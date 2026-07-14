@@ -310,7 +310,27 @@ same ports:
 
 5. **Open `STACK_URL`** in that stack's assigned browser (see below). For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red
-   `WORKTREE DEV STACK #1 :4201` banner so you never confuse a worktree tab for main.
+   `WORKTREE <NAME> · STACK #1 :4201` banner, where `<NAME>` is the uppercased checkout directory minus
+   the `ai-music-video-studio-` prefix, so you never confuse a worktree tab for main or another worktree.
+
+## Stopping and removing a worktree stack
+
+Stop and close only the tracked iTerm window before removing its worktree:
+
+```bash
+bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
+  --window-id "$DEV_WINDOW_ID" \
+  --stack-index "$STACK_INDEX"
+```
+
+The helper sends Ctrl-C to every tab, waits for the frontend, API, inspector, and debug-log ports to stop
+listening, and refuses to close the window if any remain. It closes the stopped sessions individually before the
+window because closing a multi-tab window directly shows iTerm's `Close Window #…` confirmation. If iTerm still
+shows that prompt, the helper uses Accessibility to require exactly one matching prompt and one `OK` button before
+pressing it, then verifies the tracked window is no longer visible; iTerm can retain an invisible stale scripting
+object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
+confirm an unverified iTerm prompt. After the helper succeeds, remove the worktree from the AIMVS VS Code workspace
+and Git as described above.
 
 ## Browsers (avoid auth/storage collisions)
 
