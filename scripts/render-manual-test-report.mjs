@@ -49,18 +49,20 @@ function parseEntry(rawEntry, index) {
 }
 
 function parseMetadata(yaml) {
-  const metadata = { areas: [] };
-  let inAreas = false;
+  const metadata = { areas: [], proofs: [] };
+  let arrayKey;
   for (const line of yaml.split('\n')) {
-    if (line === 'areas:') {
-      inAreas = true;
+    const arrayMatch = line.match(/^([a-z_]+):$/);
+    if (arrayMatch) {
+      arrayKey = arrayMatch[1];
+      metadata[arrayKey] = [];
       continue;
     }
-    if (inAreas && line.startsWith('  - ')) {
-      metadata.areas.push(parseScalar(line.slice(4)));
+    if (arrayKey && line.startsWith('  - ')) {
+      metadata[arrayKey].push(parseScalar(line.slice(4)));
       continue;
     }
-    inAreas = false;
+    arrayKey = undefined;
     const separator = line.indexOf(':');
     if (separator === -1) continue;
     metadata[line.slice(0, separator)] = parseScalar(
@@ -71,7 +73,9 @@ function parseMetadata(yaml) {
 }
 
 function parseScalar(value) {
-  if (value.startsWith('"')) return JSON.parse(value);
+  if (value.startsWith('"') || value.startsWith('{') || value.startsWith('[')) {
+    return JSON.parse(value);
+  }
   if (value === 'true') return true;
   if (value === 'false') return false;
   return value;
@@ -79,9 +83,10 @@ function parseScalar(value) {
 
 function buildHtml({ entries, title, workspace }) {
   const latest = entries[0];
-  const recordingCount = entries.filter(
-    (entry) => entry.metadata.recording,
-  ).length;
+  const proofPairCount = entries.reduce(
+    (count, entry) => count + (entry.metadata.proofs?.length ?? 0),
+    0,
+  );
   const counts = Object.fromEntries(
     [...validResults].map((result) => [
       result,
@@ -92,7 +97,7 @@ function buildHtml({ entries, title, workspace }) {
   const latestResult = latest?.metadata.result ?? 'blocked';
   const latestConfidence =
     latest?.metadata.confidence ??
-    'No manual-test sessions have been recorded yet.';
+    'No manual-test sessions have been reported yet.';
   const generatedAt = new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -208,7 +213,22 @@ function buildHtml({ entries, title, workspace }) {
     .run-title { min-width: 0; }
     .run-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
     .run-title span { color: var(--muted); font-size: 13px; }
-    .run-body { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .75fr); gap: 22px; padding: 0 22px 24px; border-top: 1px solid var(--line); }
+    .run-body { padding: 0 22px 24px; border-top: 1px solid var(--line); }
+    .proofs { display: grid; gap: 28px; padding-top: 24px; }
+    .proof { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: rgba(5,8,12,.72); }
+    .proof-header { padding: 22px 24px; border-bottom: 1px solid var(--line); }
+    .proof-header h3 { margin: 0 0 5px; font-size: clamp(20px, 3vw, 28px); letter-spacing: -.025em; }
+    .proof-statement { margin: 0; color: #dce7f5; font-size: clamp(15px, 2vw, 19px); }
+    .proof-statement strong { color: var(--passed); }
+    .comparison { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 20px; }
+    .shot { min-width: 0; }
+    .shot-label { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .shot-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .shot a { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #020304; }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot figcaption { margin-top: 10px; color: #bdc8d7; font-size: 14px; }
+    .comparison-arrow { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto; border: 1px solid rgba(116,199,255,.3); border-radius: 50%; color: var(--accent); background: rgba(116,199,255,.09); font-size: 30px; box-shadow: 0 0 34px rgba(116,199,255,.12); transform: rotate(90deg); }
+    .run-details { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .75fr); gap: 22px; }
     .evidence { min-width: 0; padding-top: 12px; }
     .evidence h2 { display: none; }
     .evidence h3 { margin: 28px 0 10px; font-size: 18px; }
@@ -220,7 +240,7 @@ function buildHtml({ entries, title, workspace }) {
     .media { align-self: start; position: sticky; top: 16px; margin-top: 24px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: rgba(5,8,12,.72); }
     .media-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: var(--muted); font-size: 12px; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
     video { display: block; width: 100%; border-radius: 12px; background: #020304; aspect-ratio: 16 / 10; }
-    .no-video { display: grid; place-items: center; min-height: 180px; padding: 24px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
+    .no-evidence { display: grid; place-items: center; min-height: 180px; padding: 24px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .meta div { min-width: 0; padding: 10px; border-radius: 10px; background: rgba(255,255,255,.035); }
     .meta dt { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
@@ -230,7 +250,7 @@ function buildHtml({ entries, title, workspace }) {
     footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 32px; color: var(--muted); font-size: 12px; }
     @media (max-width: 840px) {
       .summary-grid { grid-template-columns: 1fr 1fr; }
-      .run-body { grid-template-columns: 1fr; }
+      .run-details { grid-template-columns: 1fr; }
       .media { position: static; }
     }
     @media (max-width: 560px) {
@@ -252,7 +272,7 @@ function buildHtml({ entries, title, workspace }) {
       <h1>${escapeHtml(title.replace(/ Manual Test Results$/, ''))}</h1>
       <div class="verdict">
         ${statusBadge(latestResult, `Latest: ${latestResult}`)}
-        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${recordingCount} recording${recordingCount === 1 ? '' : 's'}</span>
+        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${proofPairCount} before/after proof pair${proofPairCount === 1 ? '' : 's'}</span>
       </div>
       <p class="confidence">${escapeHtml(latestConfidence)}</p>
       <p class="guardrail">${escapeHtml(reportGuardrail)}</p>
@@ -276,7 +296,7 @@ function buildHtml({ entries, title, workspace }) {
     </div>
 
     <section class="runs">
-      ${entries.map((entry, index) => renderEntry(entry, index, workspace)).join('\n') || '<div class="no-video">No test runs have been added yet.</div>'}
+      ${entries.map((entry, index) => renderEntry(entry, index, workspace)).join('\n') || '<div class="no-evidence">No test runs have been added yet.</div>'}
     </section>
 
     <footer>
@@ -295,18 +315,28 @@ function buildHtml({ entries, title, workspace }) {
 
 function renderEntry(entry, index, workspace) {
   const { metadata } = entry;
+  const proofs = metadata.proofs ?? [];
   const recording = metadata.recording;
-  let media;
+  let legacyRecording = '';
   if (recording) {
     assertSafeRelativeFilename(recording, 'recording metadata');
     const exists = existsSync(resolve(workspace.reportDirectory, recording));
-    media = exists
+    const video = exists
       ? `<video controls preload="metadata" src="./${encodeURIComponent(recording)}"></video>`
-      : `<div class="no-video">The referenced recording is missing:<br><code>${escapeHtml(recording)}</code></div>`;
-  } else {
-    media =
-      '<div class="no-video">No recording is attached to this legacy or automated-only run.</div>';
+      : `<div class="no-evidence">The referenced legacy recording is missing:<br><code>${escapeHtml(recording)}</code></div>`;
+    legacyRecording = `<div class="legacy-recording">
+      <div class="media-label"><span>Legacy session recording</span><span>MP4</span></div>
+      ${video}
+    </div>`;
   }
+  const proofsHtml = proofs.length
+    ? `
+      <section class="proofs" aria-label="Before and after visual proof">${proofs.map((proof, proofIndex) => renderProof(proof, proofIndex, workspace)).join('')}</section>`
+    : '';
+  const noVisualEvidence =
+    proofs.length === 0 && !recording
+      ? '<div class="no-evidence">No visual proof is attached to this blocked, automated-only, or legacy run.</div>'
+      : '';
   return `<details class="run" ${index === 0 ? 'open' : ''}>
     <summary>
       <div class="run-title">
@@ -315,20 +345,61 @@ function renderEntry(entry, index, workspace) {
       </div>
       ${statusBadge(metadata.result, metadata.result)}
     </summary>
-    <div class="run-body">
-      <article class="evidence">${entry.html}</article>
-      <aside class="media">
-        <div class="media-label"><span>Session recording</span><span>${recording ? 'MP4' : 'Unavailable'}</span></div>
-        ${media}
-        <dl class="meta">
-          ${metadataItem('Branch', metadata.branch)}
-          ${metadataItem('Git state', metadata.working_tree)}
-          ${metadataItem('Stack', metadata.stack)}
-          ${metadataItem('Base commit', metadata.base_commit?.slice(0, 10))}
-        </dl>
-      </aside>
+    <div class="run-body">${proofsHtml}
+      <div class="run-details">
+        <article class="evidence">${entry.html}</article>
+        <aside class="media">
+          <div class="media-label"><span>Evidence summary</span><span>${proofs.length} proof pair${proofs.length === 1 ? '' : 's'}</span></div>${noVisualEvidence}${legacyRecording}
+          <dl class="meta">
+            ${metadataItem('Branch', metadata.branch)}
+            ${metadataItem('Git state', metadata.working_tree)}
+            ${metadataItem('Stack', metadata.stack)}
+            ${metadataItem('Base commit', metadata.base_commit?.slice(0, 10))}
+          </dl>
+        </aside>
+      </div>
     </div>
   </details>`;
+}
+
+function renderProof(proof, index, workspace) {
+  for (const field of [
+    'title',
+    'before',
+    'beforeCaption',
+    'after',
+    'afterCaption',
+    'proves',
+  ]) {
+    if (typeof proof?.[field] !== 'string' || !proof[field].trim()) {
+      throw new Error(`Visual proof ${index + 1} is missing ${field}`);
+    }
+  }
+  assertSafeRelativeFilename(proof.before, `visual proof ${index + 1} before image`);
+  assertSafeRelativeFilename(proof.after, `visual proof ${index + 1} after image`);
+  return `<article class="proof">
+    <header class="proof-header">
+      <h3>${escapeHtml(proof.title)}</h3>
+      <p class="proof-statement"><strong>What this proves:</strong> ${escapeHtml(proof.proves)}</p>
+    </header>
+    <div class="comparison">
+      ${renderScreenshot('Before', proof.before, proof.beforeCaption, workspace)}
+      <div class="comparison-arrow" aria-hidden="true">→</div>
+      ${renderScreenshot('After', proof.after, proof.afterCaption, workspace)}
+    </div>
+  </article>`;
+}
+
+function renderScreenshot(label, filename, caption, workspace) {
+  const exists = existsSync(resolve(workspace.reportDirectory, filename));
+  const content = exists
+    ? `<a href="./${encodeURIComponent(filename)}" title="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot"><img loading="lazy" src="./${encodeURIComponent(filename)}" alt="${escapeHtml(`${label}: ${caption}`)}"></a>`
+    : `<div class="no-evidence">The referenced screenshot is missing:<br><code>${escapeHtml(filename)}</code></div>`;
+  return `<figure class="shot">
+    <div class="shot-label">${escapeHtml(label)}</div>
+    ${content}
+    <figcaption>${escapeHtml(caption)}</figcaption>
+  </figure>`;
 }
 
 function formatEntryDate(value) {

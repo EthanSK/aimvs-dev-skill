@@ -1,4 +1,4 @@
-# Manual-test recording and reviewer reports
+# Manual-test screenshot evidence and reviewer reports
 
 Use this workflow for every AIMVS Computer Use session that tests app behavior, including passed, failed, partial,
 and blocked sessions.
@@ -12,71 +12,71 @@ manual-test-results/
 └── <YYYY-MM-DD>-<worktree-report-slug>/
     ├── index.html
     ├── manual-test-results.md
-    ├── <YYYY-MM-DD_HH-MM-SS>-<session-slug>.mp4
-    └── <later-session-recordings>.mp4
+    ├── <YYYY-MM-DD_HH-MM-SS>-<scenario-slug>-before.png
+    ├── <YYYY-MM-DD_HH-MM-SS>-<scenario-slug>-after.png
+    └── <later-proof-screenshots>.png
 ```
 
 The first manual-test session's local date and slug name the folder. Reuse that folder for every later session in
 the same checkout/worktree, even when the date or test area changes. Never copy, move, merge, or consolidate report
-entries or recordings between worktrees. Never create a second report folder for the same worktree.
+entries or screenshots between worktrees. Never create a second report folder for the same worktree.
 
 `manual-test-results.md` is the append-only evidence source. `index.html` is the final reviewer-facing artifact and
-must be regenerated after every source edit. It is self-contained except for relative links to the Markdown source
-and adjacent MP4 recordings, so the reviewer can double-click it and review the results without a server.
+must be regenerated after every source edit. It uses relative links to the Markdown source and adjacent screenshots,
+so the reviewer can double-click it and review the results without a server. Historical entries may still reference
+MP4 recordings; keep those files and render them as legacy evidence, but never create a new recording.
 
 Keep this exact visible guardrail directly below the Markdown title and surface it in the HTML report:
 
 > Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; older entries are immutable and remain below newer entries.
 
-## Record the exact test window
+## Capture important before and after moments
 
-Complete sign-in and any credential entry before recording. Never record credentials, tokens, signed URLs,
-personal data, another app, the whole display, the user's media, microphone audio, or system audio. If authentication
-itself is under test, exclude the sensitive entry portion and record that limitation in the report.
+Capture a small number of meaningful proof pairs, not every click. Each pair must show the same user-visible area
+immediately before the important action and after the observable result has settled. Prefer one pair per behavior
+claim. Add another pair only when it proves a distinct state transition, failure path, or regression boundary.
 
-After creating and verifying the dedicated test-browser window and `TEST_WINDOW_ID`, start recording immediately
-before the first Computer Use action:
+Complete sign-in and any credential entry before capturing evidence. Never capture credentials, tokens, signed
+URLs, personal data, another app, the whole display, the user's media, or a broader screen region. If authentication
+itself is under test, exclude the sensitive entry portion and state that limitation in the report.
 
-Run the start wrapper as a long-running foreground command in its own persistent exec/terminal session. Never use
-command substitution or wait for it to exit: keep the returned session open while testing, and read
-`report_directory`, `recording`, and `pid` from its startup output before `recording-started`:
+After creating and verifying the dedicated test-browser window and `TEST_WINDOW_ID`, capture the before state:
 
 ```bash
-bash .agents/skills/aimvs-dev/scripts/start-manual-test-recording.sh \
+before_info="$(bash .agents/skills/aimvs-dev/scripts/capture-manual-test-screenshot.sh \
   --window-id "$TEST_WINDOW_ID" \
-  --slug project-asset-linking
+  --slug project-asset-linking \
+  --phase before)"
+printf '%s\n' "$before_info"
+REPORT_DIRECTORY="$(sed -n 's/^report_directory=//p' <<<"$before_info")"
+BEFORE_SCREENSHOT="$(sed -n 's/^screenshot=//p' <<<"$before_info")"
 ```
 
-Do not perform the first Computer Use action until the same session prints `recording-started`.
-
-The recorder uses ScreenCaptureKit's `desktopIndependentWindow` filter and refuses non-browser window IDs. It
-captures only that exact window at up to 1920 pixels wide, with cursor/click indication and no audio. Keeping its
-foreground command session open preserves both the recorder lifetime and the parent process's macOS Screen
-Recording permission; detached `nohup` children are reaped by the command runner, while `launchd` jobs do not
-inherit the needed capture permission. Never fall back to `screencapture -v`, display capture, rectangle capture,
-OBS, QuickTime, or another recorder: those can capture the user's active display or video. Recording must not
-activate, raise, move, resize, or cover any window.
-
-After the final Computer Use verification action, stop and validate the recording before doing non-UI log/emulator
-checks:
+Perform the focused Computer Use steps, wait for the final state, then capture the after state with the same window
+ID and scenario slug:
 
 ```bash
-stop_info="$(bash .agents/skills/aimvs-dev/scripts/stop-manual-test-recording.sh \
-  --report-directory "$REPORT_DIRECTORY")"
-printf '%s\n' "$stop_info"
+after_info="$(bash .agents/skills/aimvs-dev/scripts/capture-manual-test-screenshot.sh \
+  --window-id "$TEST_WINDOW_ID" \
+  --slug project-asset-linking \
+  --phase after)"
+printf '%s\n' "$after_info"
+AFTER_SCREENSHOT="$(sed -n 's/^screenshot=//p' <<<"$after_info")"
 ```
 
-After the stop wrapper succeeds, wait for the persistent recorder command session to report completion and close.
+The capture helper uses ScreenCaptureKit's `desktopIndependentWindow` filter and refuses non-browser window IDs.
+It captures one PNG of only that exact window at up to 1920 pixels wide, without activating, raising, moving, or
+resizing it, then exits immediately. Never start a continuous recorder or fall back to display capture, rectangle
+capture, Preview, OBS, QuickTime, or another capture path.
 
-If startup, recording, or finalization fails, do not substitute a broader capture mode. Preserve any diagnostic
-log/partial file, mark the recording evidence blocked or partial, and continue with safe UI/emulator/log evidence
-when that still satisfies the requested test. A new coherent Computer Use session gets a new MP4; never overwrite
-an earlier recording.
+If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual
+evidence partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested
+test. Never overwrite an earlier screenshot.
 
 ## Add the evidence entry
 
-After emulator and log verification, generate the newest entry and initial HTML. Pass the recording filename from
-the same session; omit `--recording` only for an automated-only run or a documented recording failure:
+After emulator and log verification, generate the newest entry and initial HTML. Describe each proof pair with a
+short title, literal before/after captions, and one quick-glance sentence explaining what the transition proves:
 
 ```bash
 node .agents/skills/aimvs-dev/scripts/create-manual-test-report.mjs \
@@ -86,14 +86,22 @@ node .agents/skills/aimvs-dev/scripts/create-manual-test-report.mjs \
   --browser Safari \
   --stack 0 \
   --url http://localhost:4200/ \
-  --recording "$RECORDING_FILENAME" \
+  --proof-title "Project link appears after import" \
+  --before "$BEFORE_SCREENSHOT" \
+  --before-caption "The asset browser has no project link before import." \
+  --after "$AFTER_SCREENSHOT" \
+  --after-caption "The imported asset shows its new project link." \
+  --proves "Importing the asset creates the visible project association without a page refresh." \
   --area "project asset links" \
   --area "asset import"
 ```
 
+Repeat the six proof arguments beginning with `--proof-title` to add another pair. Omit proof arguments only for a
+blocked session where no safe screenshot exists or an automated-only run, and explain that gap in **Not verified**.
+
 The generator records the tested base commit, branch, dirty/clean state, changed paths, and working-tree diff
-fingerprint. It inserts the newest entry directly below the marker and leaves older entries byte-for-byte below it.
-Complete only the new entry in `manual-test-results.md`:
+fingerprint. It verifies every new PNG exists in the report folder, inserts the newest entry directly below the
+marker, and leaves older entries byte-for-byte below it. Complete only the new entry in `manual-test-results.md`:
 
 - Keep `confidence` directly below `result`, on one line, at most 200 characters, with the confidence level and
   shortest useful reason.
@@ -117,15 +125,29 @@ node .agents/skills/aimvs-dev/scripts/render-manual-test-report.mjs
 
 Before finishing, verify that:
 
-- `index.html` exists and contains the newest result, confidence, scenarios, aggregate counts, and coverage areas;
-- the newest entry contains its completed **Points of weirdness** section;
-- every referenced MP4 exists beside it and `ffprobe` reports a playable H.264 video stream;
-- the newest run is expanded, older runs remain available, and recordings play through relative file links;
+- `index.html` contains the newest result, confidence, scenarios, aggregate counts, coverage areas, and proof-pair
+  count;
+- every proof appears as a large, vertically scrollable Before → After comparison with both captions and its
+  **What this proves** text;
+- every referenced PNG exists beside the report, has nonzero dimensions, and shows only the dedicated browser
+  window at the intended moment;
+- the newest run is expanded and older runs remain available, including any historical MP4 evidence;
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
-- the folder contains no credentials, logs, PID/state files, temporary recordings, or unrelated artifacts.
+- the folder contains no credentials, logs, PID/state files, temporary captures, or unrelated artifacts.
 
-Do not stage or commit the folder unless the user asks. When they request the related implementation commit, keep the
-report folder and recordings with those code changes unless he explicitly excludes the videos.
+Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
+automatically open `index.html` or any evidence file at the end of the task. When renderer layout itself changed,
+verify the generated HTML in the already assigned dedicated test-browser window without raising it, then leave a
+clickable report link in the final response so Ethan decides whether to open it. Do not enable Safari's **Allow
+JavaScript from Apple Events** setting merely to scroll or inspect a report; leave browser security settings intact
+and combine non-activating visual inspection with deterministic HTML/file checks.
+
+When the personal `ethansk.open-index-in-system-browser` VS Code extension is installed, Ethan can right-click the
+report's `index.html` row in the Source Control pane and choose **Open index.html in System Browser**. Treat that as
+a user-initiated convenience only; never invoke the command or open the report automatically during handoff.
+
+Do not stage or commit the folder unless the user asks. When they request the related implementation commit, keep
+the report folder and screenshots with those code changes unless he explicitly excludes the images.
 
 Always include the newest report entry's **Points of weirdness** in the final response so the user sees them
 without opening the report. State `None` explicitly when the section is empty.
@@ -134,5 +156,6 @@ without opening the report. State `None` explicitly when the section is empty.
 
 Search the relevant checkout/worktree's one report folder first. Use `index.html` for quick review and
 `manual-test-results.md` for exact text/fingerprints. If a question spans worktrees, read and label each folder
-separately; never merge their histories. Report only what the entries and attached recordings prove, distinguish
-clean-commit evidence from dirty-tree evidence, and state gaps instead of inferring coverage.
+separately; never merge their histories. Report only what the entries and attached screenshots or historical
+recordings prove, distinguish clean-commit evidence from dirty-tree evidence, and state gaps instead of inferring
+coverage. Never auto-open the report or Preview while answering a history question.

@@ -1,6 +1,6 @@
 # AIMVS Dev Skill
 
-> A project-specific Codex skill for running several Git worktrees as isolated local dev stacks, safely controlling real desktop browsers, verifying Firebase-backed behavior, and producing recorded reviewer-friendly manual-test reports.
+> A project-specific Codex skill for running several Git worktrees as isolated local dev stacks, safely controlling real desktop browsers, verifying Firebase-backed behavior, and producing screenshot-based reviewer-friendly manual-test reports.
 
 This skill was built for the private **AI Music Video Studio (AIMVS)** repository. It is public as a complete,
 working reference rather than a framework: the commands, ports, browser order, Firebase conventions, and report
@@ -14,9 +14,10 @@ workflow intentionally reflect AIMVS. You are welcome to adapt them to your own 
   user's active workspace or video.
 - Handles test-account authentication and App Check without committing credentials.
 - Verifies each feature at the UI, emulator-state, and frontend/API-log layers.
-- Records only the exact dedicated browser window through ScreenCaptureKit—never the whole display or audio.
+- Captures important before/after PNGs of only the exact dedicated browser window through ScreenCaptureKit—never
+  the whole display or a continuous recording.
 - Maintains one append-only Markdown evidence source per worktree and renders a double-clickable HTML report with
-  result counts, confidence summaries, coverage areas, and adjacent MP4 recordings.
+  result counts, confidence summaries, coverage areas, and large Before → After proof comparisons.
 - Preserves durable setup, recovery, and testing discoveries through a continuous-improvement contract.
 
 ## Repository layout
@@ -25,14 +26,14 @@ workflow intentionally reflect AIMVS. You are welcome to adapt them to your own 
 SKILL.md                         Codex routing and operating procedure
 agents/openai.yaml               Skill-list metadata
 references/manual-test-reporting.md
-scripts/                         Window setup, recording, and report tooling
+scripts/                         Window setup, screenshot capture, and report tooling
 ```
 
 ## Requirements
 
-- macOS 15 or newer for ScreenCaptureKit's window-only recording API.
+- macOS 14 or newer for ScreenCaptureKit's window-only screenshot API.
 - Codex with Computer Use for visible browser interaction.
-- Git worktrees, Node.js, npm, Swift, `ffprobe`, and the browsers used by your adapted workflow.
+- Git worktrees, Node.js, npm, Swift, and the browsers used by your adapted workflow.
 - A host repository whose dev servers, emulator commands, credentials, and logs match—or have been adapted from—
   the AIMVS conventions in `SKILL.md`.
 
@@ -69,12 +70,13 @@ At minimum, review and change:
 5. Ignored credential filenames and environment-variable names.
 6. Manual-test report title, coverage language, and any host-repository `AGENTS.md` instructions.
 
-Keep the safety boundaries: never publish credentials, record an entire display as a fallback, capture audio,
-replace a requested logged-in browser with an isolated profile, or overwrite older evidence entries.
+Keep the safety boundaries: never publish credentials, capture an entire display as a fallback, run a continuous
+recorder, auto-open Preview, replace a requested logged-in browser with an isolated profile, or overwrite older
+evidence entries.
 
 ## Security and privacy
 
-This public repository contains no credentials, tokens, private keys, signed URLs, browser data, recordings, or
+This public repository contains no credentials, tokens, private keys, signed URLs, browser data, screenshots, or
 manual-test results. Credential and Firebase project values are loaded from ignored host-repository configuration
 at runtime. Before publishing your own adaptation, scan the complete Git diff and history rather than relying only
 on `.gitignore`.

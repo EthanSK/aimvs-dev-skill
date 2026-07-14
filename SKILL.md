@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, or questions about previously recorded manual testing—including the main checkout on stack 0 and one or more git worktrees. This is the repo source of truth for MacBook-display routing, stack selection, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
+description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, or questions about prior manual-test screenshot evidence—including the main checkout on stack 0 and one or more git worktrees. This is the repo source of truth for MacBook-display routing, stack selection, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
 ---
 
 # AIMVS Development
@@ -458,12 +458,13 @@ the happy path still works and the logs are clean.
 ## Manual-test reporting
 
 Before every AIMVS Computer Use test, read and follow
-[references/manual-test-reporting.md](references/manual-test-reporting.md) completely. Record only the exact
-dedicated browser window, create one MP4 per coherent Computer Use session, and maintain the checkout/worktree's
-single date-prefixed report folder containing the append-only Markdown source, adjacent recordings, and final
-double-clickable `index.html`. Generate and verify the newest report entry before the final response, including
-failed, partial, and blocked sessions. Never capture credentials, audio, another app, the user's display/video, or a
-broader screen region as a fallback.
+[references/manual-test-reporting.md](references/manual-test-reporting.md) completely. Capture only important
+before/after PNG proof pairs from the exact dedicated browser window; never run a continuous screen recording.
+Maintain the checkout/worktree's single date-prefixed report folder containing the append-only Markdown source,
+adjacent screenshots, and final double-clickable `index.html`. Generate and verify the newest report entry before
+the final response, including failed, partial, and blocked sessions. Never capture credentials, another app, the
+user's display/video, or a broader screen region as a fallback. Never open Preview.app or automatically open the
+report/evidence at the end; provide links and let the user choose what to open.
 
 ## Browser crash and recovery
 
@@ -481,7 +482,7 @@ the action. This avoids double-running a mutation while the previous backend ope
 
 ## Improve this skill from new learnings
 
-Whenever AIMVS use, debugging, or investigation produces a durable verified setup, browser, emulator, recording,
+Whenever AIMVS use, debugging, or investigation produces a durable verified setup, browser, emulator, screenshot,
 reporting, login, or recovery finding, update this skill during the same task. Adjust its instructions, scripts,
 tests, or references as appropriate, retest affected behavior, and validate the skill before finishing. Preserve
 reusable evidence; do not record guesses, secrets, branch-specific results, or transient runtime state.

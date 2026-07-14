@@ -2,7 +2,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeRelativeFilename,
@@ -48,9 +48,7 @@ if (
   fail(`${workspace.directoryName} contains more than one insertion marker`);
 }
 
-const recordingMetadata = options.recording
-  ? `recording: ${yamlString(options.recording)}\n`
-  : '';
+validateProofFiles(options.proofs, workspace.reportDirectory);
 const entry = `<!-- aimvs-manual-test-entry -->
 
 \`\`\`yaml
@@ -64,7 +62,9 @@ diff_fingerprint: sha256:${fingerprint}
 browser: ${yamlString(options.browser)}
 stack: ${options.stack}
 url: ${yamlString(options.url)}
-${recordingMetadata}areas:
+proofs:
+${options.proofs.map((proof) => `  - ${JSON.stringify(proof)}`).join('\n')}
+areas:
 ${options.areas.map((area) => `  - ${yamlString(area)}`).join('\n')}
 \`\`\`
 
@@ -123,7 +123,8 @@ function parseOptions(args) {
     areas: [],
     browser: undefined,
     confidence: undefined,
-    recording: undefined,
+    currentProof: undefined,
+    proofs: [],
     result: undefined,
     slug: undefined,
     stack: undefined,
@@ -143,11 +144,27 @@ function parseOptions(args) {
       case '--confidence':
         parsed.confidence = value;
         break;
-      case '--recording':
-        parsed.recording = value;
+      case '--after':
+        requireCurrentProof(parsed, name).after = value;
+        break;
+      case '--after-caption':
+        requireCurrentProof(parsed, name).afterCaption = value;
+        break;
+      case '--before':
+        requireCurrentProof(parsed, name).before = value;
+        break;
+      case '--before-caption':
+        requireCurrentProof(parsed, name).beforeCaption = value;
         break;
       case '--result':
         parsed.result = value;
+        break;
+      case '--proof-title':
+        finishCurrentProof(parsed);
+        parsed.currentProof = { title: value };
+        break;
+      case '--proves':
+        requireCurrentProof(parsed, name).proves = value;
         break;
       case '--slug':
         parsed.slug = value;
@@ -162,6 +179,7 @@ function parseOptions(args) {
         fail(`Unknown argument: ${name}`);
     }
   }
+  finishCurrentProof(parsed);
   assertValidSlug(parsed.slug);
   if (!['passed', 'failed', 'partial', 'blocked'].includes(parsed.result)) {
     fail('--result must be passed, failed, partial, or blocked');
@@ -176,10 +194,49 @@ function parseOptions(args) {
   }
   if (!parsed.url) fail('--url is required');
   if (parsed.areas.length === 0) fail('At least one --area is required');
-  if (parsed.recording) {
-    assertSafeRelativeFilename(parsed.recording, '--recording');
-  }
+  delete parsed.currentProof;
   return parsed;
+}
+
+function requireCurrentProof(parsed, optionName) {
+  if (!parsed.currentProof) {
+    fail(`${optionName} must follow --proof-title`);
+  }
+  return parsed.currentProof;
+}
+
+function finishCurrentProof(parsed) {
+  const proof = parsed.currentProof;
+  if (!proof) return;
+  for (const field of [
+    'title',
+    'before',
+    'beforeCaption',
+    'after',
+    'afterCaption',
+    'proves',
+  ]) {
+    if (!proof[field]?.trim()) {
+      fail(`Each proof pair requires ${field}`);
+    }
+  }
+  assertSafeRelativeFilename(proof.before, '--before');
+  assertSafeRelativeFilename(proof.after, '--after');
+  parsed.proofs.push(proof);
+  parsed.currentProof = undefined;
+}
+
+function validateProofFiles(proofs, reportDirectory) {
+  for (const proof of proofs) {
+    for (const filename of [proof.before, proof.after]) {
+      if (!filename.toLowerCase().endsWith('.png')) {
+        fail(`Proof screenshots must be PNG files: ${filename}`);
+      }
+      if (!existsSync(join(reportDirectory, filename))) {
+        fail(`Proof screenshot does not exist in the report folder: ${filename}`);
+      }
+    }
+  }
 }
 
 function createWorkingTreeFingerprint(repoRoot, status, baseCommit) {
