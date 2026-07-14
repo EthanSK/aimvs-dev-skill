@@ -1,0 +1,10 @@
+{
+  "name": "aimvs-dev-codex-skill",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A project-specific Codex skill for multi-worktree development and recorded browser testing.",
+  "type": "module",
+  "dependencies": {
+    "marked": "13.0.3"
+  }
+}

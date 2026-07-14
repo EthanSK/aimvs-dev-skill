@@ -1,0 +1,4 @@
+interface:
+  display_name: "AIMVS Development"
+  short_description: "Run, test, and trace AIMVS development evidence."
+  default_prompt: "Use $aimvs-dev to run, debug, manually test, or review recorded testing for the correct AIMVS dev stack."
