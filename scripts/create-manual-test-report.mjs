@@ -102,6 +102,11 @@ Actual: <!-- Observed behavior and evidence. -->
 
 <!-- Bugs found, fixes made, and the exact retest result. Use "None" when appropriate. -->
 
+### Points of weirdness
+
+<!-- Evidence-backed surprising code or behavior the user should see. Label each item as a confirmed bug,
+intentional-but-non-obvious behavior, or open question. Use "None" when appropriate. -->
+
 ### Not verified
 
 <!-- Meaningful gaps. Use "None" only when the intended scope was fully covered. -->`;

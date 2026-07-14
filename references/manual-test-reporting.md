@@ -101,6 +101,11 @@ Complete only the new entry in `manual-test-results.md`:
 - Give each scenario its own `passed`, `failed`, `partial`, or `blocked` result, exact steps, expected behavior, and
   actual behavior.
 - Record emulator state, frontend/API/emulator logs, bugs found, fixes made, exact retests, and meaningful gaps.
+- Add a **Points of weirdness** section for evidence-backed behavior likely to make the user ask why it works that
+  way, even when the test passed. Include surprising asymmetries, misleading names or feedback, hidden writes,
+  no-op controls, unexpected coupling or cost, unusual log noise, and unresolved observations. Label each point as
+  a confirmed bug, intentional-but-non-obvious behavior, or an open question; write `None` when there are no
+  meaningful points.
 - Keep bug explanations easy to scan: state the bug/reproduction first, then the solution and retest.
 - Never include credentials, tokens, signed URLs, personal data, secrets, or transient local state.
 
@@ -113,6 +118,7 @@ node .agents/skills/aimvs-dev/scripts/render-manual-test-report.mjs
 Before finishing, verify that:
 
 - `index.html` exists and contains the newest result, confidence, scenarios, aggregate counts, and coverage areas;
+- the newest entry contains its completed **Points of weirdness** section;
 - every referenced MP4 exists beside it and `ffprobe` reports a playable H.264 video stream;
 - the newest run is expanded, older runs remain available, and recordings play through relative file links;
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
@@ -120,6 +126,9 @@ Before finishing, verify that:
 
 Do not stage or commit the folder unless the user asks. When they request the related implementation commit, keep the
 report folder and recordings with those code changes unless he explicitly excludes the videos.
+
+Always include the newest report entry's **Points of weirdness** in the final response so the user sees them
+without opening the report. State `None` explicitly when the section is empty.
 
 ## Reading past evidence
 
