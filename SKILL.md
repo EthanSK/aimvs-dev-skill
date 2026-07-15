@@ -34,9 +34,9 @@ swift .agents/skills/aimvs-dev/scripts/inspect-browser-displays.swift
 
 The script identifies displays by `NSScreen.localizedName`, converts their live frames into the same coordinate
 system as browser windows, and prints the numeric identity and display of each substantial
-Safari/Chrome/Firefox/Opera window. Record the pre-existing window IDs; never claim they were created by the
-test. Do not infer the display from a window's size, a negative X coordinate, or whichever display is currently
-main.
+Safari/Chrome/Firefox/Opera window. Record the pre-existing window IDs and whether the assigned browser app was
+already running; never claim they were created by the test. Do not infer the display from a window's size, a
+negative X coordinate, or whichever display is currently main.
 
 When Safari is assigned, create exactly one dedicated test window and navigate it to the exact stack URL in the
 same operation with:
@@ -465,6 +465,17 @@ adjacent screenshots, and final double-clickable `index.html`. Generate and veri
 the final response, including failed, partial, and blocked sessions. Never capture credentials, another app, the
 user's display/video, or a broader screen region as a fallback. Never open Preview.app or automatically open the
 report/evidence at the end; provide links and let the user choose what to open.
+
+## Close the dedicated test browser window
+
+At the end of every Computer Use manual-test session—passed, failed, partial, or blocked—finish capturing and
+verifying the report evidence, then close the exact dedicated window identified by `TEST_WINDOW_ID`. Do not leave
+it open merely because development work will continue.
+
+Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory and require
+that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
+otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
+If exact cleanup cannot be proven safe, report it as blocked instead of closing another window or app.
 
 ## Browser crash and recovery
 
