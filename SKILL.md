@@ -214,6 +214,11 @@ same ports:
 
 4. **Per worktree, pass the SAME `--dev-stack-index=N` to all three worktree processes**.
 
+   Give every nonzero stack its own Nx workspace-data directory, including when the agent is testing from the main
+   checkout. Without this, stack 0 and an agent stack in the same checkout can share Nx's running-task records and
+   the agent frontend can stop at `Waiting for frontend:serve:development in another nx process`. Use
+   `.nx/workspace-data-stack-N` for every Nx-backed command in that stack; leave stack 0 on the normal default.
+
    Prefer launching these in iTerm2 so the long-running dev processes live in a normal standalone terminal
    session, not in a Codex tool session that disappears when the chat/tool process exits. iTerm2 is installed
    at `/Applications/iTerm.app`, but its AppleScript application name is `iTerm`; target the bundle id below so
@@ -229,9 +234,9 @@ same ports:
    WORKTREE_DIR="/absolute/path/to/your-project-worktree"
    STACK_INDEX=1
    STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
-   DEV_COLOR_ENV="FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
+   DEV_COLOR_ENV="NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
 
-   (cd "$WORKTREE_DIR" && npx nx build api --configuration=development)
+   (cd "$WORKTREE_DIR" && NX_WORKSPACE_DATA_DIRECTORY=".nx/workspace-data-stack-${STACK_INDEX}" npx nx build api --configuration=development)
 
    iterm_command() {
      local title="$1"
@@ -288,9 +293,9 @@ same ports:
    If iTerm2 is unavailable, fall back to running each command in separate tabs in another terminal app:
 
    ```bash
-   npm run watch:api -- --dev-stack-index=1                 # build + watch the API
-   npm run serve:api:standalone:debug -- --dev-stack-index=1 # standalone API on :3001, inspector :9231
-   npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
+   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run watch:api -- --dev-stack-index=1                 # build + watch the API
+   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:api:standalone:debug -- --dev-stack-index=1 # standalone API on :3001, inspector :9231
+   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
    ```
 
    The prebuild before window creation is intentional: without it, a fresh worktree starts the standalone API
