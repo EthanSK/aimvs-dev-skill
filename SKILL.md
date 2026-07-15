@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, or questions about prior manual-test screenshot evidence—including the main checkout on stack 0 and one or more git worktrees. This is the repo source of truth for MacBook-display routing, stack selection, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
+description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, agent-owned nonzero stack selection, MacBook-display routing, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
 ---
 
 # AIMVS Development
@@ -8,9 +8,10 @@ description: Use for every AI Music Video Studio development interaction involvi
 ## Overview
 
 This skill is the source of truth for every AIMVS Computer Use interaction and local browser test, including a
-single test of uncommitted changes in the main checkout. Select it before any global Computer Use or
-browser-testing skill. Main uses stack 0 and Safari as the first-choice test browser; additional concurrent stacks
-use indexed ports and the next browsers below.
+test of uncommitted changes in the main checkout. Select it before any global Computer Use or browser-testing
+skill. Stack 0 belongs to Ethan's main VS Code environment and is never an agent test target. Every agent-run test
+uses a free nonzero stack index, even when its source is the main checkout; Safari is the first-choice browser for
+the first agent-owned stack and additional concurrent stacks use the next browsers below.
 
 ## Non-negotiable browser display
 
@@ -27,7 +28,7 @@ Before the first browser action, assign the browser from the order in **Browsers
 set the exact stack URL, and inventory the existing windows:
 
 ```bash
-STACK_INDEX=0 # use the selected nonzero stack index for a worktree
+STACK_INDEX=1 # replace this with the selected free nonzero index for every agent-run test
 STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
 swift .agents/skills/aimvs-dev/scripts/inspect-browser-displays.swift
 ```
@@ -61,8 +62,8 @@ If the controller cannot create, identify, and place that exact new window witho
 or closing a pre-existing window, stop and report the blocker instead of improvising.
 
 Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window creation and placement are a
-one-time setup while the tracked window exists. The Safari helper defaults to stack 0 when no URL argument is
-provided; always pass `STACK_URL` so the test target is explicit.
+one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
+argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
 After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action.
 Before acting on a fresh Computer Use state, require its accessibility tree to show the expected stack URL. If it
@@ -97,23 +98,17 @@ knob needed to keep that worktree's frontend and standalone API paired.
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
-## Main checkout (stack 0)
+## Ethan's main environment (stack 0)
 
-For the main checkout, first use the existing running services. Do not reconstruct the stack, launch Docker/MinIO,
-or start individual processes when the normal main stack is already running.
+Stack 0 is exclusively Ethan's main VS Code environment. Agents must never start, stop, restart, restore, or use
+stack 0 for their own tests unless Ethan explicitly asks for that exact stack 0 action. Read-only port and log
+inspection is allowed. Testing source from the main checkout still uses a free nonzero stack index.
 
-This existing-terminal rule applies when assessing, starting, stopping, or restarting the dev environment. It does
-not apply to ordinary log inspection. For questions such as "what is causing the API debug log error?", read the
-checkout-root `api-debug.log` directly with shell tools first; do not open or operate VS Code/Computer Use merely to
-read API errors. The API truncates this file on server start, so it represents the current API session. Use VS Code
-only when the task actually requires assessing or controlling the dev environment, when required startup/process
-output is not present in the log files, or when direct log inspection has shown that terminal state itself matters.
-
-If the main stack is not running, invoke `Restore Terminals` from the VS Code command palette. The workspace's
-`.vscode/settings.json` is the single source of truth for the complete main environment, including its terminal
-layout and startup commands; do not manually reproduce that configuration. After restoration, wait for those
-terminals to finish starting and verify the required ports. If one restored process fails, inspect and restart
-that process in its restored VS Code terminal instead of creating a separate ad hoc stack.
+For questions such as "what is causing the API debug log error?", read the checkout-root `api-debug.log` directly
+with shell tools first; do not open or operate VS Code/Computer Use merely to read API errors. The API truncates
+this file on server start, so it represents the current API session. If stack 0 is missing or unhealthy, report it
+to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action. Agents
+must never invoke `Restore Terminals` for stack 0 on their own.
 
 The user actively uses the same VS Code window while agents work. Preserve its current layout and make only the
 smallest temporary UI change required for the task. Never maximize the terminal panel vertically, toggle the
@@ -154,14 +149,15 @@ same ports:
    emulator ownership for ordinary frontend or standalone API changes.
 2. Ask the user before stopping the shared emulator because every running AIMVS stack depends on it. Do not continue
    until he confirms that the other stacks can be interrupted.
-3. Stop the shared emulator through its existing main VS Code terminal and verify ports `5001`, `8080`, and `9199`
-   are free. Do not run a blanket teardown while another approved test is using them.
+3. Ask Ethan to stop the shared emulator through his existing main VS Code terminal, then verify ports `5001`,
+   `8080`, and `9199` are free. Only operate that terminal if he explicitly asks for this exact action. Do not run
+   a blanket teardown while another approved test is using the emulators.
 4. From the trigger-changing worktree, start `npm run serve:emulators:standalone-server` in a dedicated normal
    terminal. This builds and loads that worktree's trigger code while retaining the standard emulator ports used
    by its frontend and standalone API.
 5. Run and test only that worktree against this emulator session. Do not claim other stacks are concurrently safe.
-6. When testing finishes, stop the worktree emulator cleanly, restore the main emulator through the existing
-   `Restore Terminals` workflow, and verify its ports before handing the environment back.
+6. When testing finishes, stop the worktree emulator cleanly and ask Ethan to restore his main emulator. Only
+   restore stack 0 if he explicitly asks for that exact action, then verify its ports before handing it back.
 
 ## Running a stack
 
@@ -171,10 +167,9 @@ same ports:
    lsof -nP -iTCP:5001 -iTCP:8080 -iTCP:9199 -sTCP:LISTEN
    ```
 
-   If those emulators are already listening, reuse them. If they are not running, restart them in the existing main
-   emulator terminal; use `Restore Terminals` only when the configured terminal layout itself is absent. Wait for
-   the emulator terminal to become ready, and do not start a second shared emulator from a worktree. The only
-   exception is the explicitly coordinated trigger-isolation workflow above.
+   If those emulators are already listening, reuse them. If they are not running, ask Ethan to start them in his
+   main environment and wait for them to become ready. Do not invoke `Restore Terminals` or start a second shared
+   emulator from a worktree. The only exception is the explicitly coordinated trigger-isolation workflow above.
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -207,14 +202,15 @@ same ports:
    `npm run download:ffmpeg` in the worktree or prefix the standalone API command with
    `USE_SYSTEM_FFMPEG=true`.
 
-3. **Pick the next free worktree stack index** before starting anything:
+3. **Pick the next free nonzero agent stack index** before starting anything, including tests from main:
 
    ```bash
    lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -sTCP:LISTEN
    ```
 
-   Treat index `N` as used if `4200+N` or `3000+N` is listening. Use the next free `N`, keep that same
-   index for the frontend/API/watch commands, and do not use `0` for worktree testing because `0` is main.
+   Treat index `N` as used if `4200+N` or `3000+N` is listening. Use the next free nonzero `N`, keep that same
+   index for the frontend/API/watch commands, and always pass `--dev-stack-index=N`. Never use `0`: it belongs to
+   Ethan, even when the agent is testing code directly from the main checkout.
 
 4. **Per worktree, pass the SAME `--dev-stack-index=N` to all three worktree processes**.
 
@@ -334,11 +330,11 @@ and Git as described above.
 
 ## Browsers (avoid auth/storage collisions)
 
-Use Safari first for every AIMVS local manual test, including main/stack 0 and a single worktree. This repo rule
-overrides any global preference for personal Chrome. Concurrent stacks must use different browsers so Firebase
-Auth persistence + App Check storage do not fight; assign them in this order: Safari → Firefox → Opera → personal
-Chrome. Never switch away from Safari merely because another browser is already logged in—use the test-account
-sign-in flow below when Safari needs authentication.
+Use Safari first for the first agent-owned nonzero AIMVS test stack. This repo rule overrides any global preference
+for personal Chrome. Concurrent agent stacks must use different browsers so Firebase Auth persistence + App Check
+storage do not fight; assign them in this order: Safari → Firefox → Opera → personal Chrome. Never switch away
+from Safari merely because another browser is already logged in—use the test-account sign-in flow below when
+Safari needs authentication. Stack 0 is not part of this assignment because agents never test against it.
 
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
 verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep every test browser on
