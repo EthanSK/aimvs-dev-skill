@@ -5,7 +5,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WINDOW_ID=""
 SLUG=""
-PHASE=""
 
 while (($# > 0)); do
   case "$1" in
@@ -15,10 +14,6 @@ while (($# > 0)); do
       ;;
     --slug)
       SLUG="${2:-}"
-      shift 2
-      ;;
-    --phase)
-      PHASE="${2:-}"
       shift 2
       ;;
     *)
@@ -36,14 +31,9 @@ if [[ ! "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
   printf '%s\n' '--slug must be lowercase kebab-case' >&2
   exit 1
 fi
-if [[ "$PHASE" != 'before' && "$PHASE" != 'after' ]]; then
-  printf '%s\n' '--phase must be before or after' >&2
-  exit 1
-fi
-
 REPORT_DIRECTORY="$(node "$SCRIPT_DIR/prepare-manual-test-report.mjs" --slug "$SLUG")"
 TIMESTAMP="$(date '+%Y-%m-%d_%H-%M-%S')"
-SCREENSHOT_FILENAME="${TIMESTAMP}-${SLUG}-${PHASE}.png"
+SCREENSHOT_FILENAME="${TIMESTAMP}-${SLUG}.png"
 SCREENSHOT_PATH="$REPORT_DIRECTORY/$SCREENSHOT_FILENAME"
 TEMPORARY_PATH="$REPORT_DIRECTORY/.${SCREENSHOT_FILENAME}.tmp-$$.png"
 SOURCE_FINGERPRINT="$(shasum -a 256 "$SCRIPT_DIR/capture-browser-window.swift" | awk '{print $1}')"

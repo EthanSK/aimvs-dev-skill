@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
 import {
@@ -49,7 +49,7 @@ function parseEntry(rawEntry, index) {
 }
 
 function parseMetadata(yaml) {
-  const metadata = { areas: [], proofs: [] };
+  const metadata = { areas: [], screenshots: [] };
   let arrayKey;
   for (const line of yaml.split('\n')) {
     const arrayMatch = line.match(/^([a-z_]+):$/);
@@ -83,8 +83,9 @@ function parseScalar(value) {
 
 function buildHtml({ entries, title, workspace }) {
   const latest = entries[0];
-  const proofPairCount = entries.reduce(
-    (count, entry) => count + (entry.metadata.proofs?.length ?? 0),
+  const screenshotCount = entries.reduce(
+    (count, entry) =>
+      count + getEvidenceScreenshots(entry.metadata, workspace).length,
     0,
   );
   const counts = Object.fromEntries(
@@ -214,28 +215,23 @@ function buildHtml({ entries, title, workspace }) {
     .run-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
     .run-title span { color: var(--muted); font-size: 13px; }
     .run-body { padding: 0 22px 24px; border-top: 1px solid var(--line); }
-    .proofs { display: grid; gap: 28px; padding-top: 24px; }
-    .proof { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: rgba(5,8,12,.72); }
-    .proof-header { padding: 22px 24px; border-bottom: 1px solid var(--line); }
-    .proof-header h3 { margin: 0 0 5px; font-size: clamp(20px, 3vw, 28px); letter-spacing: -.025em; }
-    .proof-statement { margin: 0; color: #dce7f5; font-size: clamp(15px, 2vw, 19px); }
-    .proof-statement strong { color: var(--passed); }
-    .comparison { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 20px; }
-    .shot { min-width: 0; }
-    .shot-label { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
-    .shot-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-    .shot-open { display: block; width: 100%; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: #020304; cursor: pointer; }
-    .shot-open:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-    .shot img { display: block; width: 100%; height: auto; }
+    .screenshots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding-top: 24px; }
+    .screenshot-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: rgba(5,8,12,.72); }
+    .screenshot-header { padding: 20px 22px; border-bottom: 1px solid var(--line); }
+    .screenshot-header h3 { margin: 0 0 5px; font-size: clamp(19px, 2.5vw, 25px); letter-spacing: -.025em; }
+    .screenshot-statement { margin: 0; color: #dce7f5; font-size: 15px; }
+    .screenshot-statement strong { color: var(--passed); }
+    .shot { min-width: 0; margin: 0; padding: 18px; }
+    .shot-action { margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; text-align: right; }
+    .shot-toggle { display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; color: inherit; background: #020304; cursor: zoom-in; }
+    .shot-toggle img { display: block; width: 100%; height: auto; }
+    .shot-toggle:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .shot-viewer { box-sizing: border-box; width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 16px; border: 0; background: #020304; overflow: hidden; }
+    .shot-viewer::backdrop { background: rgba(2,3,4,.92); }
+    .shot-viewer-close { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-out; }
+    .shot-viewer-close img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .shot-viewer-close:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
     .shot figcaption { margin-top: 10px; color: #bdc8d7; font-size: 14px; }
-    .image-viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: clamp(28px, 5vw, 70px); border: 0; color: var(--text); background: rgba(2, 4, 8, .96); cursor: pointer; }
-    .image-viewer[open] { display: grid; place-items: center; }
-    .image-viewer::backdrop { background: rgba(0, 0, 0, .82); backdrop-filter: blur(8px); }
-    .image-viewer img { display: block; max-width: 100%; max-height: calc(100dvh - clamp(56px, 10vw, 140px)); border-radius: 14px; object-fit: contain; box-shadow: var(--shadow); }
-    .image-viewer-close { position: fixed; top: 16px; right: 18px; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--text); background: rgba(255,255,255,.08); cursor: pointer; }
-    .image-viewer-hint { position: fixed; bottom: 14px; left: 50%; margin: 0; color: var(--muted); font-size: 12px; transform: translateX(-50%); }
-    body.image-viewer-open { overflow: hidden; }
-    .comparison-arrow { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto; border: 1px solid rgba(116,199,255,.3); border-radius: 50%; color: var(--accent); background: rgba(116,199,255,.09); font-size: 30px; box-shadow: 0 0 34px rgba(116,199,255,.12); transform: rotate(90deg); }
     .run-details { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .75fr); gap: 22px; }
     .evidence { min-width: 0; padding-top: 12px; }
     .evidence h2 { display: none; }
@@ -247,7 +243,6 @@ function buildHtml({ entries, title, workspace }) {
     .evidence pre code { padding: 0; background: none; }
     .media { align-self: start; position: sticky; top: 16px; margin-top: 24px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: rgba(5,8,12,.72); }
     .media-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: var(--muted); font-size: 12px; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
-    video { display: block; width: 100%; border-radius: 12px; background: #020304; aspect-ratio: 16 / 10; }
     .no-evidence { display: grid; place-items: center; min-height: 180px; padding: 24px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .meta div { min-width: 0; padding: 10px; border-radius: 10px; background: rgba(255,255,255,.035); }
@@ -258,6 +253,7 @@ function buildHtml({ entries, title, workspace }) {
     footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 32px; color: var(--muted); font-size: 12px; }
     @media (max-width: 840px) {
       .summary-grid { grid-template-columns: 1fr 1fr; }
+      .screenshots { grid-template-columns: minmax(0, 1fr); }
       .run-details { grid-template-columns: 1fr; }
       .media { position: static; }
     }
@@ -280,7 +276,7 @@ function buildHtml({ entries, title, workspace }) {
       <h1>${escapeHtml(title.replace(/ Manual Test Results$/, ''))}</h1>
       <div class="verdict">
         ${statusBadge(latestResult, `Latest: ${latestResult}`)}
-        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${proofPairCount} before/after proof pair${proofPairCount === 1 ? '' : 's'}</span>
+        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${screenshotCount} evidence screenshot${screenshotCount === 1 ? '' : 's'}</span>
       </div>
       <p class="confidence">${escapeHtml(latestConfidence)}</p>
       <p class="guardrail">${escapeHtml(reportGuardrail)}</p>
@@ -312,43 +308,36 @@ function buildHtml({ entries, title, workspace }) {
       <span>${escapeHtml(workspace.directoryName)}</span>
     </footer>
   </main>
-  <dialog class="image-viewer" data-image-viewer aria-label="Full-size screenshot">
-    <button class="image-viewer-close" type="button" data-action="close-image-viewer" aria-label="Close full-size screenshot">×</button>
-    <img data-image-viewer-image alt="">
-    <p class="image-viewer-hint">Click anywhere or press Escape to close</p>
+  <dialog class="shot-viewer" data-shot-viewer aria-label="Enlarged screenshot">
+    <button class="shot-viewer-close" type="button" data-shot-viewer-close aria-label="Close enlarged screenshot" title="Close enlarged screenshot">
+      <img alt="">
+    </button>
   </dialog>
   <script>
     const runs = [...document.querySelectorAll('.run')];
+    const screenshotToggles = [...document.querySelectorAll('[data-expand-shot]')];
+    const screenshotViewer = document.querySelector('[data-shot-viewer]');
+    const screenshotViewerClose = document.querySelector('[data-shot-viewer-close]');
+    const screenshotViewerImage = screenshotViewerClose?.querySelector('img');
+    let expandedScreenshotToggle;
     document.querySelector('[data-action="expand"]')?.addEventListener('click', () => runs.forEach((run) => { run.open = true; }));
     document.querySelector('[data-action="collapse"]')?.addEventListener('click', () => runs.forEach((run) => { run.open = false; }));
-    const imageViewer = document.querySelector('[data-image-viewer]');
-    const imageViewerImage = document.querySelector('[data-image-viewer-image]');
-    let imageViewerTrigger;
-    const closeImageViewer = () => {
-      if (!imageViewer?.open) return;
-      imageViewer.close();
-    };
-    document.querySelectorAll('[data-image-viewer-trigger]').forEach((trigger) => {
-      trigger.addEventListener('click', () => {
-        imageViewerTrigger = trigger;
-        imageViewerImage.src = trigger.dataset.imageViewerSrc;
-        imageViewerImage.alt = trigger.dataset.imageViewerAlt;
-        document.body.classList.add('image-viewer-open');
-        imageViewer.showModal(); // Keep the report URL and scroll position; direct PNG navigation gets trapped in the browser's zoom view.
-      });
-    });
-    imageViewer?.addEventListener('click', closeImageViewer);
-    imageViewer?.addEventListener('close', () => {
-      document.body.classList.remove('image-viewer-open');
-      imageViewerImage.removeAttribute('src');
-      imageViewerImage.alt = '';
-      imageViewerTrigger?.focus();
-      imageViewerTrigger = undefined;
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape' || !imageViewer?.open) return;
-      event.preventDefault();
-      closeImageViewer();
+    screenshotToggles.forEach((toggle) => toggle.addEventListener('click', () => {
+      const image = toggle.querySelector('img');
+      if (!screenshotViewer || !screenshotViewerClose || !screenshotViewerImage || !image) return;
+      const label = toggle.dataset.expandLabel;
+      expandedScreenshotToggle = toggle;
+      screenshotViewerImage.src = image.currentSrc || image.src;
+      screenshotViewerImage.alt = image.alt;
+      screenshotViewerClose.setAttribute('aria-label', 'Close enlarged screenshot: ' + label);
+      toggle.setAttribute('aria-pressed', 'true');
+      screenshotViewer.showModal(); // Keep quick screenshot inspection inside the browser viewport; native fullscreen makes review unnecessarily slow.
+    }));
+    screenshotViewerClose?.addEventListener('click', () => screenshotViewer?.close());
+    screenshotViewer?.addEventListener('close', () => {
+      expandedScreenshotToggle?.setAttribute('aria-pressed', 'false');
+      expandedScreenshotToggle = undefined;
+      screenshotViewerImage?.removeAttribute('src');
     });
   </script>
 </body>
@@ -357,27 +346,14 @@ function buildHtml({ entries, title, workspace }) {
 
 function renderEntry(entry, index, workspace) {
   const { metadata } = entry;
-  const proofs = metadata.proofs ?? [];
-  const recording = metadata.recording;
-  let legacyRecording = '';
-  if (recording) {
-    assertSafeRelativeFilename(recording, 'recording metadata');
-    const exists = existsSync(resolve(workspace.reportDirectory, recording));
-    const video = exists
-      ? `<video controls preload="metadata" src="./${encodeURIComponent(recording)}"></video>`
-      : `<div class="no-evidence">The referenced legacy recording is missing:<br><code>${escapeHtml(recording)}</code></div>`;
-    legacyRecording = `<div class="legacy-recording">
-      <div class="media-label"><span>Legacy session recording</span><span>MP4</span></div>
-      ${video}
-    </div>`;
-  }
-  const proofsHtml = proofs.length
+  const screenshots = getEvidenceScreenshots(metadata, workspace);
+  const screenshotsHtml = screenshots.length
     ? `
-      <section class="proofs" aria-label="Before and after visual proof">${proofs.map((proof, proofIndex) => renderProof(proof, proofIndex, workspace)).join('')}</section>`
+      <section class="screenshots" aria-label="Visual evidence screenshots">${screenshots.map((screenshot, screenshotIndex) => renderEvidenceScreenshot(screenshot, screenshotIndex, workspace)).join('')}</section>`
     : '';
   const noVisualEvidence =
-    proofs.length === 0 && !recording
-      ? '<div class="no-evidence">No visual proof is attached to this blocked, automated-only, or legacy run.</div>'
+    screenshots.length === 0
+      ? '<div class="no-evidence">No screenshot is attached to this blocked or automated-only run.</div>'
       : '';
   return `<details class="run" ${index === 0 ? 'open' : ''}>
     <summary>
@@ -387,11 +363,11 @@ function renderEntry(entry, index, workspace) {
       </div>
       ${statusBadge(metadata.result, metadata.result)}
     </summary>
-    <div class="run-body">${proofsHtml}
+    <div class="run-body">${screenshotsHtml}
       <div class="run-details">
         <article class="evidence">${entry.html}</article>
         <aside class="media">
-          <div class="media-label"><span>Evidence summary</span><span>${proofs.length} proof pair${proofs.length === 1 ? '' : 's'}</span></div>${noVisualEvidence}${legacyRecording}
+          <div class="media-label"><span>Evidence summary</span><span>${screenshots.length} screenshot${screenshots.length === 1 ? '' : 's'}</span></div>${noVisualEvidence}
           <dl class="meta">
             ${metadataItem('Branch', metadata.branch)}
             ${metadataItem('Git state', metadata.working_tree)}
@@ -404,44 +380,81 @@ function renderEntry(entry, index, workspace) {
   </details>`;
 }
 
-function renderProof(proof, index, workspace) {
-  for (const field of [
-    'title',
-    'before',
-    'beforeCaption',
-    'after',
-    'afterCaption',
-    'proves',
-  ]) {
-    if (typeof proof?.[field] !== 'string' || !proof[field].trim()) {
-      throw new Error(`Visual proof ${index + 1} is missing ${field}`);
+function getEvidenceScreenshots(metadata, workspace) {
+  const screenshots = [...(metadata.screenshots ?? [])];
+  const screenshotFilenames = new Set(
+    screenshots.map((screenshot) => screenshot.filename),
+  );
+  for (const proof of metadata.proofs ?? []) {
+    for (const field of [
+      'title',
+      'before',
+      'beforeCaption',
+      'after',
+      'afterCaption',
+    ]) {
+      if (typeof proof?.[field] !== 'string' || !proof[field].trim()) {
+        throw new Error(`Legacy visual proof is missing ${field}`);
+      }
+    }
+    const legacyScreenshots = [
+      {
+        title: `${proof.title} — Before`,
+        filename: proof.before,
+        caption: proof.beforeCaption,
+        proves: 'This records the before state from the legacy comparison.',
+      },
+      {
+        title: `${proof.title} — After`,
+        filename: proof.after,
+        caption: proof.afterCaption,
+        proves: 'This records the after state from the legacy comparison.',
+      },
+    ];
+    for (const screenshot of legacyScreenshots) {
+      if (typeof screenshot.filename !== 'string') continue;
+      assertSafeRelativeFilename(
+        screenshot.filename,
+        'legacy evidence screenshot',
+      );
+      if (existsSync(resolve(workspace.reportDirectory, screenshot.filename))) {
+        if (!screenshotFilenames.has(screenshot.filename)) {
+          screenshots.push(screenshot); // Git integration can bring in an immutable report entry written by the older proof-pair format; surface each surviving image as an independent card without recreating or requiring paired evidence.
+          screenshotFilenames.add(screenshot.filename);
+        }
+      }
     }
   }
-  assertSafeRelativeFilename(proof.before, `visual proof ${index + 1} before image`);
-  assertSafeRelativeFilename(proof.after, `visual proof ${index + 1} after image`);
-  return `<article class="proof">
-    <header class="proof-header">
-      <h3>${escapeHtml(proof.title)}</h3>
-      <p class="proof-statement"><strong>What this proves:</strong> ${escapeHtml(proof.proves)}</p>
-    </header>
-    <div class="comparison">
-      ${renderScreenshot('Before', proof.before, proof.beforeCaption, workspace)}
-      <div class="comparison-arrow" aria-hidden="true">→</div>
-      ${renderScreenshot('After', proof.after, proof.afterCaption, workspace)}
-    </div>
-  </article>`;
+  return screenshots;
 }
 
-function renderScreenshot(label, filename, caption, workspace) {
-  const exists = existsSync(resolve(workspace.reportDirectory, filename));
+function renderEvidenceScreenshot(screenshot, index, workspace) {
+  for (const field of ['title', 'filename', 'caption', 'proves']) {
+    if (typeof screenshot?.[field] !== 'string' || !screenshot[field].trim()) {
+      throw new Error(`Evidence screenshot ${index + 1} is missing ${field}`);
+    }
+  }
+  assertSafeRelativeFilename(
+    screenshot.filename,
+    `evidence screenshot ${index + 1}`,
+  );
+  const exists = existsSync(
+    resolve(workspace.reportDirectory, screenshot.filename),
+  );
   const content = exists
-    ? `<button class="shot-open" type="button" data-image-viewer-trigger data-image-viewer-src="./${encodeURIComponent(filename)}" data-image-viewer-alt="${escapeHtml(`${label}: ${caption}`)}" title="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot" aria-label="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot"><img loading="lazy" src="./${encodeURIComponent(filename)}" alt="${escapeHtml(`${label}: ${caption}`)}"></button>`
-    : `<div class="no-evidence">The referenced screenshot is missing:<br><code>${escapeHtml(filename)}</code></div>`;
-  return `<figure class="shot">
-    <div class="shot-label">${escapeHtml(label)}</div>
-    ${content}
-    <figcaption>${escapeHtml(caption)}</figcaption>
-  </figure>`;
+    ? `<button class="shot-toggle" type="button" data-expand-shot data-expand-label="${escapeHtml(`${screenshot.title}: ${screenshot.caption}`)}" aria-label="${escapeHtml(`Enlarge screenshot: ${screenshot.title}: ${screenshot.caption}`)}" aria-pressed="false" title="Enlarge screenshot"><img loading="lazy" src="./${encodeURIComponent(screenshot.filename)}" alt="${escapeHtml(`${screenshot.title}: ${screenshot.caption}`)}"></button>`
+    : `<div class="no-evidence">The referenced screenshot is missing:<br><code>${escapeHtml(screenshot.filename)}</code></div>`;
+  return `<article class="screenshot-card">
+    <header class="screenshot-header">
+      <h3>${escapeHtml(screenshot.title)}</h3>
+      <p class="screenshot-statement"><strong>What this proves:</strong> ${escapeHtml(screenshot.proves)}</p>
+    </header>
+    <figure class="shot">
+      ${exists ? '<div class="shot-action">Click to enlarge</div>' : ''}
+      ${content}
+      <figcaption>${escapeHtml(screenshot.caption)}</figcaption>
+    </figure>
+  </article>`;
 }
 
 function formatEntryDate(value) {

@@ -14,10 +14,13 @@ workflow intentionally reflect AIMVS. You are welcome to adapt them to your own 
   user's active workspace or video.
 - Handles test-account authentication and App Check without committing credentials.
 - Verifies each feature at the UI, emulator-state, and frontend/API-log layers.
-- Captures important before/after PNGs of only the exact dedicated browser window through ScreenCaptureKit—never
-  the whole display or a continuous recording.
+- Captures important settled-state PNGs of only the exact dedicated browser window through ScreenCaptureKit—never
+  reverted or recreated old behavior, the whole display, or a continuous recording.
 - Maintains one append-only Markdown evidence source per worktree and renders a double-clickable HTML report with
-  result counts, confidence summaries, coverage areas, and large Before → After proof comparisons.
+  result counts, confidence summaries, coverage areas, independently captioned screenshot cards, and a fast
+  click-to-enlarge overlay that stays inside the browser viewport.
+- Requires the host repository to store manual-test PNGs through Git LFS so durable evidence does not bloat
+  ordinary Git history.
 - Preserves durable setup, recovery, and testing discoveries through a continuous-improvement contract.
 
 ## Repository layout
@@ -33,7 +36,7 @@ scripts/                         Window setup, screenshot capture, and report to
 
 - macOS 14 or newer for ScreenCaptureKit's window-only screenshot API.
 - Codex with Computer Use for visible browser interaction.
-- Git worktrees, Node.js, npm, Swift, and the browsers used by your adapted workflow.
+- Git worktrees, Git LFS, Node.js, npm, Swift, and the browsers used by your adapted workflow.
 - A host repository whose dev servers, emulator commands, credentials, and logs match—or have been adapted from—
   the AIMVS conventions in `SKILL.md`.
 
@@ -69,6 +72,15 @@ At minimum, review and change:
 4. Browser order, display name, window-opening helpers, and authentication flow.
 5. Ignored credential filenames and environment-variable names.
 6. Manual-test report title, coverage language, and any host-repository `AGENTS.md` instructions.
+
+Add these rules to the host repository's `.gitattributes` before capturing evidence:
+
+```gitattributes
+manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
+```
+
+If the host already tracks manual-test binaries without LFS, run `git add --renormalize manual-test-results` as
+part of the next intentional staging operation, then verify the staged paths with `git lfs ls-files`.
 
 Keep the safety boundaries: never publish credentials, capture an entire display as a fallback, run a continuous
 recorder, auto-open Preview, replace a requested logged-in browser with an isolated profile, or overwrite older

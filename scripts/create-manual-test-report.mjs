@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import {
   assertSafeRelativeFilename,
   assertValidSlug,
@@ -48,7 +48,7 @@ if (
   fail(`${workspace.directoryName} contains more than one insertion marker`);
 }
 
-validateProofFiles(options.proofs, workspace.reportDirectory);
+validateScreenshotFiles(options.screenshots, workspace.reportDirectory, repoRoot);
 const entry = `<!-- aimvs-manual-test-entry -->
 
 \`\`\`yaml
@@ -62,8 +62,8 @@ diff_fingerprint: sha256:${fingerprint}
 browser: ${yamlString(options.browser)}
 stack: ${options.stack}
 url: ${yamlString(options.url)}
-proofs:
-${options.proofs.map((proof) => `  - ${JSON.stringify(proof)}`).join('\n')}
+screenshots:
+${options.screenshots.map((screenshot) => `  - ${JSON.stringify(screenshot)}`).join('\n')}
 areas:
 ${options.areas.map((area) => `  - ${yamlString(area)}`).join('\n')}
 \`\`\`
@@ -100,7 +100,7 @@ Actual: <!-- Observed behavior and evidence. -->
 
 ### Issues and retests
 
-<!-- Bugs found, fixes made, and the exact retest result. Use "None" when appropriate. -->
+<!-- Issues found, fixes made, and the exact retest result. Use "None" when appropriate. -->
 
 ### Points of weirdness
 
@@ -123,9 +123,9 @@ function parseOptions(args) {
     areas: [],
     browser: undefined,
     confidence: undefined,
-    currentProof: undefined,
-    proofs: [],
+    currentScreenshot: undefined,
     result: undefined,
+    screenshots: [],
     slug: undefined,
     stack: undefined,
     url: undefined,
@@ -144,27 +144,21 @@ function parseOptions(args) {
       case '--confidence':
         parsed.confidence = value;
         break;
-      case '--after':
-        requireCurrentProof(parsed, name).after = value;
-        break;
-      case '--after-caption':
-        requireCurrentProof(parsed, name).afterCaption = value;
-        break;
-      case '--before':
-        requireCurrentProof(parsed, name).before = value;
-        break;
-      case '--before-caption':
-        requireCurrentProof(parsed, name).beforeCaption = value;
+      case '--caption':
+        requireCurrentScreenshot(parsed, name).caption = value;
         break;
       case '--result':
         parsed.result = value;
         break;
-      case '--proof-title':
-        finishCurrentProof(parsed);
-        parsed.currentProof = { title: value };
+      case '--evidence-title':
+        finishCurrentScreenshot(parsed);
+        parsed.currentScreenshot = { title: value };
         break;
       case '--proves':
-        requireCurrentProof(parsed, name).proves = value;
+        requireCurrentScreenshot(parsed, name).proves = value;
+        break;
+      case '--screenshot':
+        requireCurrentScreenshot(parsed, name).filename = value;
         break;
       case '--slug':
         parsed.slug = value;
@@ -179,7 +173,7 @@ function parseOptions(args) {
         fail(`Unknown argument: ${name}`);
     }
   }
-  finishCurrentProof(parsed);
+  finishCurrentScreenshot(parsed);
   assertValidSlug(parsed.slug);
   if (!['passed', 'failed', 'partial', 'blocked'].includes(parsed.result)) {
     fail('--result must be passed, failed, partial, or blocked');
@@ -194,47 +188,49 @@ function parseOptions(args) {
   }
   if (!parsed.url) fail('--url is required');
   if (parsed.areas.length === 0) fail('At least one --area is required');
-  delete parsed.currentProof;
+  delete parsed.currentScreenshot;
   return parsed;
 }
 
-function requireCurrentProof(parsed, optionName) {
-  if (!parsed.currentProof) {
-    fail(`${optionName} must follow --proof-title`);
+function requireCurrentScreenshot(parsed, optionName) {
+  if (!parsed.currentScreenshot) {
+    fail(`${optionName} must follow --evidence-title`);
   }
-  return parsed.currentProof;
+  return parsed.currentScreenshot;
 }
 
-function finishCurrentProof(parsed) {
-  const proof = parsed.currentProof;
-  if (!proof) return;
-  for (const field of [
-    'title',
-    'before',
-    'beforeCaption',
-    'after',
-    'afterCaption',
-    'proves',
-  ]) {
-    if (!proof[field]?.trim()) {
-      fail(`Each proof pair requires ${field}`);
+function finishCurrentScreenshot(parsed) {
+  const screenshot = parsed.currentScreenshot;
+  if (!screenshot) return;
+  for (const field of ['title', 'filename', 'caption', 'proves']) {
+    if (!screenshot[field]?.trim()) {
+      fail(`Each evidence screenshot requires ${field}`);
     }
   }
-  assertSafeRelativeFilename(proof.before, '--before');
-  assertSafeRelativeFilename(proof.after, '--after');
-  parsed.proofs.push(proof);
-  parsed.currentProof = undefined;
+  assertSafeRelativeFilename(screenshot.filename, '--screenshot');
+  parsed.screenshots.push(screenshot);
+  parsed.currentScreenshot = undefined;
 }
 
-function validateProofFiles(proofs, reportDirectory) {
-  for (const proof of proofs) {
-    for (const filename of [proof.before, proof.after]) {
-      if (!filename.toLowerCase().endsWith('.png')) {
-        fail(`Proof screenshots must be PNG files: ${filename}`);
-      }
-      if (!existsSync(join(reportDirectory, filename))) {
-        fail(`Proof screenshot does not exist in the report folder: ${filename}`);
-      }
+function validateScreenshotFiles(screenshots, reportDirectory, repoRoot) {
+  for (const screenshot of screenshots) {
+    if (!screenshot.filename.toLowerCase().endsWith('.png')) {
+      fail(`Evidence screenshots must be PNG files: ${screenshot.filename}`);
+    }
+    const screenshotPath = join(reportDirectory, screenshot.filename);
+    if (!existsSync(screenshotPath)) {
+      fail(
+        `Evidence screenshot does not exist in the report folder: ${screenshot.filename}`,
+      );
+    }
+    const repoRelativePath = relative(repoRoot, screenshotPath);
+    const lfsAttribute = git(['check-attr', 'filter', '--', repoRelativePath], {
+      cwd: repoRoot,
+    });
+    if (!lfsAttribute.endsWith(': filter: lfs')) {
+      fail(
+        `Evidence screenshot must use Git LFS. Add "manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text" to .gitattributes: ${repoRelativePath}`,
+      );
     }
   }
 }

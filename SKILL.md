@@ -5,6 +5,15 @@ description: Use for every AI Music Video Studio development interaction involvi
 
 # AIMVS Development
 
+## Continuous improvement
+
+Improve this skill as part of using it. Whenever usage, debugging, investigation, or user feedback produces a
+durable verified AIMVS setup, browser, emulator, screenshot, reporting, login, or recovery finding, update this
+skill during the same task without waiting for a separate request. Adjust its instructions, scripts, tests, or
+references as appropriate, retest affected behavior, and validate the skill before finishing. Preserve reusable
+knowledge; do not record guesses, duplicate guidance, secrets, credentials, branch-specific results, or transient
+runtime state.
+
 ## Overview
 
 This skill is the source of truth for every AIMVS Computer Use interaction and local browser test, including a
@@ -65,7 +74,13 @@ Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
-After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action.
+After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action
+merely to wake or find a browser. One narrow exception applies when the user explicitly permits temporary foreground
+control and a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
+`Transition was aborted because of invalid state`: after verifying the tracked window's display and stack URL, raise
+only that exact dedicated window and keep it foregrounded through the route interactions. Chromium's View Transitions
+API needs a fully active document; background inspection can still work while the Angular navigation itself stalls.
+Send the normal macOS heads-up before taking focus, and stop taking focus as soon as the route test is complete.
 Before acting on a fresh Computer Use state, require its accessibility tree to show the expected stack URL. If it
 shows another window or stack, stop rather than activating the assigned browser or changing which window is
 frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display
@@ -438,17 +453,22 @@ debug tokens.
 
 For feature testing, prove the behavior at all four layers before calling it done:
 
-- UI: complete the user-visible flow, reload after frontend changes, and verify controls, loading/disabled states,
-  feedback, dialogs, and absence of stale feedback after refresh.
-- Screenshot pixels: use a read-only image tool to load and personally inspect every before/after PNG. File or
-  metadata checks, captions, DOM, Accessibility state, and logs are not visual verification.
-- Emulator state: query the active Firestore/Storage emulator after each important flow and confirm the expected
-  documents, counters, operation statuses, links, and storage side effects in the staging project namespace.
-- Logs: inspect the stack frontend debug log, standalone API logs, and emulator output. Treat fresh runtime errors,
-  failed HTTP calls, and backend exceptions as failures unless already known and irrelevant to the touched code.
+- UI: complete the user-visible flow in the stack browser, reload after frontend changes, and verify expected
+  controls, loading/disabled states, snackbars, dialogs, and absence of stale feedback after refresh.
+- Screenshot pixels: load every captured PNG with a read-only image tool and personally inspect the actual image.
+  File existence, dimensions, captions, DOM, Accessibility state, and logs do not prove visual correctness.
+- Emulator state: query the active Firestore/Storage emulator session—shared normally or exclusive for a
+  trigger-changing worktree—after each important flow and confirm the expected documents, counters, operation
+  statuses, links, and storage side effects. Use the staging project namespace when connecting to the local emulator.
+- Logs: inspect the stack frontend debug log (`frontend-debug.log` for stack 0, `frontend-debug-N.log` for stack
+  N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
+  backend exceptions as test failures unless they are already known and irrelevant to the touched code.
 
-If a task-caused bug appears—including in a screenshot—fix it surgically and rerun the smallest proving checks;
-report pre-existing, unrelated, or deeper issues with the exact image instead of widening scope. Leave no temporary test code in the diff.
+If verification finds a bug caused by the current work—including a defect visible in a screenshot—fix it
+surgically, restart or reload the affected process when needed, and repeat the smallest proving flow, screenshot,
+log, and emulator checks. Report pre-existing, unrelated, or deeper visual problems with the exact screenshot
+instead of silently widening the implementation. Do not leave temporary test hooks, forced errors, debug logs, or
+local-only code changes in the diff.
 
 When a feature has user-visible async/error handling, test at least one failure mode in addition to the happy
 path. Prefer a temporary local throw, disabled dependency, invalid emulator fixture, or rejected API response that
@@ -459,15 +479,18 @@ the happy path still works and the logs are clean.
 
 Before every AIMVS Computer Use test, read and follow
 [references/manual-test-reporting.md](references/manual-test-reporting.md) completely. Capture only important
-before/after PNG proof pairs from the exact dedicated browser window; never run a continuous screen recording.
+settled-state PNGs from the exact dedicated browser window; never revert or recreate old behavior to manufacture a
+“before” state, and never run a continuous screen recording. Each screenshot independently carries its own title,
+caption, and narrow evidence claim.
 Maintain the checkout/worktree's single date-prefixed report folder containing the append-only Markdown source,
-adjacent screenshots, and final double-clickable `index.html`. The helpers keep the folder assignment in the
-checkout's private Git directory so every checkout ignores clean report folders inherited from another checkout;
-when this marker is introduced to active work, only one locally changed report folder can be adopted.
-Generate and verify the newest report entry before the final response, including failed, partial, and blocked
-sessions. Never capture credentials, another app, the user's display/video, or a broader screen region as a
-fallback. Never open Preview.app or automatically open the report/evidence at the end; provide links and let the
-user choose what to open.
+adjacent Git LFS-backed screenshots, and final double-clickable `index.html`. The helpers store the folder assignment
+inside the checkout's private Git directory, so each checkout ignores clean report folders inherited from other
+worktrees; when this marker is introduced to active work, only one locally changed report folder can be adopted.
+The report renders independent cards in a responsive grid and lets the reviewer click any image to open an instant
+browser-viewport overlay without entering native fullscreen. Generate and verify the newest report entry before the
+final response, including failed, partial, and blocked sessions. Never capture credentials, another app, the user's
+display/video, or a broader screen region as a fallback. Never open Preview.app or automatically open the
+report/evidence at the end; provide links and let the user choose what to open.
 
 ## Close the dedicated test browser window
 
@@ -493,10 +516,3 @@ or an app-triggered failure.
 
 After a crash or forced browser restart, always re-check emulator state and operation status docs before retrying
 the action. This avoids double-running a mutation while the previous backend operation actually succeeded.
-
-## Improve this skill from new learnings
-
-Whenever AIMVS use, debugging, or investigation produces a durable verified setup, browser, emulator, screenshot,
-reporting, login, or recovery finding, update this skill during the same task. Adjust its instructions, scripts,
-tests, or references as appropriate, retest affected behavior, and validate the skill before finishing. Preserve
-reusable evidence; do not record guesses, secrets, branch-specific results, or transient runtime state.
