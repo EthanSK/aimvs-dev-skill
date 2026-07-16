@@ -461,10 +461,13 @@ Before every AIMVS Computer Use test, read and follow
 [references/manual-test-reporting.md](references/manual-test-reporting.md) completely. Capture only important
 before/after PNG proof pairs from the exact dedicated browser window; never run a continuous screen recording.
 Maintain the checkout/worktree's single date-prefixed report folder containing the append-only Markdown source,
-adjacent screenshots, and final double-clickable `index.html`. Generate and verify the newest report entry before
-the final response, including failed, partial, and blocked sessions. Never capture credentials, another app, the
-user's display/video, or a broader screen region as a fallback. Never open Preview.app or automatically open the
-report/evidence at the end; provide links and let the user choose what to open.
+adjacent screenshots, and final double-clickable `index.html`. The helpers keep the folder assignment in the
+checkout's private Git directory so every checkout ignores clean report folders inherited from another checkout;
+when this marker is introduced to active work, only one locally changed report folder can be adopted.
+Generate and verify the newest report entry before the final response, including failed, partial, and blocked
+sessions. Never capture credentials, another app, the user's display/video, or a broader screen region as a
+fallback. Never open Preview.app or automatically open the report/evidence at the end; provide links and let the
+user choose what to open.
 
 ## Close the dedicated test browser window
 

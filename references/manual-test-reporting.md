@@ -21,6 +21,13 @@ The first manual-test session's local date and slug name the folder. Reuse that 
 the same checkout/worktree, even when the date or test area changes. Never copy, move, merge, or consolidate report
 entries or screenshots between worktrees. Never create a second report folder for the same worktree.
 
+The helpers record the owned folder name in that checkout's private Git directory. Any checkout can still see
+tracked report folders inherited from other work, but it ignores clean inherited folders and creates its own folder
+on the first capture. When this marker is introduced after a checkout already started reporting, the helper adopts
+its one locally changed report folder; more than one is ambiguous and stops for review. Do not edit or copy the
+private assignment marker between worktrees; later capture, create, and render commands use it to select the same
+folder even when several inherited folders are visible.
+
 `manual-test-results.md` is the append-only evidence source. `index.html` is the final reviewer-facing artifact and
 must be regenerated after every source edit. It uses relative links to the Markdown source and adjacent screenshots,
 so the reviewer can double-click it and review the results without a server. Historical entries may still reference
@@ -150,6 +157,8 @@ Before finishing, verify that:
   count;
 - every proof appears as a large, vertically scrollable Before → After comparison with both captions and its
   **What this proves** text;
+- clicking a proof screenshot opens the full-size image inside the report, and clicking again or pressing Escape
+  returns to the same report position without navigating the browser directly to the PNG;
 - every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
   agent, shows only the dedicated browser window at the intended moment, supports its proof claim, and has no
   unaddressed task-caused visual defect;

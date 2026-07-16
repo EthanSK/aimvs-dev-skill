@@ -224,9 +224,17 @@ function buildHtml({ entries, title, workspace }) {
     .shot { min-width: 0; }
     .shot-label { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
     .shot-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-    .shot a { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #020304; }
+    .shot-open { display: block; width: 100%; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: #020304; cursor: pointer; }
+    .shot-open:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
     .shot img { display: block; width: 100%; height: auto; }
     .shot figcaption { margin-top: 10px; color: #bdc8d7; font-size: 14px; }
+    .image-viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: clamp(28px, 5vw, 70px); border: 0; color: var(--text); background: rgba(2, 4, 8, .96); cursor: pointer; }
+    .image-viewer[open] { display: grid; place-items: center; }
+    .image-viewer::backdrop { background: rgba(0, 0, 0, .82); backdrop-filter: blur(8px); }
+    .image-viewer img { display: block; max-width: 100%; max-height: calc(100dvh - clamp(56px, 10vw, 140px)); border-radius: 14px; object-fit: contain; box-shadow: var(--shadow); }
+    .image-viewer-close { position: fixed; top: 16px; right: 18px; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--text); background: rgba(255,255,255,.08); cursor: pointer; }
+    .image-viewer-hint { position: fixed; bottom: 14px; left: 50%; margin: 0; color: var(--muted); font-size: 12px; transform: translateX(-50%); }
+    body.image-viewer-open { overflow: hidden; }
     .comparison-arrow { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto; border: 1px solid rgba(116,199,255,.3); border-radius: 50%; color: var(--accent); background: rgba(116,199,255,.09); font-size: 30px; box-shadow: 0 0 34px rgba(116,199,255,.12); transform: rotate(90deg); }
     .run-details { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .75fr); gap: 22px; }
     .evidence { min-width: 0; padding-top: 12px; }
@@ -304,10 +312,44 @@ function buildHtml({ entries, title, workspace }) {
       <span>${escapeHtml(workspace.directoryName)}</span>
     </footer>
   </main>
+  <dialog class="image-viewer" data-image-viewer aria-label="Full-size screenshot">
+    <button class="image-viewer-close" type="button" data-action="close-image-viewer" aria-label="Close full-size screenshot">×</button>
+    <img data-image-viewer-image alt="">
+    <p class="image-viewer-hint">Click anywhere or press Escape to close</p>
+  </dialog>
   <script>
     const runs = [...document.querySelectorAll('.run')];
     document.querySelector('[data-action="expand"]')?.addEventListener('click', () => runs.forEach((run) => { run.open = true; }));
     document.querySelector('[data-action="collapse"]')?.addEventListener('click', () => runs.forEach((run) => { run.open = false; }));
+    const imageViewer = document.querySelector('[data-image-viewer]');
+    const imageViewerImage = document.querySelector('[data-image-viewer-image]');
+    let imageViewerTrigger;
+    const closeImageViewer = () => {
+      if (!imageViewer?.open) return;
+      imageViewer.close();
+    };
+    document.querySelectorAll('[data-image-viewer-trigger]').forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        imageViewerTrigger = trigger;
+        imageViewerImage.src = trigger.dataset.imageViewerSrc;
+        imageViewerImage.alt = trigger.dataset.imageViewerAlt;
+        document.body.classList.add('image-viewer-open');
+        imageViewer.showModal(); // Keep the report URL and scroll position; direct PNG navigation gets trapped in the browser's zoom view.
+      });
+    });
+    imageViewer?.addEventListener('click', closeImageViewer);
+    imageViewer?.addEventListener('close', () => {
+      document.body.classList.remove('image-viewer-open');
+      imageViewerImage.removeAttribute('src');
+      imageViewerImage.alt = '';
+      imageViewerTrigger?.focus();
+      imageViewerTrigger = undefined;
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !imageViewer?.open) return;
+      event.preventDefault();
+      closeImageViewer();
+    });
   </script>
 </body>
 </html>`;
@@ -393,7 +435,7 @@ function renderProof(proof, index, workspace) {
 function renderScreenshot(label, filename, caption, workspace) {
   const exists = existsSync(resolve(workspace.reportDirectory, filename));
   const content = exists
-    ? `<a href="./${encodeURIComponent(filename)}" title="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot"><img loading="lazy" src="./${encodeURIComponent(filename)}" alt="${escapeHtml(`${label}: ${caption}`)}"></a>`
+    ? `<button class="shot-open" type="button" data-image-viewer-trigger data-image-viewer-src="./${encodeURIComponent(filename)}" data-image-viewer-alt="${escapeHtml(`${label}: ${caption}`)}" title="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot" aria-label="Open the full-size ${escapeHtml(label.toLowerCase())} screenshot"><img loading="lazy" src="./${encodeURIComponent(filename)}" alt="${escapeHtml(`${label}: ${caption}`)}"></button>`
     : `<div class="no-evidence">The referenced screenshot is missing:<br><code>${escapeHtml(filename)}</code></div>`;
   return `<figure class="shot">
     <div class="shot-label">${escapeHtml(label)}</div>
