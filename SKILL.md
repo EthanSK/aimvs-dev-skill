@@ -243,7 +243,9 @@ same ports:
    unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
    that tab's session; passing commands directly to `create tab with default profile command ...` can open and
    close too quickly instead of leaving the expected long-running tab. Snapshot existing iTerm window ids first
-   so session restoration or an already-open iTerm window does not steal the worktree tabs.
+   so session restoration or an already-open iTerm window does not steal the worktree tabs. Record the exact new
+   window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
+   position, or whichever iTerm window is active.
 
    ```bash
    WORKTREE_DIR="/absolute/path/to/your-project-worktree"
@@ -259,7 +261,7 @@ same ports:
      printf "%s" "printf '\\033]0;${title}\\007'; cd '${WORKTREE_DIR}'; ${cmd}; exec zsh"
    }
 
-   osascript - \
+   DEV_WINDOW_ID="$(osascript - \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API watch" "${DEV_COLOR_ENV} npm run watch:api -- --dev-stack-index=${STACK_INDEX}")" \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API server" "${DEV_COLOR_ENV} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")" \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
@@ -296,9 +298,12 @@ same ports:
        tell devWindow to create tab with default profile
        delay 0.5
        tell current session of devWindow to write text (item 3 of argv) newline yes
+       return id of devWindow
      end tell
    end run
    APPLESCRIPT
+   )"
+   printf 'DEV_WINDOW_ID=%s\n' "$DEV_WINDOW_ID"
    ```
 
    `exec zsh` keeps the tab open if a command exits, so failures remain visible. If iTerm2 AppleScript automation
@@ -329,9 +334,12 @@ same ports:
    `WORKTREE <NAME> · STACK #1 :4201` banner, where `<NAME>` is the uppercased checkout directory minus
    the `ai-music-video-studio-` prefix, so you never confuse a worktree tab for main or another worktree.
 
-## Stopping and removing a worktree stack
+## Stop and close an agent-owned stack
 
-Stop and close only the tracked iTerm window before removing its worktree:
+Stop and close the agent-owned nonzero stack in each case: at the end of every Computer Use manual-test session,
+whenever finished using a worktree's dev stack, and before removing its worktree. This applies to passed, failed,
+partial, blocked, and interrupted tests unless Ethan explicitly asks to keep that exact stack running. Finish the
+report and browser cleanup first, then stop the processes before closing any terminal tab or window:
 
 ```bash
 bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
@@ -339,14 +347,19 @@ bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
   --stack-index "$STACK_INDEX"
 ```
 
-The helper sends Ctrl-C to every tab, waits for the frontend, API, inspector, and debug-log ports to stop
-listening, and refuses to close the window if any remain. It closes the stopped sessions individually before the
-window because closing a multi-tab window directly shows iTerm's `Close Window #…` confirmation. If iTerm still
-shows that prompt, the helper uses Accessibility to require exactly one matching prompt and one `OK` button before
-pressing it, then verifies the tracked window is no longer visible; iTerm can retain an invisible stale scripting
+The helper sends Ctrl-C to every tab first, waits for the frontend, API, inspector, and debug-log ports to stop
+listening, and refuses to close the window if any remain. Only then does it close the terminal sessions and their
+exact tracked window. It closes the stopped sessions individually because closing a multi-tab window directly
+shows iTerm's `Close Window #…` confirmation. If iTerm still shows that prompt, the helper uses Accessibility to
+require exactly one matching prompt and one `OK` button before pressing it, then verifies the tracked window is no
+longer visible; iTerm can retain an invisible stale scripting
 object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
-confirm an unverified iTerm prompt. After the helper succeeds, remove the worktree from the AIMVS VS Code workspace
-and Git as described above.
+confirm an unverified iTerm prompt.
+
+For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
+verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
+window. Never quit a terminal app or close an unrelated window. Remove the worktree from VS Code and Git afterward
+only when removal is part of the task.
 
 ## Browsers (avoid auth/storage collisions)
 
@@ -502,6 +515,10 @@ Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browse
 that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
 otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
 If exact cleanup cannot be proven safe, report it as blocked instead of closing another window or app.
+
+After the browser window is proven closed, complete **Stop and close an agent-owned stack**. The session is not
+cleaned up until both its browser window and its stack processes and terminal window are gone, unless Ethan
+explicitly asked to keep that exact nonzero stack running.
 
 ## Browser crash and recovery
 
