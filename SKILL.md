@@ -113,6 +113,22 @@ knob needed to keep that worktree's frontend and standalone API paired.
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
+## Completion handoff
+
+End every completed AIMVS task or review with this compact field list. Keep every field on its own bullet so the
+handoff stays easy to scan; never combine the checkout, branch, stack, or frontend URL into one sentence. Make the
+checkout path and frontend URL clickable.
+
+```markdown
+- Checkout: [<checkout name>](<absolute checkout path>)
+- Branch: <branch name>
+- Dev stack: <stack index>
+- Frontend: [<localhost URL>](<localhost URL>)
+```
+
+When no dev stack for that exact checkout or worktree is running, write `Not running` for both **Dev stack** and
+**Frontend** instead of omitting either line.
+
 ## Ethan's main environment (stack 0)
 
 Stack 0 is exclusively Ethan's main VS Code environment. Agents must never start, stop, restart, restore, or use
