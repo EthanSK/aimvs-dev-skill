@@ -73,6 +73,27 @@ If capture fails, do not substitute a broader capture mode or reuse an unrelated
 evidence partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested
 test. Never overwrite an earlier screenshot.
 
+## Inspect the actual screenshot pixels
+
+After every proof capture, load each before and after PNG into the model's visual context with a read-only image
+inspection tool such as `view_image`. The agent performing the test must actually look at and reason from the
+pixels. A successful capture, nonzero dimensions, captions, report rendering, DOM or Accessibility state, and logs
+do not prove that the UI looks right.
+
+Inspect the whole visible app window at useful detail, not only the control under test. Compare the before and after
+images and check the target behavior plus the surrounding UI for clipped, overlapping, obscured, or off-screen
+elements; unexpected wrapping; misalignment or inconsistent spacing; missing text or icons; wrong layering; broken
+responsive layout; and stale loading, disabled, or error feedback. Confirm the screenshots actually support their
+captions and **What this proves** claim.
+
+If a visual defect was caused by the current task's changes and fixing it stays within the current scope, fix it
+automatically, reload or restart as needed, rerun the focused flow, capture fresh proof images, and inspect them
+again. Never overwrite the original evidence. If the defect is pre-existing, unrelated, or needs a deeper change to
+existing code, do not silently widen the implementation; record the exact issue and affected screenshot under
+**Bugs found**, **Points of weirdness**, or **Not verified** as appropriate, and bring it to Ethan's attention in the
+final response. If ownership is unclear, inspect the current diff and relevant code; treat unresolved causality as
+a verification gap instead of approving the screenshot.
+
 ## Add the evidence entry
 
 After emulator and log verification, generate the newest entry and initial HTML. Describe each proof pair with a
@@ -129,8 +150,9 @@ Before finishing, verify that:
   count;
 - every proof appears as a large, vertically scrollable Before → After comparison with both captions and its
   **What this proves** text;
-- every referenced PNG exists beside the report, has nonzero dimensions, and shows only the dedicated browser
-  window at the intended moment;
+- every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
+  agent, shows only the dedicated browser window at the intended moment, supports its proof claim, and has no
+  unaddressed task-caused visual defect;
 - the newest run is expanded and older runs remain available, including any historical MP4 evidence;
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
 - the folder contains no credentials, logs, PID/state files, temporary captures, or unrelated artifacts.

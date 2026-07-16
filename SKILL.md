@@ -436,20 +436,17 @@ debug tokens.
 
 ## Manual verification loop
 
-For feature testing, prove the behavior at three layers before calling it done:
+For feature testing, prove the behavior at all four layers before calling it done:
 
-- UI: complete the user-visible flow in the stack browser, reload after frontend changes, and verify expected
-  controls, loading/disabled states, snackbars, dialogs, and absence of stale feedback after refresh.
-- Emulator state: query the active Firestore/Storage emulator session—shared normally or exclusive for a
-  trigger-changing worktree—after each important flow and confirm the expected documents, counters, operation
-  statuses, links, and storage side effects. Use the staging project namespace when connecting to the local emulator.
-- Logs: inspect the stack frontend debug log (`frontend-debug.log` for stack 0, `frontend-debug-N.log` for stack
-  N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
-  backend exceptions as test failures unless they are already known and irrelevant to the touched code.
+- UI: complete the user-visible flow, reload after frontend changes, and verify controls, loading/disabled states,
+  feedback, dialogs, and absence of stale feedback after refresh.
+- Screenshot pixels: load every before/after PNG into the model's visual context with a read-only image inspection tool and personally inspect the whole visible app. File capture, dimensions, captions, DOM, Accessibility state, and logs are not visual verification.
+- Emulator state: query the active Firestore/Storage emulator after each important flow and confirm the expected
+  documents, counters, operation statuses, links, and storage side effects in the staging project namespace.
+- Logs: inspect the stack frontend debug log, standalone API logs, and emulator output. Treat fresh runtime errors,
+  failed HTTP calls, and backend exceptions as failures unless already known and irrelevant to the touched code.
 
-If verification finds a bug caused by the current work, fix it surgically, restart the affected process when
-needed, and re-run the smallest browser/log/emulator check that proves the fix. Do not leave temporary test hooks,
-forced errors, debug logs, or local-only code changes in the diff.
+If verification finds a bug caused by the current work, including a visual defect in a screenshot, fix it surgically and repeat the smallest flow plus screenshot/log/emulator checks that prove the fix. If a visible issue is pre-existing, unrelated, or needs a deeper existing-code change, do not hide it or silently widen the implementation: record the exact issue and image in the report and final response. Leave no temporary test hooks, forced errors, debug logs, or local-only code in the diff.
 
 When a feature has user-visible async/error handling, test at least one failure mode in addition to the happy
 path. Prefer a temporary local throw, disabled dependency, invalid emulator fixture, or rejected API response that
