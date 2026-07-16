@@ -440,13 +440,15 @@ For feature testing, prove the behavior at all four layers before calling it don
 
 - UI: complete the user-visible flow, reload after frontend changes, and verify controls, loading/disabled states,
   feedback, dialogs, and absence of stale feedback after refresh.
-- Screenshot pixels: load every before/after PNG into the model's visual context with a read-only image inspection tool and personally inspect the whole visible app. File capture, dimensions, captions, DOM, Accessibility state, and logs are not visual verification.
+- Screenshot pixels: use a read-only image tool to load and personally inspect every before/after PNG. File or
+  metadata checks, captions, DOM, Accessibility state, and logs are not visual verification.
 - Emulator state: query the active Firestore/Storage emulator after each important flow and confirm the expected
   documents, counters, operation statuses, links, and storage side effects in the staging project namespace.
 - Logs: inspect the stack frontend debug log, standalone API logs, and emulator output. Treat fresh runtime errors,
   failed HTTP calls, and backend exceptions as failures unless already known and irrelevant to the touched code.
 
-If verification finds a bug caused by the current work, including a visual defect in a screenshot, fix it surgically and repeat the smallest flow plus screenshot/log/emulator checks that prove the fix. If a visible issue is pre-existing, unrelated, or needs a deeper existing-code change, do not hide it or silently widen the implementation: record the exact issue and image in the report and final response. Leave no temporary test hooks, forced errors, debug logs, or local-only code in the diff.
+If a task-caused bug appears—including in a screenshot—fix it surgically and rerun the smallest proving checks;
+report pre-existing, unrelated, or deeper issues with the exact image instead of widening scope. Leave no temporary test code in the diff.
 
 When a feature has user-visible async/error handling, test at least one failure mode in addition to the happy
 path. Prefer a temporary local throw, disabled dependency, invalid emulator fixture, or rejected API response that
