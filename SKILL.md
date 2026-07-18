@@ -372,6 +372,40 @@ same. Do not delete the shared export as a first response because that hides the
    `WORKTREE <NAME> · STACK #1 :4201` banner, where `<NAME>` is the uppercased checkout directory minus
    the `ai-music-video-studio-` prefix, so you never confuse a worktree tab for main or another worktree.
 
+## Mandatory pre-Computer-Use stack health gate
+
+Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
+process restart, inspect the current output of every tab in that exact worktree's tracked iTerm stack window without
+raising it. Require the API-watch, API-server, and frontend tabs to show the exact worktree path and the same nonzero
+`--dev-stack-index=N`, then verify all of the following from their latest/current runs:
+
+- API watch completed its latest build successfully and is still watching.
+- The standalone API completed Nest startup, listens on `3000 + N` with its inspector on `9230 + N`, and has no
+  unresolved startup or current-run errors.
+- The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
+  receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
+- The required shared or isolated emulator ports are listening; when the worktree owns isolated emulators, their
+  terminal's current run is also error-free.
+- A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
+  unexplained errors from the current run.
+
+Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
+other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+Prefer narrow status/error matching over returning raw log tails. Match the actual `App Check debug token: <value>`
+log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
+filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
+In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
+the secret without inserting the marker.
+
+A listening port, a `200` root response, or an older successful build is not enough. Angular's dev server can keep
+serving its last successful lazy chunks after a later `Application bundle generation failed`; fetch the relevant
+served lazy chunk when live UI contradicts source. If any current process, build, proxy, emulator, or fresh-log check
+fails, diagnose and fix the cause, rebuild or restart only the affected worktree process, then repeat this entire
+gate until it is clean. Do not open or operate the test browser, hand the URL to Ethan, or begin screenshot evidence
+while an error remains; report a blocker if it cannot be fixed safely. Historical output from before a later verified
+restart/build does not itself fail the gate, but never use that distinction to dismiss an error still affecting the
+current run.
+
 ## Stop and close an agent-owned stack
 
 Stop and close the agent-owned nonzero stack in each case: at the end of every Computer Use manual-test session,
