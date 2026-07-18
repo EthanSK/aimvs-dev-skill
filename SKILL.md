@@ -212,6 +212,16 @@ matching Storage metadata/blob counts. Firebase regenerates internal blob UUID f
 logical object counts, size multisets, or sampled content hashes instead of expecting those filenames to stay the
 same. Do not delete the shared export as a first response because that hides the race and loses reusable local state.
 
+Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. Normal dev-stack
+startup, `npm test`, local Git hooks, and Firebase predeploy do not invoke this suite; the deploy workflow runs it on
+an isolated GitHub Actions host. The test config uses separate ports, but Firebase Tools 15.24.0 stores every local
+Storage emulator's live blobs in the same user-global temporary directory. When the short-lived test emulator stops,
+it removes that directory, so the shared emulator keeps stale in-memory metadata and can exit with `ENOENT` on the
+next asset read. Distinct ports do not isolate Storage persistence. Before a local rules test, check `:9199`; if it
+is occupied, stop and report the conflict instead of running the suite or stopping Ethan's emulator. After a
+collision, treat the shared stack as unhealthy and preserve its export; restart it only with Ethan's explicit
+authorization.
+
 ## Running a stack
 
 1. **Reuse the shared main emulator stack.** Check its required ports before starting a worktree:
