@@ -190,6 +190,28 @@ same ports:
 6. When testing finishes, stop the worktree emulator cleanly and ask Ethan to restore his main emulator. Only
    restore stack 0 if he explicitly asks for that exact action, then verify its ports before handing it back.
 
+## Shared Storage emulator export failures
+
+If stopping or restarting the shared emulator fails with `ENOENT` for
+`firebase/storage/blobs/<uuid>` while exporting Storage, inspect `firebase-debug.log` before changing rules or
+discarding emulator data. Firebase Tools can yield between reading its live file map and copying each blob, so an
+ordinary delete or replacement request can remove the source file halfway through the snapshot. That race is not
+evidence that a rules-codegen worktree changed the running emulator; verify the emulator command's checkout and
+loaded rules paths separately before attributing the failure to another worktree.
+
+This repository patches that Firebase Tools export loop through `tools/scripts/patch-storage-emulator.ts`; the
+normal `postinstall` applies it. The bug is present in the installed `15.13.0` and was reverified in a clean
+`15.24.0` package. Run `npm run patch:storage-emulator` after a dependency refresh or when diagnosing this exact
+error. The command is idempotent and makes only the blob/metadata snapshot loop synchronous. Storage mutations are
+synchronous after their async Rules checks, so one no-yield loop keeps the in-memory file map and disk blobs aligned;
+periodic export briefly pauses Storage request handling instead of writing a corrupt snapshot. Run the focused
+regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register
+tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase Tools. Restart only
+through the terminal that owns the shared emulator, then prove recovery with clean export/shutdown cycles and
+matching Storage metadata/blob counts. Firebase regenerates internal blob UUID filenames during export, so compare
+logical object counts, size multisets, or sampled content hashes instead of expecting those filenames to stay the
+same. Do not delete the shared export as a first response because that hides the race and loses reusable local state.
+
 ## Running a stack
 
 1. **Reuse the shared main emulator stack.** Check its required ports before starting a worktree:
