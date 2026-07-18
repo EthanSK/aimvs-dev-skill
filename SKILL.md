@@ -516,10 +516,11 @@ adjacent Git LFS-backed screenshots, and final double-clickable `index.html`. Th
 inside the checkout's private Git directory, so each checkout ignores clean report folders inherited from other
 worktrees; when this marker is introduced to active work, only one locally changed report folder can be adopted.
 The report renders independent cards in a responsive grid and lets the reviewer click any image to open an instant
-browser-viewport overlay without entering native fullscreen. Generate and verify the newest report entry before the
-final response, including failed, partial, and blocked sessions. Never capture credentials, another app, the user's
-display/video, or a broader screen region as a fallback. Never open Preview.app or automatically open the
-report/evidence at the end; provide links and let the user choose what to open.
+browser-viewport overlay without entering native fullscreen. Its generated HTML keeps the readable report markup,
+including the latest confidence paragraph, above the long self-contained style block. Generate and verify the newest
+report entry before the final response, including failed, partial, and blocked sessions. Never capture credentials,
+another app, the user's display/video, or a broader screen region as a fallback. Never open Preview.app or
+automatically open the report/evidence at the end; provide links and let the user choose what to open.
 
 ## Close the dedicated test browser window
 

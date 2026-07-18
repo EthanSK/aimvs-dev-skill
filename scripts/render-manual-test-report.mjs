@@ -111,6 +111,51 @@ function buildHtml({ entries, title, workspace }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>${escapeHtml(title)}</title>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">AIMVS · Manual verification</div>
+      <h1>${escapeHtml(title.replace(/ Manual Test Results$/, ''))}</h1>
+      <div class="verdict">
+        ${statusBadge(latestResult, `Latest: ${latestResult}`)}
+        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${screenshotCount} evidence screenshot${screenshotCount === 1 ? '' : 's'}</span>
+      </div>
+      <p class="confidence">${escapeHtml(latestConfidence)}</p>
+      <p class="guardrail">${escapeHtml(reportGuardrail)}</p>
+      <div class="areas">${areas.map((area) => `<span class="tag">${escapeHtml(area)}</span>`).join('')}</div>
+    </section>
+
+    <section class="summary-grid" aria-label="Result counts">
+      ${metric('Passed', counts.passed)}
+      ${metric('Failed', counts.failed)}
+      ${metric('Partial', counts.partial)}
+      ${metric('Blocked', counts.blocked)}
+    </section>
+
+    <div class="toolbar">
+      <h2>Test runs</h2>
+      <div class="toolbar-actions">
+        <button type="button" data-action="expand">Expand all</button>
+        <button type="button" data-action="collapse">Collapse all</button>
+        <a class="source-link" href="./manual-test-results.md">View source</a>
+      </div>
+    </div>
+
+    <section class="runs">
+      ${entries.map((entry, index) => renderEntry(entry, index, workspace)).join('\n') || '<div class="no-evidence">No test runs have been added yet.</div>'}
+    </section>
+
+    <footer>
+      <span>Generated ${escapeHtml(generatedAt)} · self-contained reviewer report</span>
+      <span>${escapeHtml(workspace.directoryName)}</span>
+    </footer>
+  </main>
+  <dialog class="shot-viewer" data-shot-viewer aria-label="Enlarged screenshot">
+    <button class="shot-viewer-close" type="button" data-shot-viewer-close aria-label="Close enlarged screenshot" title="Close enlarged screenshot">
+      <img alt="">
+    </button>
+  </dialog>
   <style>
     :root {
       --bg: #070a0f;
@@ -267,52 +312,7 @@ function buildHtml({ entries, title, workspace }) {
       footer { flex-direction: column; }
     }
     @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
-  </style>
-</head>
-<body>
-  <main class="shell">
-    <section class="hero">
-      <div class="eyebrow">AIMVS · Manual verification</div>
-      <h1>${escapeHtml(title.replace(/ Manual Test Results$/, ''))}</h1>
-      <div class="verdict">
-        ${statusBadge(latestResult, `Latest: ${latestResult}`)}
-        <span>${entries.length} test run${entries.length === 1 ? '' : 's'} · ${screenshotCount} evidence screenshot${screenshotCount === 1 ? '' : 's'}</span>
-      </div>
-      <p class="confidence">${escapeHtml(latestConfidence)}</p>
-      <p class="guardrail">${escapeHtml(reportGuardrail)}</p>
-      <div class="areas">${areas.map((area) => `<span class="tag">${escapeHtml(area)}</span>`).join('')}</div>
-    </section>
-
-    <section class="summary-grid" aria-label="Result counts">
-      ${metric('Passed', counts.passed)}
-      ${metric('Failed', counts.failed)}
-      ${metric('Partial', counts.partial)}
-      ${metric('Blocked', counts.blocked)}
-    </section>
-
-    <div class="toolbar">
-      <h2>Test runs</h2>
-      <div class="toolbar-actions">
-        <button type="button" data-action="expand">Expand all</button>
-        <button type="button" data-action="collapse">Collapse all</button>
-        <a class="source-link" href="./manual-test-results.md">View source</a>
-      </div>
-    </div>
-
-    <section class="runs">
-      ${entries.map((entry, index) => renderEntry(entry, index, workspace)).join('\n') || '<div class="no-evidence">No test runs have been added yet.</div>'}
-    </section>
-
-    <footer>
-      <span>Generated ${escapeHtml(generatedAt)} · self-contained reviewer report</span>
-      <span>${escapeHtml(workspace.directoryName)}</span>
-    </footer>
-  </main>
-  <dialog class="shot-viewer" data-shot-viewer aria-label="Enlarged screenshot">
-    <button class="shot-viewer-close" type="button" data-shot-viewer-close aria-label="Close enlarged screenshot" title="Close enlarged screenshot">
-      <img alt="">
-    </button>
-  </dialog>
+  </style> <!-- Keep the long self-contained styles below the report markup so the latest confidence stays near the top of the file. -->
   <script>
     const runs = [...document.querySelectorAll('.run')];
     const screenshotToggles = [...document.querySelectorAll('[data-expand-shot]')];

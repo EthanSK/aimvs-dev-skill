@@ -34,7 +34,9 @@ folder even when several inherited folders are visible.
 
 `manual-test-results.md` is the append-only evidence source. `index.html` is the final reviewer-facing artifact and
 must be regenerated after every source edit. It uses relative links to the Markdown source and adjacent screenshots,
-so the reviewer can double-click it and review the results without a server.
+so the reviewer can double-click it and review the results without a server. Keep the readable report markup before
+the embedded style block in generated source order so the latest confidence paragraph remains near the top of the
+HTML file while the report stays self-contained.
 
 Store manual-test PNGs through Git LFS:
 
@@ -166,6 +168,7 @@ Before finishing, verify that:
 
 - `index.html` contains the newest result, confidence, scenarios, aggregate counts, coverage areas, and evidence
   screenshot count;
+- the latest confidence `<p>` appears before the embedded `<style>` block in `index.html`, near the top of the file;
 - every screenshot appears as a large independent card with its title, caption, and **What this proves** text, in a
   two-column desktop grid that stacks on narrow screens;
 - clicking any screenshot opens it in an in-page browser-viewport overlay, clicking the enlarged image or pressing
