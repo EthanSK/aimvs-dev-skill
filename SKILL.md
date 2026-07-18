@@ -576,7 +576,11 @@ Before every AIMVS Computer Use test, read and follow
 [references/manual-test-reporting.md](references/manual-test-reporting.md) completely. Capture only important
 settled-state PNGs from the exact dedicated browser window; never revert or recreate old behavior to manufacture a
 “before” state, and never run a continuous screen recording. Each screenshot independently carries its own title,
-caption, and narrow evidence claim.
+caption, and narrow evidence claim. When one narrow UI area is the screenshot's main evidence, optionally burn one
+high-contrast outline and brief review label into the final PNG so the target is clear in source control and every
+image viewer, not only the HTML report. The agent must put one concise explanatory sentence in the nearest visually
+empty space beside the outline so it does not cover any UI or evidence. Inspect the full screenshot before and after
+highlighting, and never annotate old immutable evidence.
 Maintain the checkout/worktree's single date-prefixed report folder containing the append-only Markdown source,
 adjacent Git LFS-backed screenshots, and final double-clickable `index.html`. The helpers store the folder assignment
 inside the checkout's private Git directory, so each checkout ignores clean report folders inherited from other

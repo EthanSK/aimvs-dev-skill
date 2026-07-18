@@ -70,6 +70,19 @@ Give every screenshot its own short title, literal caption, and narrow **What th
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
 evidence in the scenario steps and supporting checks instead.
 
+When one narrow area is the main evidence, optionally burn one high-contrast outline and short review label into the
+final PNG so it is obvious in VS Code, source control, the HTML report, and any image viewer. Keep highlights narrow
+and use at most one per screenshot. The agent chooses the rectangle, one concise explanatory sentence, and the nearest
+visually empty label position from the screenshot's proof claim and inspected pixels; the helper does not detect or
+guess any of them. Write the label like a quick update to a reviewer, such as `The dialog shows the parsed media error
+in full.` Do not split it into a title, dash, and description. Prefer a position immediately beside one outline edge;
+move farther away only when every nearby position would cover controls, text, visible media, or evidence. The label has
+yellow glyphs with a thin black outline and no background block, but it still must not touch meaningful UI or evidence.
+Inspect the full raw screenshot first, then inspect the annotated PNG again; move the text and regenerate from the raw
+screenshot if it covers anything. The annotation must never replace whole-window review. Never annotate an older
+immutable screenshot or draw a second annotation over an existing one. Recapture instead when the selected area needs
+to change.
+
 Complete sign-in and credential entry before capturing evidence. Never capture credentials, tokens, signed URLs,
 personal data, another app, the whole display, the user's media, or a broader screen region. If authentication itself
 is under test, exclude the sensitive entry portion and state that limitation in the report.
@@ -90,6 +103,23 @@ The capture helper uses ScreenCaptureKit's `desktopIndependentWindow` filter and
 captures one PNG of only that exact window at up to 1920 pixels wide, without activating, raising, moving, or resizing
 it, then exits immediately. Never start a continuous recorder or fall back to display capture, rectangle capture,
 Preview, OBS, QuickTime, or another capture path.
+
+After inspecting the raw PNG, optionally replace it atomically with an outlined version. Express the rectangle as
+`left,top,width,height` percentages of the full screenshot:
+
+```bash
+bash .agents/skills/aimvs-dev/scripts/highlight-manual-test-screenshot.sh \
+  --screenshot "$REPORT_DIRECTORY/$SCREENSHOT" \
+  --highlight "34.3,49,31.5,16.5" \
+  --label "The dialog shows the parsed media error in full." \
+  --label-position "50,41"
+```
+
+To convert a pixel rectangle or label position, divide each horizontal value by the screenshot width and each vertical
+value by its height, then multiply by 100. `--label-position` is the label's horizontal center and top edge. Put it in
+the nearest clean empty space beside the outline, not over controls, text, visible media, or the highlighted evidence.
+The helper rewrites the PNG itself while preserving its dimensions and original metadata. It does not add report
+metadata or an HTML-only overlay.
 
 If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual evidence
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
@@ -171,6 +201,8 @@ Before finishing, verify that:
 - the latest confidence `<p>` appears before the embedded `<style>` block in `index.html`, near the top of the file;
 - every screenshot appears as a large independent card with its title, caption, and **What this proves** text, in a
   two-column desktop grid that stacks on narrow screens;
+- every intentionally highlighted PNG visibly outlines the correct narrow area, uses a brief reviewer-friendly label,
+  and keeps both readable without obscuring the evidence;
 - clicking any screenshot opens it in an in-page browser-viewport overlay, clicking the enlarged image or pressing
   Escape closes it immediately, native browser fullscreen is never used, and the trigger is keyboard-accessible;
 - every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
