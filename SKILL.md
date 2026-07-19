@@ -129,6 +129,13 @@ checkout path and frontend URL clickable.
 When no dev stack for that exact checkout or worktree is running, write `Not running` for both **Dev stack** and
 **Frontend** instead of omitting either line.
 
+Also end every completed implementation or review with a **Manual checks** section containing one to three concise,
+high-value tests Ethan can perform against the current change set (`PR` shorthand). Choose the smallest set that best
+proves the changed behavior, and give the exact starting state, action, and expected result so Ethan does not have to
+design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
+one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
+keep the section and say why instead of inventing one.
+
 ## Ethan's main environment (stack 0)
 
 Stack 0 is exclusively Ethan's main VS Code environment. Agents must never start, stop, restart, restore, or use
@@ -580,7 +587,8 @@ caption, and narrow evidence claim. When one narrow UI area is the screenshot's 
 high-contrast outline and brief review label into the final PNG so the target is clear in source control and every
 image viewer, not only the HTML report. The agent must put one concise explanatory sentence in the nearest visually
 empty space beside the outline so it does not cover any UI or evidence. Inspect the full screenshot before and after
-highlighting, and never annotate old immutable evidence.
+highlighting; the helper keeps portrait annotation text readable and asks for a shorter sentence instead of silently
+shrinking it too far. Never annotate old immutable evidence.
 Maintain the checkout/worktree's single date-prefixed report folder containing the append-only Markdown source,
 adjacent Git LFS-backed screenshots, and final double-clickable `index.html`. The helpers store the folder assignment
 inside the checkout's private Git directory, so each checkout ignores clean report folders inherited from other

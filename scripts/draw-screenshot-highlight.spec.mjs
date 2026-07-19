@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import sharp from 'sharp';
 import {
+  createLabelLayout,
   drawHighlightPixels,
   drawLabelPixels,
   drawScreenshotHighlight,
@@ -141,6 +142,48 @@ describe('screenshot highlights', () => {
     );
   });
 
+  it('keeps label text readable across common screenshot dimensions', () => {
+    const label = parseLabel(
+      'The highlighted control keeps its full processing status visible.',
+    );
+    const dimensions = [
+      { height: 900, minimumFontSize: 18, width: 1600 },
+      { height: 1000, minimumFontSize: 20, width: 1000 },
+      { height: 1600, minimumFontSize: 32, width: 900 },
+      { height: 844, minimumFontSize: 16, width: 390 },
+    ];
+
+    for (const { height, minimumFontSize, width } of dimensions) {
+      const layout = createLabelLayout({
+        height,
+        label,
+        labelPosition: parseLabelPosition('50,10'),
+        width,
+      });
+
+      assert.ok(layout.fontSize >= minimumFontSize);
+      assert.ok(layout.lines.length <= 2);
+      assert.ok(layout.left >= 4);
+      assert.ok(layout.left + layout.labelWidth <= width - 4);
+    }
+  });
+
+  it('rejects a label instead of shrinking it below the readable floor', () => {
+    assert.throws(
+      () =>
+        createLabelLayout({
+          height: 844,
+          label: parseLabel('x'.repeat(120)),
+          labelPosition: parseLabelPosition('50,10'),
+          width: 390,
+        }),
+      {
+        message:
+          '--label is too long for readable text on this screenshot; shorten it',
+      },
+    );
+  });
+
   it('clamps an explicit label position inside the screenshot edges', async () => {
     const width = 320;
     const height = 200;
@@ -220,8 +263,8 @@ describe('screenshot highlights', () => {
     const directory = mkdtempSync(join(tmpdir(), 'aimvs-highlight-test-'));
     const inputPath = join(directory, 'input.png');
     const outputPath = join(directory, 'output.png');
-    const width = 100;
-    const height = 80;
+    const width = 640;
+    const height = 480;
     const original = Buffer.alloc(width * height * 4);
     for (let index = 0; index < original.length; index += 1) {
       original[index] = index % 251;

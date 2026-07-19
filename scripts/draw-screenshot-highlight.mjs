@@ -211,19 +211,30 @@ export async function drawLabelPixels({
   };
 }
 
-function createLabelLayout({ height, label, labelPosition, width }) {
+export function createLabelLayout({ height, label, labelPosition, width }) {
+  const isPortrait = height > width; // Bug: portrait screenshots used their narrow side for both font scale and label width, making review text tiny; scale from height and use more of the available width below.
   const maximumLabelWidth = Math.min(
     width - 8,
-    Math.max(160, Math.min(520, Math.round(width * 0.42))),
+    Math.max(
+      160,
+      Math.min(
+        isPortrait ? 840 : 520,
+        Math.round(width * (isPortrait ? 0.84 : 0.42)),
+      ),
+    ),
   );
+  const minimumFontSize = 16; // Bug: a narrow or long label could silently shrink to 10 px; reject an oversized label instead of creating unreadable evidence.
   let fontSize = Math.max(
-    10,
-    Math.min(26, Math.round(Math.min(width, height) / 50)),
+    minimumFontSize,
+    Math.min(
+      isPortrait ? 40 : 26,
+      Math.round((isPortrait ? height : Math.min(width, height)) / 50),
+    ),
   );
   let fits = false;
   let lines;
   let horizontalPadding;
-  while (fontSize >= 10) {
+  while (fontSize >= minimumFontSize) {
     horizontalPadding = Math.max(6, Math.round(fontSize * 0.55));
     lines = wrapLabel({
       fontSize,
@@ -241,7 +252,9 @@ function createLabelLayout({ height, label, labelPosition, width }) {
     fontSize -= 1;
   }
   if (!lines || !fits) {
-    throw new Error('--label is too long for this screenshot');
+    throw new Error(
+      '--label is too long for readable text on this screenshot; shorten it',
+    );
   }
 
   const lineHeight = Math.round(fontSize * 1.2);

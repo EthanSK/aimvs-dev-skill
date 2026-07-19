@@ -80,8 +80,9 @@ move farther away only when every nearby position would cover controls, text, vi
 yellow glyphs with a thin black outline and no background block, but it still must not touch meaningful UI or evidence.
 Inspect the full raw screenshot first, then inspect the annotated PNG again; move the text and regenerate from the raw
 screenshot if it covers anything. The annotation must never replace whole-window review. Never annotate an older
-immutable screenshot or draw a second annotation over an existing one. Recapture instead when the selected area needs
-to change.
+immutable screenshot or draw a second annotation over an existing one. The helper keeps annotation text readable
+across landscape, square, and portrait screenshots and refuses to shrink below its readability floor; shorten the
+sentence if it reports that the label does not fit. Recapture instead when the selected area needs to change.
 
 Complete sign-in and credential entry before capturing evidence. Never capture credentials, tokens, signed URLs,
 personal data, another app, the whole display, the user's media, or a broader screen region. If authentication itself
