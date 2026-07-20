@@ -116,11 +116,13 @@ Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`
 ## Completion handoff
 
 End every completed AIMVS task or review with this compact field list. Keep every field on its own bullet so the
-handoff stays easy to scan; never combine the checkout, branch, stack, or frontend URL into one sentence. Make the
-checkout path and frontend URL clickable.
+handoff stays easy to scan; never combine the worktree or checkout, branch, stack, or frontend URL into one sentence.
+Make the worktree or checkout path and frontend URL clickable. Use exactly one of these forms for the first field:
+
+- Linked Git worktree: `- Worktree: [<worktree name>](<absolute worktree path>)`
+- Repository's primary checkout: `- Checkout: [<checkout name>](<absolute checkout path>)`
 
 ```markdown
-- Checkout: [<checkout name>](<absolute checkout path>)
 - Branch: <branch name>
 - Dev stack: <stack index>
 - Frontend: [<localhost URL>](<localhost URL>)
@@ -219,13 +221,14 @@ matching Storage metadata/blob counts. Firebase regenerates internal blob UUID f
 logical object counts, size multisets, or sampled content hashes instead of expecting those filenames to stay the
 same. Do not delete the shared export as a first response because that hides the race and loses reusable local state.
 
-Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. Normal dev-stack
-startup, `npm test`, local Git hooks, and Firebase predeploy do not invoke this suite; the deploy workflow runs it on
-an isolated GitHub Actions host. The test config uses separate ports, but Firebase Tools 15.24.0 stores every local
-Storage emulator's live blobs in the same user-global temporary directory. When the short-lived test emulator stops,
-it removes that directory, so the shared emulator keeps stale in-memory metadata and can exit with `ENOENT` on the
-next asset read. Distinct ports do not isolate Storage persistence. Before a local rules test, check `:9199`; if it
-is occupied, stop and report the conflict instead of running the suite or stopping Ethan's emulator. After a
+Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. The script checks
+that port before generating rules and exits if it is occupied. Normal dev-stack startup, `npm test`, local Git hooks,
+and Firebase predeploy do not invoke this suite; the deploy workflow runs it on an isolated GitHub Actions host. The
+test config uses separate ports, but Firebase Tools 15.24.0 stores every local Storage emulator's live blobs in the
+same user-global temporary directory. When the short-lived test emulator stops, it removes that directory, so the
+shared emulator keeps stale in-memory metadata and can exit with `ENOENT` on the next asset read. Distinct ports do
+not isolate Storage persistence, and the repository patch above fixes only the separate live-export race. If the
+guard reports a conflict, stop and report it instead of running the suite or stopping Ethan's emulator. After a
 collision, treat the shared stack as unhealthy and preserve its export; restart it only with Ethan's explicit
 authorization.
 
@@ -458,6 +461,11 @@ storage do not fight; assign them in this order: Safari → Firefox → Opera �
 from Safari merely because another browser is already logged in—use the test-account sign-in flow below when
 Safari needs authentication. Stack 0 is not part of this assignment because agents never test against it.
 
+Treat a browser Ethan is actively using as unavailable, even when it would otherwise be next in the assignment
+order. Never commandeer or repeatedly foreground his active browser; choose the next browser compatible with the
+test, and stop if none is available. When a test specifically needs Chromium DevTools, use the first available
+Chromium browser—prefer Opera while Ethan is using personal Chrome.
+
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
 verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep every test browser on
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
@@ -471,11 +479,19 @@ keyboard, or browser-controller actions can change shared desktop focus. Before 
 exclusive-control window; if the user is actively clicking or typing, do not rely on multi-step UI sequences because
 his input can steal focus between steps and make the test invalid.
 
+Finish every possible background task—stack health, fixture discovery and setup, upload-file preparation, and test
+sequencing—before creating, navigating, or foregrounding a browser window when that action could take focus. Batch
+the remaining focus-required steps so setup never interrupts Ethan before the test is ready to run.
+
 When the user grants exclusive control, use the normal visible browser assigned to that stack with Computer Use. If
 he wants to keep using the machine while testing runs, ask for a short exclusive-control window before clicks/typing, or use
 a scriptable browser/control path only if he accepts that mode. Use the same stack URL, same `.secret.local`
 credentials, and same App Check debug token. Do not silently switch browser modes and call it the requested
 manual Firefox/Safari/Opera test.
+
+Foreground only the exact tracked test window and only for the shortest interaction that requires it. As soon as a
+DevTools change, file selection, hover, Back action, or other focused step finishes, minimize that exact window and
+restore Ethan's prior app; keep it minimized throughout uploads, loading, waits, shell work, and report generation.
 
 If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user
 changed the app mid-action, assume the user is probably using the computer. Stop the immediate click/type loop and

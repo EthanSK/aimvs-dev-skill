@@ -24,7 +24,6 @@ preserve both immutable entry streams in newest-first order, keep both sets of s
 `index.html`; choosing one side would silently erase valid evidence, while creating another folder would make the
 report tooling reject the checkout. Do not rewrite an integrated entry that still uses the older `proofs:` metadata;
 the renderer shows each surviving legacy PNG as an independent evidence card and ignores deliberately removed files.
-
 The helpers record the owned folder name inside that checkout's private Git directory. Any checkout can still see
 tracked report folders inherited from other work, but it ignores clean inherited folders and creates its own folder
 on the first capture. When this marker is introduced after a checkout already started reporting, the helper adopts
@@ -125,7 +124,6 @@ metadata or an HTML-only overlay.
 If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual evidence
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
 overwrite an earlier screenshot.
-
 ## Inspect the actual screenshot pixels
 
 After every capture, load each PNG into the model's visual context with a read-only image inspection tool such as
