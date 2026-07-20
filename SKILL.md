@@ -493,6 +493,17 @@ Foreground only the exact tracked test window and only for the shortest interact
 DevTools change, file selection, hover, Back action, or other focused step finishes, minimize that exact window and
 restore Ethan's prior app; keep it minimized throughout uploads, loading, waits, shell work, and report generation.
 
+Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
+selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
+non-mutating, click the name, verify edit mode, then press Escape without moving the pointer so its display tooltip can
+appear; otherwise use a controller with a real pointer move or report that the hover could not be captured safely.
+
+Safari can expose a collapsed Angular expansion-panel header and its hidden child actions as one composite button. If
+the header's Accessibility description includes action labels from inside the collapsed panel, never invoke its primary
+click: the click can activate a hidden dev or management action instead of expanding the panel. Try the explicitly
+exposed `Expand` secondary action once; if neither Accessibility state nor pixels change and coordinate input is
+unavailable, report the panel interaction as blocked instead of clicking the composite target.
+
 If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user
 changed the app mid-action, assume the user is probably using the computer. Stop the immediate click/type loop and
 retry with exponential backoff: wait 1 minute, then 2 minutes, then 4, 8, 16, 32, and cap at 60 minutes. Re-check
