@@ -500,6 +500,10 @@ a scriptable browser/control path only if he accepts that mode. Use the same sta
 credentials, and same App Check debug token. Do not silently switch browser modes and call it the requested
 manual Firefox/Safari/Opera test.
 
+A request to run Computer Use tests authorizes the test, not exclusive foreground control. A macOS heads-up is also
+only a warning, not permission: when Ethan is using the Mac, wait for an explicit short control window before
+activating, raising, clicking, typing, or navigating in the test browser.
+
 Foreground only the exact tracked test window and only for the shortest interaction that requires it. As soon as a
 DevTools change, file selection, hover, Back action, or other focused step finishes, minimize that exact window and
 restore Ethan's prior app; keep it minimized throughout uploads, loading, waits, shell work, and report generation.
@@ -590,6 +594,11 @@ staging web app > Manage debug tokens, then add it to `.secret.local` and restar
 debug tokens.
 
 ## Manual verification loop
+
+Keep requested manual testing proportionate and usage-conscious. Prefer a small set of high-value scenarios that
+jointly cover the important behavior, and let one honest settled flow prove several overlapping outcomes when it can.
+Avoid near-duplicate interactions and screenshots. This is guidance rather than a hard quota: add another scenario
+when a materially different risk cannot be covered clearly by the existing flows.
 
 For feature testing, prove the behavior at all four layers before calling it done:
 

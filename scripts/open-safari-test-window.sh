@@ -30,6 +30,8 @@ SWIFT
 
 IFS=',' read -r left top right bottom <<<"$target_bounds"
 
+hidden_window_ids="$(osascript -e 'tell application "Safari" to get id of every window whose visible is false' | tr -d ' ')"
+
 window_id="$(osascript - "$left" "$top" "$right" "$bottom" "$TARGET_URL" "$EXISTING_WINDOW_ID" <<'APPLESCRIPT'
 on run argv
   set leftBound to item 1 of argv as integer
@@ -59,6 +61,7 @@ on run argv
       end repeat
       if testWindow is missing value then error "Could not identify the newly created Safari window"
     end if
+    set visible of testWindow to true
     set bounds of testWindow to {leftBound, topBound, rightBound, bottomBound}
     set testWindowId to id of testWindow as text
   end tell
@@ -67,6 +70,41 @@ on run argv
 end run
 APPLESCRIPT
 )"
+
+swift - <<'SWIFT'
+import AppKit
+
+guard let safari = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == "com.apple.Safari" }) else {
+  fatalError("Safari is not running")
+}
+_ = safari.unhide()
+SWIFT
+
+osascript - "$window_id" "$hidden_window_ids" <<'APPLESCRIPT'
+on split_ids(joinedIds)
+  if joinedIds is "" then return {}
+  set previousDelimiters to AppleScript's text item delimiters
+  set AppleScript's text item delimiters to ","
+  set windowIds to text items of joinedIds
+  set AppleScript's text item delimiters to previousDelimiters
+  return windowIds
+end split_ids
+
+on run argv
+  set testWindowId to item 1 of argv as integer
+  set hiddenWindowIds to my split_ids(item 2 of argv)
+  tell application "Safari"
+    set visible of first window whose id is testWindowId to true
+    repeat with hiddenWindowId in hiddenWindowIds
+      if (hiddenWindowId as integer) is not testWindowId then
+        try
+          set visible of first window whose id is (hiddenWindowId as integer) to false
+        end try
+      end if
+    end repeat
+  end tell
+end run
+APPLESCRIPT
 
 sleep 0.5
 inspection="$(swift "$SCRIPT_DIR/inspect-browser-displays.swift")"
