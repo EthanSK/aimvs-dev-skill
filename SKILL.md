@@ -300,7 +300,10 @@ authorization.
    commands instead of synthetic keyboard shortcuts or clipboard paste; Ghostty keyboard automation has been
    unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
    that tab's session; passing commands directly to `create tab with default profile command ...` can open and
-   close too quickly instead of leaving the expected long-running tab. Snapshot existing iTerm window ids first
+   close too quickly instead of leaving the expected long-running tab. Capture the new window's numeric id
+   immediately, then re-resolve that exact window and retain each new tab's session before writing its command;
+   iTerm can otherwise resolve a later `current session of devWindow` against a pre-existing active window even
+   though the tab was created in the new window. Snapshot existing iTerm window ids first
    so session restoration or an already-open iTerm window does not steal the worktree tabs. Record the exact new
    window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
    position, or whichever iTerm window is active.
@@ -349,14 +352,22 @@ authorization.
        end repeat
        if devWindow is missing value then set devWindow to current window
 
-       tell current session of devWindow to write text (item 1 of argv) newline yes
+       set devWindowId to id of devWindow
+       set apiWatchSession to current session of devWindow
+       tell apiWatchSession to write text (item 1 of argv) newline yes
+
        tell devWindow to create tab with default profile
        delay 0.5
-       tell current session of devWindow to write text (item 2 of argv) newline yes
+       set devWindow to first window whose id is devWindowId
+       set apiServerSession to current session of last tab of devWindow
+       tell apiServerSession to write text (item 2 of argv) newline yes
+
        tell devWindow to create tab with default profile
        delay 0.5
-       tell current session of devWindow to write text (item 3 of argv) newline yes
-       return id of devWindow
+       set devWindow to first window whose id is devWindowId
+       set frontendSession to current session of last tab of devWindow
+       tell frontendSession to write text (item 3 of argv) newline yes
+       return devWindowId
      end tell
    end run
    APPLESCRIPT
@@ -603,6 +614,11 @@ When a feature has user-visible async/error handling, test at least one failure 
 path. Prefer a temporary local throw, disabled dependency, invalid emulator fixture, or rejected API response that
 exercises the real UI/status/notification path. Remove the temporary fault before final verification, then confirm
 the happy path still works and the logs are clean.
+
+After deleting an exact temporary emulator project, wait for in-flight Functions triggers and query that project ID
+again. A clip or project trigger that started before deletion can recreate a skeletal project document or derived
+subcollection after the first cleanup check; recursively delete only the known temporary ID again and reverify it is
+absent instead of assuming the first successful delete is final.
 
 ## Manual-test reporting
 
