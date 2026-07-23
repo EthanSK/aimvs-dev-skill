@@ -613,6 +613,12 @@ For feature testing, prove the behavior at all four layers before calling it don
   N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
   backend exceptions as test failures unless they are already known and irrelevant to the touched code.
 
+Treat every dev fixture button as a durable emulator mutation. In particular, **Create 40 Test Project Notices**
+writes 40 server-owned documents under the selected project and can leave its latest synthetic bulk notice visible
+below the generation button long after the test. Run it only against an exact disposable project in the agent's
+nonzero stack, never against Ethan's existing project; remove that temporary project or its known fixture documents
+afterward and re-query the project notices before cleanup is considered complete.
+
 If verification finds a bug caused by the current work—including a defect visible in a screenshot—fix it
 surgically, restart or reload the affected process when needed, and repeat the smallest proving flow, screenshot,
 log, and emulator checks. Report pre-existing, unrelated, or deeper visual problems with the exact screenshot
