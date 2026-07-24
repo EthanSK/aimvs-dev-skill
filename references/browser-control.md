@@ -4,7 +4,7 @@
 
 - [Non-negotiable browser display](#non-negotiable-browser-display)
 - [Browser assignment](#browser-assignment)
-- [Browser control while the user is using the Mac](#browser-control-while-the-user-is-using-the-mac)
+- [Background browser control while the user is using the Mac](#background-browser-control-while-the-user-is-using-the-mac)
 - [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
 - [Browser crash and recovery](#browser-crash-and-recovery)
 
@@ -90,34 +90,39 @@ verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep ev
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
 move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting.
 
-## Browser control while the user is using the Mac
+## Background browser control while the user is using the Mac
 
-The Safari helper and read-only accessibility inspection can operate without activating or raising the test
-window, so the user may continue using another app or display during those operations. Computer Use pointer,
-keyboard, or browser-controller actions can change shared desktop focus, so target only the exact tracked test
-window and refresh its state whenever live user input interrupts a multi-step sequence.
-
-Finish every possible background task—stack health, fixture discovery and setup, upload-file preparation, and test
-sequencing—before creating, navigating, or interacting with a browser window. Batch the remaining browser steps so
-setup never interrupts Ethan before the test is ready to run.
-
-Use the normal visible browser assigned to that stack with Computer Use. The user may keep using the machine while
-testing runs; use the same stack URL, same `.secret.local` credentials, and same App Check debug token. Do not
-silently switch browser modes and call it the requested manual Firefox/Safari/Opera test.
+The dedicated test window is agent-owned, so operate it in the background without asking Ethan for exclusive control.
+The user may keep working in other apps and browser windows throughout the test. Routine background Computer Use
+actions do not need a macOS heads-up.
 
 An explicit request to run a Computer Use test authorizes clicking, typing, and navigating inside that test's exact
-dedicated browser window. It does not authorize activating, raising, or reordering the window. Do not ask for
-separate keyboard or mouse permission; the ordinary Computer Use confirmation policy still applies to consequential
-actions such as credentials, payments, permanent deletion, or sensitive-data transmission.
+dedicated browser window. It does not authorize activating, raising, moving, resizing, or reordering the window. Do
+not ask for separate keyboard or mouse permission; the ordinary Computer Use confirmation policy still applies to
+consequential actions such as credentials, payments, permanent deletion, or sensitive-data transmission.
 
-Keep the exact tracked test window unminimized on `Built-in Retina Display`, but leave it in the background while
-Ethan uses another app. Computer Use can ordinarily keep operating that background window without activating or
-raising it. Do not minimize Safari during an active test: a minimized window drops out of Computer Use targeting,
-and a later app-level state read can silently attach to another Safari window instead. Before every action, require
-the fresh accessibility state to show the tracked window UUID, stack URL, and worktree banner. If it resolves to a
-different window, stop instead of activating, raising, or reordering Safari to recover the target. Only foreground
-the exact tracked window when a specific interaction truly cannot work in the background and Ethan explicitly asks
-for that foreground action.
+Keep the tracked window unminimized on `Built-in Retina Display`; a minimized Safari window drops out of Computer
+Use targeting. Before every action, require the current Computer Use state to show the tracked window UUID, exact
+stack URL, and worktree banner. Use element-index actions and app-targeted key presses so clicks, scrolling, and
+typing stay scoped to that window. Never foreground the browser for routine testing, and never send global keyboard
+or pointer input.
+
+Do not click an Accessibility-disabled control to prove it is a no-op. Computer Use can wait until the control becomes
+enabled and then execute a later valid click; prove the disabled state from fresh Accessibility/pixel evidence and
+prove duplicate prevention from request or emulator counts instead.
+
+Finish stack health, fixtures, uploads, and test sequencing before the first interaction. Keep waits, shell work,
+screenshot capture, and report generation in the background. Use the same stack URL, `.secret.local` credentials,
+and App Check debug token as the normal visible browser; do not switch to an isolated browser mode.
+
+If an action unexpectedly steals focus, targets a different window, or is changed by the user's simultaneous input,
+stop that sequence and re-check the exact window and URL read-only. Retry only through a focus-preserving background
+path. Do not repeatedly interrupt Ethan or ask for exclusive control as the fallback; report a controller limitation
+when the required interaction cannot be completed safely in the background.
+
+Foreground control is opt-in only when Ethan explicitly asks for it. The narrow Chromium View Transitions exception
+above still requires that explicit permission and a macOS heads-up because it intentionally keeps the test document
+frontmost.
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
@@ -145,6 +150,12 @@ Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browse
 that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
 otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
 If exact cleanup cannot be proven safe, report it as blocked instead of closing another window or app.
+
+If a Safari Computer Use close times out and the next state attaches to an unrelated sheet or window, do not click
+the new state or send an app-wide `Cmd+W`. Re-read the tracked numeric `TEST_WINDOW_ID` and its exact URL with
+Safari AppleScript, require exactly one matching window, close that exact window by ID, then re-run the display
+inventory and require the ID to be gone. This Safari-only fallback preserves unrelated sheets and windows when
+Computer Use loses its original window target during the close.
 
 After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
 The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,

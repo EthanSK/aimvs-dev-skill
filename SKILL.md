@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, agent-owned nonzero stack selection, MacBook-display routing, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
+description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, code review, Git worktree or dirty rebase/stash maintenance, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, agent-owned nonzero stack selection, Git-state preservation, MacBook-display routing, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
 ---
 
 # AIMVS Development
@@ -8,7 +8,7 @@ description: Use for every AI Music Video Studio development interaction involvi
 ## Continuous improvement
 
 Improve this skill as part of using it. Whenever usage, debugging, investigation, or user feedback produces a
-durable verified AIMVS setup, browser, emulator, screenshot, reporting, login, or recovery finding, update this
+durable verified AIMVS setup, browser, emulator, screenshot, reporting, login, Git/worktree, or recovery finding, update this
 skill during the same task without waiting for a separate request. Adjust its instructions, scripts, tests, or
 references as appropriate, retest affected behavior, and validate the skill before finishing. After every
 modification, review whether `SKILL.md` remains a concise operating contract and router; split, merge, rename, or
@@ -19,9 +19,10 @@ credentials, branch-specific results, or transient runtime state.
 ## Purpose
 
 Use this skill as the AIMVS source of truth for every Computer Use interaction, local browser test, dev-stack action,
-emulator investigation, authentication flow, and prior manual-test evidence question. It overrides global
-browser-testing defaults for AIMVS. Stack 0 belongs to Ethan's main VS Code environment and is never an agent test
-target. Every agent-run test uses a free nonzero stack index, including tests of uncommitted main-checkout changes.
+emulator investigation, authentication flow, code review, dirty Git-state operation, and prior manual-test evidence
+question. It overrides global browser-testing defaults for AIMVS. Stack 0 belongs to Ethan's main VS Code environment
+and is never an agent test target. Every agent-run test uses a free nonzero stack index, including tests of
+uncommitted main-checkout changes.
 
 ## Universal safeguards
 
@@ -55,6 +56,8 @@ linked directly here so an agent never needs to discover operating instructions 
   read [references/browser-control.md](references/browser-control.md).
 - **Any sign-in, test-account, App Check, browser autofill, or authenticated file-picker flow:** read
   [references/authentication.md](references/authentication.md).
+- **Any code review, stash, rebase, worktree landing, or staged/unstaged preservation operation:** read
+  [references/git-state-and-code-review.md](references/git-state-and-code-review.md).
 - **Every requested manual feature test, fixture mutation, failure-path test, or four-layer verification pass:** read
   [references/manual-verification.md](references/manual-verification.md).
 - **Every Computer Use test, screenshot/report update, or question about prior manual-test evidence:** read

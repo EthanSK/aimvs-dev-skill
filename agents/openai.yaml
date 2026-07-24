@@ -1,4 +1,4 @@
 interface:
-  display_name: "AIMVS Development"
-  short_description: "Run, test, and trace AIMVS development evidence."
-  default_prompt: "Use $aimvs-dev to run, debug, manually test, or review screenshot evidence for the correct AIMVS dev stack."
+  display_name: 'AIMVS Development'
+  short_description: 'Run, test, review, and preserve AIMVS development state.'
+  default_prompt: 'Use $aimvs-dev to run, debug, test, review, or preserve Git/worktree state for the correct AIMVS checkout and dev stack.'
