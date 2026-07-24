@@ -3,6 +3,14 @@
 Use this workflow for every AIMVS Computer Use session that tests app behavior, including passed, failed, partial,
 and blocked sessions.
 
+## Contents
+
+- [Artifact contract](#artifact-contract)
+- [Capture only important settled states](#capture-only-important-settled-states)
+- [Inspect the actual screenshot pixels](#inspect-the-actual-screenshot-pixels)
+- [Add the evidence entry](#add-the-evidence-entry)
+- [Reading past evidence](#reading-past-evidence)
+
 ## Artifact contract
 
 Each checkout/worktree owns exactly one independent date-prefixed report folder:
@@ -124,6 +132,7 @@ metadata or an HTML-only overlay.
 If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual evidence
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
 overwrite an earlier screenshot.
+
 ## Inspect the actual screenshot pixels
 
 After every capture, load each PNG into the model's visual context with a read-only image inspection tool such as

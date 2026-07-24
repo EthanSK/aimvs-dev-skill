@@ -1,0 +1,165 @@
+# Browser assignment and window control
+
+## Contents
+
+- [Non-negotiable browser display](#non-negotiable-browser-display)
+- [Browser assignment](#browser-assignment)
+- [Browser control while the user is using the Mac](#browser-control-while-the-user-is-using-the-mac)
+- [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
+- [Browser crash and recovery](#browser-crash-and-recovery)
+
+## Non-negotiable browser display
+
+Every AIMVS browser interaction must happen on the MacBook's display named `Built-in Retina Display`. Never test
+on either external display (including the ultrawide or the Dell), and never disturb an existing external-display
+browser window.
+
+Never move, raise, resize, or reposition a Computer Use preview or dedicated test-browser window over a video
+the user is watching. Preserve the active playback area and leave the user's media window unobstructed; if the
+assigned browser cannot be operated without covering it, stop and report the blocker instead of moving the test
+or preview window across the video.
+
+Before the first browser action, assign the browser from the order in **Browser assignment**, set the exact stack
+URL, and inventory the existing windows:
+
+```bash
+STACK_INDEX=1 # replace this with the selected free nonzero index for every agent-run test
+STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
+swift .agents/skills/aimvs-dev/scripts/inspect-browser-displays.swift
+```
+
+The script identifies displays by `NSScreen.localizedName`, converts their live frames into the same coordinate
+system as browser windows, and prints the numeric identity and display of each substantial
+Safari/Chrome/Firefox/Opera window. Record the pre-existing window IDs and whether the assigned browser app was
+already running; never claim they were created by the test. Do not infer the display from a window's size, a
+negative X coordinate, or whichever display is currently main.
+
+When Safari is assigned, create exactly one dedicated test window and navigate it to the exact stack URL in the
+same operation with:
+
+```bash
+inspection="$(bash .agents/skills/aimvs-dev/scripts/open-safari-test-window.sh "$STACK_URL")"
+printf '%s\n' "$inspection"
+TEST_WINDOW_ID="$(sed -n 's/^window=//p' <<<"$inspection")"
+```
+
+This derives the window bounds from the live `Built-in Retina Display` frame, creates the window at those bounds,
+navigates it, and prints its numeric ID. The helper must never activate Safari, raise a window, or require Safari
+to remain frontmost after setup.
+
+When Firefox, Opera, or personal Chrome is assigned to a concurrent stack, use that browser's normal persistent
+profile with the applicable Computer Use/browser controller—never a fresh or isolated profile. After recording
+the existing window IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
+`Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window only when one new ID
+for the assigned browser appears on that display and the controller state shows `STACK_URL`; save that ID as
+`TEST_WINDOW_ID`. This creation-and-placement operation is the only browser action allowed before verification.
+If the controller cannot create, identify, and place that exact new window without navigating, moving, raising,
+or closing a pre-existing window, stop and report the blocker instead of improvising.
+
+Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window creation and placement are a
+one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
+argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
+
+After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action
+to wake or find a browser. If a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
+`Transition was aborted because of invalid state`, report that its View Transition requires a foreground document
+instead of taking focus. Before acting on a fresh Computer Use state, require its accessibility tree to show the
+expected stack URL. If it shows another window or stack, stop rather than activating the assigned browser or changing
+which window is frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing
+external-display windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
+
+Background Safari may defer an async completion or repaint until its page receives another interaction. Before
+reporting a stuck loader, use one harmless in-page interaction such as opening and closing an existing filter,
+then read fresh Computer Use state; do not activate or raise Safari to wake it.
+
+## Browser assignment
+
+Use Safari first for the first agent-owned nonzero AIMVS test stack. This repo rule overrides any global preference
+for personal Chrome. Concurrent agent stacks must use different browsers so Firebase Auth persistence + App Check
+storage do not fight; assign them in this order: Safari → Firefox → Opera → personal Chrome. Never switch away
+from Safari merely because another browser is already logged in—use the test-account sign-in flow when Safari needs
+authentication. Stack 0 is not part of this assignment because agents never test against it.
+
+Treat a browser Ethan is actively using as unavailable, even when it would otherwise be next in the assignment
+order. Never commandeer or repeatedly foreground his active browser; choose the next browser compatible with the
+test, and stop if none is available. When a test specifically needs Chromium DevTools, use the first available
+Chromium browser—prefer Opera while Ethan is using personal Chrome.
+
+The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
+verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep every test browser on
+`Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
+move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting.
+
+## Browser control while the user is using the Mac
+
+The Safari helper and read-only accessibility inspection can operate without activating or raising the test
+window, so the user may continue using another app or display during those operations. Computer Use pointer,
+keyboard, or browser-controller actions can change shared desktop focus, so target only the exact tracked test
+window and refresh its state whenever live user input interrupts a multi-step sequence.
+
+Finish every possible background task—stack health, fixture discovery and setup, upload-file preparation, and test
+sequencing—before creating, navigating, or interacting with a browser window. Batch the remaining browser steps so
+setup never interrupts Ethan before the test is ready to run.
+
+Use the normal visible browser assigned to that stack with Computer Use. The user may keep using the machine while
+testing runs; use the same stack URL, same `.secret.local` credentials, and same App Check debug token. Do not
+silently switch browser modes and call it the requested manual Firefox/Safari/Opera test.
+
+An explicit request to run a Computer Use test authorizes clicking, typing, and navigating inside that test's exact
+dedicated browser window. It does not authorize activating, raising, or reordering the window. Do not ask for
+separate keyboard or mouse permission; the ordinary Computer Use confirmation policy still applies to consequential
+actions such as credentials, payments, permanent deletion, or sensitive-data transmission.
+
+Keep the exact tracked test window unminimized on `Built-in Retina Display`, but leave it in the background while
+Ethan uses another app. Computer Use can ordinarily keep operating that background window without activating or
+raising it. Do not minimize Safari during an active test: a minimized window drops out of Computer Use targeting,
+and a later app-level state read can silently attach to another Safari window instead. Before every action, require
+the fresh accessibility state to show the tracked window UUID, stack URL, and worktree banner. If it resolves to a
+different window, stop instead of activating, raising, or reordering Safari to recover the target. Only foreground
+the exact tracked window when a specific interaction truly cannot work in the background and Ethan explicitly asks
+for that foreground action.
+
+Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
+selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
+non-mutating, click the name, verify edit mode, then press Escape without moving the pointer so its display tooltip can
+appear; otherwise use a controller with a real pointer move or report that the hover could not be captured safely.
+
+Safari can expose a collapsed Angular expansion-panel header and its hidden child actions as one composite button. If
+the header's Accessibility description includes action labels from inside the collapsed panel, never invoke its primary
+click: the click can activate a hidden dev or management action instead of expanding the panel. Try the explicitly
+exposed `Expand` secondary action once; if neither Accessibility state nor pixels change and coordinate input is
+unavailable, report the panel interaction as blocked instead of clicking the composite target.
+
+If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user
+changed the app mid-action, assume the user is probably using the computer. Stop the immediate click/type loop and
+retry with exponential backoff: wait 1 minute, then 2 minutes, then 4, 8, 16, 32, and cap at 60 minutes. Re-check
+`get_app_state` after each wait before continuing. Do not keep burning retries while focus is unstable.
+
+## Close the dedicated test browser window
+
+At the end of every Computer Use manual-test session—passed, failed, partial, or blocked—finish capturing and
+verifying the report evidence, then close the exact dedicated window identified by `TEST_WINDOW_ID`. Do not leave
+it open merely because development work will continue.
+
+Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory and require
+that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
+otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
+If exact cleanup cannot be proven safe, report it as blocked instead of closing another window or app.
+
+After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
+The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,
+unless Ethan explicitly asked to keep that exact nonzero stack running.
+
+## Browser crash and recovery
+
+If the browser crashes, freezes, loses its window, or restores a previous session mid-test, do not abandon the
+task. First inventory browser windows and confirm whether `TEST_WINDOW_ID` still exists. If it exists, recover only
+that window and restore `STACK_URL`. If it no longer exists, the one-window rule permits exactly one replacement:
+repeat the assigned browser's creation-and-placement flow, record the new ID, and verify its process, display, and
+`STACK_URL` before interacting. Never repurpose a pre-existing window as the replacement. Verify authenticated
+state again and continue from the last reliable checkpoint. Capture useful crash/report text or visible error
+details if available, then check frontend/API/emulator logs to decide whether the crash was browser instability
+or an app-triggered failure.
+
+After a crash or forced browser restart, always re-check emulator state and operation status docs before retrying
+the action. This avoids double-running a mutation while the previous backend operation actually succeeded.

@@ -26,10 +26,15 @@ workflow intentionally reflect AIMVS. You are welcome to adapt them to your own 
 ## Repository layout
 
 ```text
-SKILL.md                         Codex routing and operating procedure
-agents/openai.yaml               Skill-list metadata
-references/manual-test-reporting.md
-scripts/                         Window setup, screenshot capture, and report tooling
+SKILL.md                             Concise operating contract and reference router
+agents/openai.yaml                   Skill-list metadata
+references/stack-lifecycle.md        Dev-stack setup, health, and cleanup
+references/emulator-safety.md        Emulator ownership, data drift, and recovery
+references/browser-control.md        Browser assignment and exact-window safety
+references/authentication.md         Test-account and App Check workflow
+references/manual-verification.md    Four-layer feature verification
+references/manual-test-reporting.md  Screenshot evidence and report workflow
+scripts/                             Window setup, screenshot capture, and report tooling
 ```
 
 ## Requirements
@@ -38,7 +43,7 @@ scripts/                         Window setup, screenshot capture, and report to
 - Codex with Computer Use for visible browser interaction.
 - Git worktrees, Git LFS, Node.js, npm, Swift, and the browsers used by your adapted workflow.
 - A host repository whose dev servers, emulator commands, credentials, and logs match—or have been adapted from—
-  the AIMVS conventions in `SKILL.md`.
+  the AIMVS conventions routed by `SKILL.md`.
 
 The HTML renderer uses `marked`. Run `npm install` in this repository when the host project does not already
 provide that dependency.
