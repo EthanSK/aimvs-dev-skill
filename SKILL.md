@@ -75,16 +75,12 @@ one-time setup while the tracked window exists. The Safari helper technically de
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
 After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action
-merely to wake or find a browser. One narrow exception applies when the user explicitly permits temporary foreground
-control and a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
-`Transition was aborted because of invalid state`: after verifying the tracked window's display and stack URL, raise
-only that exact dedicated window and keep it foregrounded through the route interactions. Chromium's View Transitions
-API needs a fully active document; background inspection can still work while the Angular navigation itself stalls.
-Send the normal macOS heads-up before taking focus, and stop taking focus as soon as the route test is complete.
-Before acting on a fresh Computer Use state, require its accessibility tree to show the expected stack URL. If it
-shows another window or stack, stop rather than activating the assigned browser or changing which window is
-frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display
-windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
+to wake or find a browser. If a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
+`Transition was aborted because of invalid state`, report that its View Transition requires a foreground document
+instead of taking focus. Before acting on a fresh Computer Use state, require its accessibility tree to show the
+expected stack URL. If it shows another window or stack, stop rather than activating the assigned browser or changing
+which window is frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing
+external-display windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
 
 Background Safari may defer an async completion or repaint until its page receives another interaction. Before
 reporting a stuck loader, use one harmless in-page interaction such as opening and closing an existing filter,
@@ -275,6 +271,13 @@ authorization.
    `npm run download:ffmpeg` in the worktree or prefix the standalone API command with
    `USE_SYSTEM_FFMPEG=true`.
 
+   The standalone API caches GCP Secret Manager payloads in
+   `~/Library/Caches/ai-music-video-studio/secrets.json`. Rotating a provider secret does not update that cache or
+   a running API process. Restart only the agent-owned nonzero API with `REFRESH_SECRETS=true` for one launch, then
+   verify the refreshed credential through equality/status-only checks. Never print secret payloads, hashes, raw
+   provider request objects, or unfiltered provider-error log sections; Axios request data can contain
+   `Authorization` or `x-api-key` headers.
+
 3. **Pick the next free nonzero agent stack index** before starting anything, including tests from main:
 
    ```bash
@@ -308,6 +311,11 @@ authorization.
    window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
    position, or whichever iTerm window is active.
 
+   Creating an iTerm window briefly foregrounds iTerm even when the AppleScript omits `activate`, so it is not a
+   background-safe operation. Send the normal macOS heads-up before launch, remember the previously frontmost app,
+   create the window and tabs in one batch, then immediately restore that app as shown below. Do not ask for exclusive
+   keyboard or mouse control and do not claim that removing `activate` prevents the focus change.
+
    ```bash
    WORKTREE_DIR="/absolute/path/to/your-project-worktree"
    STACK_INDEX=1
@@ -322,6 +330,7 @@ authorization.
      printf "%s" "printf '\\033]0;${title}\\007'; cd '${WORKTREE_DIR}'; ${cmd}; exec zsh"
    }
 
+   PREVIOUS_FRONTMOST_PID="$(osascript -e 'tell application "System Events" to unix id of first application process whose frontmost is true')"
    DEV_WINDOW_ID="$(osascript - \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API watch" "${DEV_COLOR_ENV} npm run watch:api -- --dev-stack-index=${STACK_INDEX}")" \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API server" "${DEV_COLOR_ENV} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")" \
@@ -372,6 +381,13 @@ authorization.
    end run
    APPLESCRIPT
    )"
+   osascript - "$PREVIOUS_FRONTMOST_PID" <<'APPLESCRIPT'
+   on run argv
+     tell application "System Events"
+       set frontmost of first application process whose unix id is (item 1 of argv as integer) to true
+     end tell
+   end run
+   APPLESCRIPT
    printf 'DEV_WINDOW_ID=%s\n' "$DEV_WINDOW_ID"
    ```
 
@@ -486,27 +502,30 @@ move only that new window to `Built-in Retina Display` and re-run the display in
 
 The Safari helper and read-only accessibility inspection can operate without activating or raising the test
 window, so the user may continue using another app or display during those operations. Computer Use pointer,
-keyboard, or browser-controller actions can change shared desktop focus. Before any such input, obtain a short
-exclusive-control window; if the user is actively clicking or typing, do not rely on multi-step UI sequences because
-his input can steal focus between steps and make the test invalid.
+keyboard, or browser-controller actions can change shared desktop focus, so target only the exact tracked test
+window and refresh its state whenever live user input interrupts a multi-step sequence.
 
 Finish every possible background task—stack health, fixture discovery and setup, upload-file preparation, and test
-sequencing—before creating, navigating, or foregrounding a browser window when that action could take focus. Batch
-the remaining focus-required steps so setup never interrupts Ethan before the test is ready to run.
+sequencing—before creating, navigating, or interacting with a browser window. Batch the remaining browser steps so
+setup never interrupts Ethan before the test is ready to run.
 
-When the user grants exclusive control, use the normal visible browser assigned to that stack with Computer Use. If
-he wants to keep using the machine while testing runs, ask for a short exclusive-control window before clicks/typing, or use
-a scriptable browser/control path only if he accepts that mode. Use the same stack URL, same `.secret.local`
-credentials, and same App Check debug token. Do not silently switch browser modes and call it the requested
-manual Firefox/Safari/Opera test.
+Use the normal visible browser assigned to that stack with Computer Use. The user may keep using the machine while
+testing runs; use the same stack URL, same `.secret.local` credentials, and same App Check debug token. Do not
+silently switch browser modes and call it the requested manual Firefox/Safari/Opera test.
 
-A request to run Computer Use tests authorizes the test, not exclusive foreground control. A macOS heads-up is also
-only a warning, not permission: when Ethan is using the Mac, wait for an explicit short control window before
-activating, raising, clicking, typing, or navigating in the test browser.
+An explicit request to run a Computer Use test authorizes clicking, typing, and navigating inside that test's exact
+dedicated browser window. It does not authorize activating, raising, or reordering the window. Do not ask for
+separate keyboard or mouse permission; the ordinary Computer Use confirmation policy still applies to consequential
+actions such as credentials, payments, permanent deletion, or sensitive-data transmission.
 
-Foreground only the exact tracked test window and only for the shortest interaction that requires it. As soon as a
-DevTools change, file selection, hover, Back action, or other focused step finishes, minimize that exact window and
-restore Ethan's prior app; keep it minimized throughout uploads, loading, waits, shell work, and report generation.
+Keep the exact tracked test window unminimized on `Built-in Retina Display`, but leave it in the background while
+Ethan uses another app. Computer Use can ordinarily keep operating that background window without activating or
+raising it. Do not minimize Safari during an active test: a minimized window drops out of Computer Use targeting,
+and a later app-level state read can silently attach to another Safari window instead. Before every action, require
+the fresh accessibility state to show the tracked window UUID, stack URL, and worktree banner. If it resolves to a
+different window, stop instead of activating, raising, or reordering Safari to recover the target. Only foreground
+the exact tracked window when a specific interaction truly cannot work in the background and Ethan explicitly asks
+for that foreground action.
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
@@ -576,6 +595,11 @@ values. After submitting, Firefox may show a "Save password" prompt for the curr
 so it does not obscure the app while waiting for the auth redirect. After every modal change, popover,
 failed click, or user focus interruption, call Computer Use
 `get_app_state` again before reusing element indexes; Firefox's accessibility indexes shift.
+
+For AIMVS MP3 uploads through Firefox's macOS file picker, select `MPEG Audio` when `All Supported Types` leaves
+the valid file disabled. Use a task-specific copy in `Downloads`; verified files under `/private/tmp` could not be
+opened through this picker even though the same bytes were selectable from `Downloads`. Remove only that exact
+task-created copy during cleanup.
 
 Login verification must be based on authenticated UI state, not just the public page rendering. The public home
 can show a `Create Project` button while still unauthenticated. Treat login as successful only after the top-right
