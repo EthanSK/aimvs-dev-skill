@@ -3,6 +3,7 @@
 ## Contents
 
 - [Shared emulator ownership](#shared-emulator-ownership)
+- [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
@@ -21,6 +22,23 @@ emulator workflow below instead of the shared emulator.
 Node-side wiring lives in `apps/frontend/plugins/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
 (the CLI the npm scripts call). In ordinary shared-emulator mode, `--dev-stack-index=N` on any script is the only
 knob needed to keep that worktree's frontend and standalone API paired.
+
+## Periodic exporter ownership and recovery
+
+Run only one `export-emulator-data-periodically` process against the shared emulator hub. `firebase emulators:export`
+exports whichever dataset is live on `:4400`; it does not care which checkout launched the exporter. A main-checkout
+exporter can therefore overwrite main's canonical export while a worktree-owned emulator is running. Before changing
+emulator ownership, stop every periodic exporter and verify none remain. Restart exactly one exporter only after the
+main emulator command's `--import` and `--export-on-exit` paths both resolve to main's canonical
+`emulator-export-data`.
+
+If the wrong live dataset has already overwritten the canonical export, stop all exporters first, export the current
+live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its ports close. Move
+the overwritten canonical export to a separate preservation path before restoring a known-good snapshot. Restart the
+emulators from main, then use the Admin SDK with project id `ai-music-video-studio-staging` to verify the affected
+Channel, private Channel, collaborator, Assets, and Projects instead of trusting open ports alone. Only then restart
+one main-checkout exporter and verify its first export completes. Never delete or reuse either recovery copy during
+the restore.
 
 ## Persisted data and object drift
 
