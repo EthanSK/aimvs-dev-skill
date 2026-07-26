@@ -5,6 +5,7 @@
 - [Shared emulator ownership](#shared-emulator-ownership)
 - [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
+- [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
@@ -58,6 +59,14 @@ reload repeats a signed-URL 404 and can make coalesced media loading look global
 compare the exact Firestore pointer with the bucket keys and retained test evidence; restore the proven matching object
 or update only the stale emulator pointer to the newest surviving valid object instead of repeatedly restarting Java
 or changing download authorization.
+
+## Storage customTime limitation
+
+Firebase Tools 15.24.0 does not persist GCS `customTime` in the Storage emulator. Its metadata model can serialize the
+field, but the upload/copy implementations omit it and metadata PATCH ignores it. When a temporary object has no
+`customTime` locally, verify that production code supplies the field and that focused tests cover that call; only a
+real staging GCS bucket can prove lifecycle expiry. Do not change working production lifecycle code to satisfy this
+emulator gap, and print only selected metadata fields because the full object metadata contains a download token.
 
 ## Firestore WebChannel wedge recovery
 

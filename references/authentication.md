@@ -58,6 +58,11 @@ the valid file disabled. Use a task-specific copy in `Downloads`; verified files
 opened through this picker even though the same bytes were selectable from `Downloads`. Remove only that exact
 task-created copy during cleanup.
 
+Firefox's native macOS file picker can remain visible in screenshots while Computer Use's separate input channel
+times out on every click and key request. After repeated input timeouts, stop retrying: ask Ethan to dismiss the
+picker, then fetch fresh Firefox state before continuing; the visible dialog does not prove that mouse input is
+available.
+
 Login verification must be based on authenticated UI state, not just the public page rendering. The public home
 can show a `Create Project` button while still unauthenticated. Treat login as successful only after the top-right
 `Sign In` control is gone and an authenticated-only account/channel/project UI is visible, for example

@@ -107,6 +107,11 @@ stack URL, and worktree banner. Use element-index actions and app-targeted key p
 typing stay scoped to that window. Never foreground the browser for routine testing, and never send global keyboard
 or pointer input.
 
+If a native file chooser is visibly attached to the verified task window but its Accessibility action times out,
+use a screenshot-derived coordinate click on its visible **Cancel** button and re-query the exact browser window
+before treating the chooser as blocked. Do not leave a recoverable chooser for Ethan to dismiss or switch to an
+unrelated browser window.
+
 Do not click an Accessibility-disabled control to prove it is a no-op. Computer Use can wait until the control becomes
 enabled and then execute a later valid click; prove the disabled state from fresh Accessibility/pixel evidence and
 prove duplicate prevention from request or emulator counts instead.

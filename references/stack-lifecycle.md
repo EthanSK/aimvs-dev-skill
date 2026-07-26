@@ -246,7 +246,9 @@ folders before continuing.
 
    For API changes, `watch:api` only rebuilds `dist/apps/api`; restart `serve:api:standalone:debug` for the same
    index before testing so the running Node process loads the rebuilt code. If no API is listening on the computed
-   `3000 + N` port, the indexed frontend still loads but `/api` calls fail.
+   `3000 + N` port, the indexed frontend still loads but `/api` calls fail. Verify the port actually closes before
+   relaunching: signaling only the npm wrapper can leave `run-standalone.js` orphaned, in which case terminate that
+   exact stack's listener PID and wait for the port to close before rerunning the command in the preserved session.
 
 5. **Open `STACK_URL`** in that stack's assigned browser. For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red
