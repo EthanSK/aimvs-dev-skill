@@ -5,6 +5,10 @@ jointly cover the important behavior, and let one honest settled flow prove seve
 Avoid near-duplicate interactions and screenshots. This is guidance rather than a hard quota: add another scenario
 when a materially different risk cannot be covered clearly by the existing flows.
 
+Within the requested feature scope, actively maximize meaningful surface area: cover every materially distinct new
+entry point, state, and recovery path, and prefer flows that exercise several connected components at once. Compact
+means avoiding redundant repetition, not leaving separate new behavior untested.
+
 For feature testing, prove the behavior at all four layers before calling it done:
 
 - UI: complete the user-visible flow in the stack browser, reload after frontend changes, and verify expected

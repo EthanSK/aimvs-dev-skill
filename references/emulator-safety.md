@@ -2,6 +2,7 @@
 
 ## Contents
 
+- [Durable recovery memory](#durable-recovery-memory)
 - [Shared emulator ownership](#shared-emulator-ownership)
 - [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
@@ -9,6 +10,14 @@
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
+
+## Durable recovery memory
+
+Treat this reference as the durable memory for AIMVS emulator failures and recovery. Before changing emulator
+processes or data, search the relevant section for matching symptoms. After a recovery verifies a reusable symptom,
+cause, diagnostic, recovery step, or prevention rule, update the closest section in the same task. Keep the guidance
+procedural and current rather than adding a separate dated incident log; do not record guesses, credentials, signed
+URLs, private object contents, transient PIDs, or large raw logs.
 
 ## Shared emulator ownership
 
@@ -49,6 +58,12 @@ though every listener still belongs to the correct checkout. When main breaks af
 affected emulator fields and object paths against both code versions before restarting processes; use disposable test
 data or restore compatible data when the worktree intentionally changes a persisted shape.
 
+A Firebase CLI project alias and its resolved project ID can address distinct Firestore REST namespaces inside the
+same emulator process. Before declaring a fixture repair complete, query the namespace named by the browser's Firebase
+configuration as well as any CLI alias used to start the hub; hub/export success under the resolved project ID does not
+prove that an alias-path REST write repaired the browser's data, or vice versa. Apply the narrow compatible repair to
+every populated namespace that serves the shared dataset, then verify the browser-marked reload and canonical export.
+
 If an unmerged profile-picture flow leaves a request-versioned object, copy the intended bytes to main's canonical
 `profile-pic.webp` path, repoint only that channel, persist the emulator export, verify the canonical object, and remove
 the temporary object; never broaden main's path validator merely to accept temporary shared-emulator data.
@@ -59,6 +74,13 @@ reload repeats a signed-URL 404 and can make coalesced media loading look global
 compare the exact Firestore pointer with the bucket keys and retained test evidence; restore the proven matching object
 or update only the stale emulator pointer to the newest surviving valid object instead of repeatedly restarting Java
 or changing download authorization.
+
+An apparently misleading frontend TypeError can also come from a persisted discriminator written by another
+worktree, not from the named helper being missing. In one verified case, an experimental worktree wrote
+`assetType: animatedImage` while main recognized image, video, and audio and represented animation as
+`assetType: image` plus `isAnimatedImage: true`; the helper existed but its exhaustive switch returned no iterable
+value. Before changing frontend code, enumerate the affected documents' discriminator values against the active
+branch's types, then normalize only the incompatible emulator fixtures to that branch's schema.
 
 ## Storage customTime limitation
 
