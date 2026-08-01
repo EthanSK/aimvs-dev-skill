@@ -50,6 +50,12 @@ Channel, private Channel, collaborator, Assets, and Projects instead of trusting
 one main-checkout exporter and verify its first export completes. Never delete or reuse either recovery copy during
 the restore.
 
+If the hub is gone but an orphan Firestore Java process still owns `:8080`, the Firebase CLI cannot export it. After
+stopping every periodic exporter, call Firestore's `/emulator/v1/projects/<project-id>:export` endpoint with a unique
+`export_directory` and `export_name`, verify the resulting overall-export metadata, then stop only that verified
+orphan PID. Preserve the canonical export separately before restoring main; an open Firestore port alone is not a
+healthy shared emulator.
+
 ## Persisted data and object drift
 
 Shared emulator ownership does not isolate stored data from worktree behavior. A worktree can write a newer document

@@ -31,6 +31,12 @@ with shell tools first; do not open or operate VS Code/Computer Use merely to re
 this file on server start, so it represents the current API session. If stack 0 is missing or unhealthy, report it
 to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action. Agents
 must never invoke `Restore Terminals` for stack 0 on their own.
+Every stack-0 terminal group in `.vscode/settings.json` must set `cwd` to
+`${workspaceFolder:ai-music-video-studio}`; Restore Terminals must fail if that named primary folder is unavailable
+rather than inheriting the active worktree in a multi-root VS Code window.
+After installing a Restore Terminals build with `cwd` support, verify `code --list-extensions --show-versions`
+reports that exact version and reload VS Code before running the command; an extension folder on disk does not mean
+VS Code registered or loaded it.
 
 The user actively uses the same VS Code window while agents work. Preserve its current layout and make only the
 smallest temporary UI change required for the task. Never maximize the terminal panel vertically, toggle the
