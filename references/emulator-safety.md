@@ -137,11 +137,15 @@ same ports:
 3. Ask Ethan to stop the shared emulator through his existing main VS Code terminal, then verify ports `5001`,
    `8080`, and `9199` are free. Only operate that terminal if he explicitly asks for this exact action. Do not run
    a blanket teardown while another approved test is using the emulators.
-4. From the trigger-changing worktree, start `npm run serve:emulators:standalone-server` in a dedicated normal
+4. Before startup, make the worktree's ignored `emulator-export-data` path a symlink to the main checkout's
+   canonical `emulator-export-data`. If that worktree path already contains a real directory or points elsewhere,
+   preserve it and stop for review instead of replacing it. A stale or empty worktree-local export makes valid
+   staging users look as though their channel and collaborator data disappeared.
+5. From the trigger-changing worktree, start `npm run serve:emulators:standalone-server` in a dedicated normal
    terminal. This builds and loads that worktree's trigger code while retaining the standard emulator ports used
-   by its frontend and standalone API.
-5. Run and test only that worktree against this emulator session. Do not claim other stacks are concurrently safe.
-6. When testing finishes, stop the worktree emulator cleanly and ask Ethan to restore his main emulator. Only
+   by its frontend and standalone API. Verify the import path is the canonical main export before testing.
+6. Run and test only that worktree against this emulator session. Do not claim other stacks are concurrently safe.
+7. When testing finishes, stop the worktree emulator cleanly and ask Ethan to restore his main emulator. Only
    restore stack 0 if he explicitly asks for that exact action, then verify its ports before handing it back.
 
 ## Shared Storage emulator export failures

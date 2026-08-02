@@ -96,6 +96,10 @@ Complete sign-in and credential entry before capturing evidence. Never capture c
 personal data, another app, the whole display, the user's media, or a broader screen region. If authentication itself
 is under test, exclude the sensitive entry portion and state that limitation in the report.
 
+If Chromium DevTools was opened during the test, reset any temporary network preset, close DevTools, and verify the
+tracked window shows only the app before capturing. Never retain a DevTools screenshot: its Console can expose the
+App Check debug token even when the tested panel itself looks harmless.
+
 After creating and verifying the dedicated test-browser window and `TEST_WINDOW_ID`, wait for an important state to
 settle and capture it:
 

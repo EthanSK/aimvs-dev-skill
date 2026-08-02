@@ -85,6 +85,10 @@ order. Never commandeer or repeatedly foreground his active browser; choose the 
 test, and stop if none is available. When a test specifically needs Chromium DevTools, use the first available
 Chromium browser—prefer Opera while Ethan is using personal Chrome.
 
+With Ethan's `Dvorak - QWERTY ⌘` input source, character-based `Cmd+Option+I` automation may not toggle Opera
+DevTools. After verifying and focusing only the tracked Opera test window, use physical macOS key code `34` with
+Command+Option and then verify that docked DevTools actually appeared; do not keep retrying character `i` shortcuts.
+
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
 verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep every test browser on
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
