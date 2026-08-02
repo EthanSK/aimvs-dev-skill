@@ -56,6 +56,12 @@ stopping every periodic exporter, call Firestore's `/emulator/v1/projects/<proje
 orphan PID. Preserve the canonical export separately before restoring main; an open Firestore port alone is not a
 healthy shared emulator.
 
+Never edit `serve-emulators.sh` while an invocation of that script is still running. In a verified failure, the file
+grew by 40 bytes while Bash was waiting for Firebase; after Firebase exited, Bash resumed at the old end-of-file offset
+and executed the newly exposed `ort-on-exit="$EMULATOR_EXPORT_DATA_DIR"` suffix as a separate command. Stop the owning
+terminal before changing the script, or treat the edit as applying only to the next launch. If this suffix error occurs,
+check for an orphan Firestore process on `:8080` before retrying startup.
+
 ## Persisted data and object drift
 
 Shared emulator ownership does not isolate stored data from worktree behavior. A worktree can write a newer document
