@@ -29,6 +29,12 @@ This works because we assume worktrees rarely change Firestore/Storage triggers,
 is fine for all of them. If a worktree changes Functions, Firestore, or Storage trigger behavior, use the exclusive
 emulator workflow below instead of the shared emulator.
 
+Starting `serve:emulators` restores AIMVS's intentional single-emulator behavior: it runs `teardown-emulators` first,
+which stops Firebase processes and the standard emulator ports globally, then starts the requested checkout's suite.
+Coordinate exclusive ownership before starting it because every stack using the current shared emulator is interrupted.
+The refusal-only teardown and multi-emulator ownership framework were tried and explicitly rejected in favor of this
+original behavior. (Codex task: 019faf46-16ac-7a90-b650-e988a2e6a505)
+
 Node-side wiring lives in `apps/frontend/plugins/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
 (the CLI the npm scripts call). In ordinary shared-emulator mode, `--dev-stack-index=N` on any script is the only
 knob needed to keep that worktree's frontend and standalone API paired.
