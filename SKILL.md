@@ -72,8 +72,9 @@ linked directly here so an agent never needs to discover operating instructions 
 3. Create and verify one dedicated browser window for the exact worktree and stack URL before interacting. Stop if
    the process, display, URL, window identity, or worktree banner is ambiguous.
 4. Test a compact set of high-value flows that maximizes meaningful surface area across the requested behavior.
-   Inspect actual screenshot pixels, emulator state, frontend/API/emulator logs, and relevant UI state; do not infer
-   visual correctness from DOM or Accessibility state.
+   Inspect actual screenshot pixels yourself, then have the latest Claude Opus independently review every evidence
+   PNG as required by the reporting reference. Also inspect emulator state, frontend/API/emulator logs, and relevant
+   UI state; neither DOM/Accessibility state nor the second opinion replaces your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, generate and inspect the durable report, close the exact
    test window, stop the agent-owned stack, and verify cleanup.
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,

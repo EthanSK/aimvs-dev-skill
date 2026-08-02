@@ -8,6 +8,7 @@ and blocked sessions.
 - [Artifact contract](#artifact-contract)
 - [Capture only important settled states](#capture-only-important-settled-states)
 - [Inspect the actual screenshot pixels](#inspect-the-actual-screenshot-pixels)
+- [Get an independent Opus visual review](#get-an-independent-opus-visual-review)
 - [Add the evidence entry](#add-the-evidence-entry)
 - [Reading past evidence](#reading-past-evidence)
 
@@ -144,6 +145,9 @@ Inspect the whole visible app window at useful detail, not only the control unde
 surrounding UI for clipped, overlapping, obscured, or off-screen elements; unexpected wrapping; misalignment or
 inconsistent spacing; missing text or icons; wrong layering; broken responsive layout; and stale loading, disabled,
 or error feedback. Confirm that every screenshot actually supports its caption and **What this proves** claim.
+For a before/after visual regression, reproduce the baseline's interaction state and browser-viewport geometry where
+practical; otherwise label each unavoidable difference so the review does not confuse geometry or hover/focus state
+with a rendering change.
 
 If a visual defect was caused by the current task and fixing it stays within scope, fix it automatically, reload or
 restart as needed, rerun the focused flow, capture fresh evidence, and inspect it again. Never overwrite the original
@@ -152,6 +156,25 @@ the implementation; record the exact issue and affected screenshot under **Issue
 **Not verified** as appropriate, and bring it to Ethan's attention in the final response. If ownership is unclear,
 inspect the current diff and relevant code; treat unresolved causality as a verification gap instead of approving the
 screenshot.
+
+## Get an independent Opus visual review
+
+After personally inspecting the pixels, invoke `$invoke-claude` with the rolling `opus` alias so every captured
+evidence PNG receives a second visual-engine review. Review all screenshots from one settled test run in one Claude
+session when practical, but require an explicit verdict for each file. Keep the review independent: give Claude the
+raw PNG, its narrow evidence claim, and the user's original manual-test request under separate headings; do not reveal
+your own verdict or suspected defect first.
+
+Grant only the read access needed for the exact report directory, keep safe mode enabled, and ask whether the target
+and whole visible app window look intentional and polished, including typography, clipping, wrapping, alignment,
+spacing, layering, responsive behavior, and stale loading/error UI. Verify JSON `modelUsage` resolves to the latest
+canonical Claude Opus model; never infer the version from the alias or silently substitute another model. A failed or
+unavailable Opus review is a visible verification gap, not permission to omit the check.
+
+Treat Opus as advisory. Reconcile every concrete observation against the pixels yourself, fix and recapture
+task-caused defects, and report unresolved disagreement rather than averaging the two opinions. Record the canonical
+model, Claude session ID, per-screenshot verdict, and any accepted issue or disagreement in the newest manual-test
+report entry. Opus agreement never replaces the executing agent's own pixel inspection.
 
 ## Add the evidence entry
 
