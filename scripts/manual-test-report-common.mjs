@@ -16,7 +16,7 @@ export const reportHtmlFilename = 'index.html';
 export const reportDirectoryMarkerFilename =
   'aimvs-manual-test-report-directory';
 export const reportGuardrail =
-  'Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; older entries are immutable and remain below newer entries.';
+  'Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records, but remove screenshots that no longer represent current behavior.';
 const reportDirectoryNamePattern =
   /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

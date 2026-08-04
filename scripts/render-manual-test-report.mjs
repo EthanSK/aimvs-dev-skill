@@ -419,7 +419,7 @@ function getEvidenceScreenshots(metadata, workspace) {
       );
       if (existsSync(resolve(workspace.reportDirectory, screenshot.filename))) {
         if (!screenshotFilenames.has(screenshot.filename)) {
-          screenshots.push(screenshot); // Git integration can bring in an immutable report entry written by the older proof-pair format; surface each surviving image as an independent card without recreating or requiring paired evidence.
+          screenshots.push(screenshot); // Git integration can bring in a report entry written by the older proof-pair format; surface each surviving image as an independent card without recreating or requiring paired evidence.
           screenshotFilenames.add(screenshot.filename);
         }
       }

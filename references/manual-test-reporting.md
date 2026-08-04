@@ -29,10 +29,11 @@ The first manual-test session's local date and slug name the folder. Reuse that 
 the same checkout/worktree, even when the date or test area changes. Never copy, move, merge, or consolidate report
 entries or screenshots between worktrees while recording or reviewing tests. Never create a second report folder for
 the same worktree. When Git integrates two branches that independently appended to the same canonical folder,
-preserve both immutable entry streams in newest-first order, keep both sets of screenshots, and regenerate
-`index.html`; choosing one side would silently erase valid evidence, while creating another folder would make the
-report tooling reject the checkout. Do not rewrite an integrated entry that still uses the older `proofs:` metadata;
-the renderer shows each surviving legacy PNG as an independent evidence card and ignores deliberately removed files.
+preserve both entry streams in newest-first order, keep every screenshot that still represents current behavior, and
+regenerate `index.html`; choosing one side would silently erase valid evidence, while creating another folder would
+make the report tooling reject the checkout. Do not rewrite an integrated entry that still uses the older `proofs:`
+metadata except to remove a screenshot that later UI changes made inaccurate; the renderer shows each surviving
+legacy PNG as an independent evidence card and ignores deliberately removed files.
 The helpers record the owned folder name inside that checkout's private Git directory. Any checkout can still see
 tracked report folders inherited from other work, but it ignores clean inherited folders and creates its own folder
 on the first capture. When this marker is introduced after a checkout already started reporting, the helper adopts
@@ -61,7 +62,7 @@ operation; never stage or renormalize pre-emptively.
 
 Keep this exact visible guardrail directly below the Markdown title and surface it in the HTML report:
 
-> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; older entries are immutable and remain below newer entries.
+> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records, but remove screenshots that no longer represent current behavior.
 
 ## Capture only important settled states
 
@@ -73,6 +74,11 @@ reviewer see a result, warning, loading boundary, error path, or regression-sens
 Never revert, reimplement, or temporarily resurrect earlier product behavior solely to capture visual evidence. The
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
+
+After further UI changes, the next manual test must audit this worktree's earlier task-owned screenshots before
+handoff. Delete each image that no longer represents current behavior, remove its `screenshots:` or legacy `proofs:`
+metadata from `manual-test-results.md`, and regenerate `index.html`. Keep older run text and every screenshot that
+still accurately documents the current change set; do not delete evidence merely because it is old.
 
 Give every screenshot its own short title, literal caption, and narrow **What this proves** claim. The claim must not
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
@@ -87,8 +93,8 @@ in full.` Do not split it into a title, dash, and description. Prefer a position
 move farther away only when every nearby position would cover controls, text, visible media, or evidence. The label has
 yellow glyphs with a thin black outline and no background block, but it still must not touch meaningful UI or evidence.
 Inspect the full raw screenshot first, then inspect the annotated PNG again; move the text and regenerate from the raw
-screenshot if it covers anything. The annotation must never replace whole-window review. Never annotate an older
-immutable screenshot or draw a second annotation over an existing one. The helper keeps annotation text readable
+screenshot if it covers anything. The annotation must never replace whole-window review. Never annotate a screenshot
+from an earlier run or draw a second annotation over an existing one. The helper keeps annotation text readable
 across landscape, square, and portrait screenshots and refuses to shrink below its readability floor; shorten the
 sentence if it reports that the label does not fit. Recapture instead when the selected area needs to change.
 
