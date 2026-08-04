@@ -32,8 +32,9 @@ this file on server start, so it represents the current API session. If stack 0 
 to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action. Agents
 must never invoke `Restore Terminals` for stack 0 on their own.
 Every stack-0 terminal group in `.vscode/settings.json` must set `cwd` to
-`${workspaceFolder:ai-music-video-studio}`; Restore Terminals must fail if that named primary folder is unavailable
-rather than inheriting the active worktree in a multi-root VS Code window.
+`${workspaceFolder:ai-music-video-studio}`, and every restored shell command must source the primary sibling's
+`tools/scripts/set-main-worktree-dir.sh` before starting. This second guard corrects a terminal that still inherits
+the active linked worktree and refuses to continue if the primary checkout is unavailable or not on `main`.
 After installing a Restore Terminals build with `cwd` support, verify `code --list-extensions --show-versions`
 reports that exact version and reload VS Code before running the command; an extension folder on disk does not mean
 VS Code registered or loaded it.

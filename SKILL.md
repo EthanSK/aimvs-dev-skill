@@ -39,6 +39,9 @@ uncommitted main-checkout changes.
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
+- Keep preview rendering disabled on every nonzero stack unless the requested test specifically verifies preview
+  generation. Enable **Preview Rendering** only for that test, then disable it again before cleanup because its
+  per-origin localStorage override persists across reloads and later uses of the same stack.
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
 
