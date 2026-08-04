@@ -48,6 +48,12 @@ emulator ownership, stop every periodic exporter and verify none remain. Restart
 main emulator command's `--import` and `--export-on-exit` paths both resolve to main's canonical
 `emulator-export-data`.
 
+The periodic exporter runs one export immediately when its terminal starts, then waits for its configured interval
+(normally 30 minutes). Repeated Restore Terminals runs or manual terminal restarts therefore create extra immediate
+exports even when only one exporter remains afterward. Large snapshots can briefly add enough Firestore and disk load
+to make clients sluggish, so correlate each export's actual start/completion window with the client errors; an error
+that began before the export is not caused by it.
+
 If the wrong live dataset has already overwritten the canonical export, stop all exporters first, export the current
 live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its ports close. Move
 the overwritten canonical export to a separate preservation path before restoring a known-good snapshot. Restart the
