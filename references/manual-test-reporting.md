@@ -144,6 +144,10 @@ If capture fails, do not substitute a broader capture mode or reuse an unrelated
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
 overwrite an earlier screenshot.
 
+If a new capture is byte-identical to an earlier PNG after a deliberately visible browser-state change, treat it as a
+stale WindowServer frame: delete the new PNG, do not cite either image as proof of the changed state, and record that
+visual-evidence gap. Do not raise or foreground the browser merely to refresh its composited surface.
+
 ## Inspect the actual screenshot pixels
 
 After every capture, load each PNG into the model's visual context with a read-only image inspection tool such as
