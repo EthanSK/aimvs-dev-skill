@@ -8,7 +8,7 @@ and blocked sessions.
 - [Artifact contract](#artifact-contract)
 - [Capture only important settled states](#capture-only-important-settled-states)
 - [Inspect the actual screenshot pixels](#inspect-the-actual-screenshot-pixels)
-- [Get an independent Opus visual review](#get-an-independent-opus-visual-review)
+- [Get a task-scoped Opus visual review](#get-a-task-scoped-opus-visual-review)
 - [Add the evidence entry](#add-the-evidence-entry)
 - [Reading past evidence](#reading-past-evidence)
 
@@ -167,24 +167,27 @@ the implementation; record the exact issue and affected screenshot under **Issue
 inspect the current diff and relevant code; treat unresolved causality as a verification gap instead of approving the
 screenshot.
 
-## Get an independent Opus visual review
+## Get a task-scoped Opus visual review
 
 After personally inspecting the pixels, invoke `$invoke-claude` with the rolling `opus` alias so every captured
-evidence PNG receives a second visual-engine review. Review all screenshots from one settled test run in one Claude
-session when practical, but require an explicit verdict for each file. Keep the review independent: give Claude the
-raw PNG, its narrow evidence claim, and the user's original manual-test request under separate headings; do not reveal
-your own verdict or suspected defect first.
+evidence PNG receives a second visual-engine review. Give Claude the raw PNG, the user's original request, the narrow
+evidence claim, and a concise list of UI introduced or changed by the current task. Require an explicit verdict for
+each file, limited to whether those task-owned changes satisfy the request and whether they caused a visible
+regression in an affected surrounding or shared surface.
 
-Grant only the read access needed for the exact report directory, keep safe mode enabled, and ask whether the target
-and whole visible app window look intentional and polished, including typography, clipping, wrapping, alignment,
-spacing, layering, responsive behavior, and stale loading/error UI. Verify JSON `modelUsage` resolves to the latest
-canonical Claude Opus model; never infer the version from the alias or silently substitute another model. A failed or
-unavailable Opus review is a visible verification gap, not permission to omit the check.
+Do not ask Claude whether the whole pre-existing app looks polished, and do not invite general redesign, typography,
+alignment, spacing, or styling suggestions outside the task-owned changes. If Claude comments on unrelated or
+pre-existing UI, classify that observation as out of scope and do not change code for it. A task-caused regression in
+an existing consumer remains in scope because the current change caused it.
 
-Treat Opus as advisory. Reconcile every concrete observation against the pixels yourself, fix and recapture
-task-caused defects, and report unresolved disagreement rather than averaging the two opinions. Record the canonical
-model, Claude session ID, per-screenshot verdict, and any accepted issue or disagreement in the newest manual-test
-report entry. Opus agreement never replaces the executing agent's own pixel inspection.
+Grant only the read access needed for the exact report directory and keep safe mode enabled. Verify JSON `modelUsage`
+resolves to the latest canonical Claude Opus model; never infer the version from the alias or silently substitute
+another model. A failed or unavailable scoped Opus review is a visible verification gap.
+
+Treat Opus as advisory and reconcile each in-scope observation against the pixels and diff yourself. Record the
+canonical model, Claude session ID, per-screenshot task-scoped verdict, accepted task-caused issue, and any dismissed
+out-of-scope observation in the newest manual-test report entry. Opus agreement never replaces the executing agent's
+own pixel inspection.
 
 ## Add the evidence entry
 
