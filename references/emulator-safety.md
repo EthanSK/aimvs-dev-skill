@@ -82,6 +82,11 @@ though every listener still belongs to the correct checkout. When main breaks af
 affected emulator fields and object paths against both code versions before restarting processes; use disposable test
 data or restore compatible data when the worktree intentionally changes a persisted shape.
 
+Do not confuse stale persisted data with stale emulator code. Moving source hunks into main and restarting the emulator
+can update the running Functions or Rules code, but it cannot repair incompatible Firestore documents or Storage
+objects. Inspect and narrowly repair or replace only task-owned incompatible fixtures when the stored shape is the
+problem; never restart or overwrite shared data merely because the UI and the active worktree disagree.
+
 A Firebase CLI project alias and its resolved project ID can address distinct Firestore REST namespaces inside the
 same emulator process. Before declaring a fixture repair complete, query the namespace named by the browser's Firebase
 configuration as well as any CLI alias used to start the hub; hub/export success under the resolved project ID does not
@@ -144,21 +149,26 @@ same ports:
 
 1. Confirm the worktree actually changes Functions, Firestore, or Storage trigger behavior. Do not take exclusive
    emulator ownership for ordinary frontend or standalone API changes.
-2. Ask the user before stopping the shared emulator because every running AIMVS stack depends on it. Do not continue
-   until he confirms that the other stacks can be interrupted.
-3. Ask Ethan to stop the shared emulator through his existing main VS Code terminal, then verify ports `5001`,
-   `8080`, and `9199` are free. Only operate that terminal if he explicitly asks for this exact action. Do not run
-   a blanket teardown while another approved test is using the emulators.
-4. Before startup, make the worktree's ignored `emulator-export-data` path a symlink to the main checkout's
-   canonical `emulator-export-data`. If that worktree path already contains a real directory or points elsewhere,
-   preserve it and stop for review instead of replacing it. A stale or empty worktree-local export makes valid
-   staging users look as though their channel and collaborator data disappeared.
-5. From the trigger-changing worktree, start `npm run serve:emulators:standalone-server` in a dedicated normal
-   terminal. This builds and loads that worktree's trigger code while retaining the standard emulator ports used
-   by its frontend and standalone API. Verify the import path is the canonical main export before testing.
-6. Run and test only that worktree against this emulator session. Do not claim other stacks are concurrently safe.
-7. When testing finishes, stop the worktree emulator cleanly and ask Ethan to restore his main emulator. Only
-   restore stack 0 if he explicitly asks for that exact action, then verify its ports before handing it back.
+2. Resolve the live emulator process's command, checkout, owning VS Code terminal tab, and import/export paths. Inspect
+   the worktree and primary main checkout's staged, unstaged, and untracked state before changing either; open ports or
+   an old successful log line do not prove which source the current emulator loaded.
+3. Move only the exact source hunks the emulator needs from the worktree into the primary main checkout as unstaged,
+   uncommitted changes. Preserve every pre-existing main staged, unstaged, and untracked boundary exactly; never stage,
+   commit, overwrite an overlapping change, or copy unrelated frontend, standalone-API, test, or cleanup hunks. Stop for
+   Ethan's decision if the required hunk overlaps existing main work or cannot be transferred exactly.
+4. Ask Ethan before stopping the shared emulator because every running AIMVS stack depends on it. Do not continue until
+   he confirms that the other stacks can be interrupted and explicitly authorizes operating the exact stack-0 emulator
+   terminal.
+5. In the same shell in the same main VS Code terminal tab that already owns the emulator, stop the current command,
+   verify ports `5001`, `8080`, and `9199` are free, then rerun the emulator command there. Do not start it from a new
+   shell, another terminal tab or app, Restore Terminals, a linked worktree, or a blanket teardown. Reusing the owning
+   shell preserves its verified checkout, environment, canonical import/export paths, and visible process ownership.
+6. Verify the new emulator run reports the primary main checkout and canonical `emulator-export-data`, loaded the
+   transferred source, started without unresolved errors, and owns the expected ports. Then repeat the manual-test
+   health gate before using the browser.
+7. Run and test only the authorized worktree against this temporarily refreshed shared emulator session. Leave the
+   transferred main hunks unstaged and uncommitted for Ethan to review; do not silently remove, stage, or commit them
+   after testing.
 
 ## Shared Storage emulator export failures
 

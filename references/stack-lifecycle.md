@@ -78,8 +78,8 @@ folders before continuing.
 
    If those emulators are already listening, reuse them. If they are not running, ask Ethan to start them in his
    main environment and wait for them to become ready. Do not invoke `Restore Terminals` or start a second shared
-   emulator from a worktree. The only exception is the explicitly coordinated trigger-isolation workflow routed
-   from the main `SKILL.md`.
+   emulator from a worktree. A trigger-changing test must use the coordinated main-checkout shared-emulator refresh
+   workflow routed from the main `SKILL.md`.
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -274,8 +274,8 @@ raising it. Require the API-watch, API-server, and frontend tabs to show the exa
   unresolved startup or current-run errors.
 - The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
   receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
-- The required shared or isolated emulator ports are listening; when the worktree owns isolated emulators, their
-  terminal's current run is also error-free.
+- The required emulator ports are listening. For a coordinated trigger-changing test, the current run in the exact
+  owning main VS Code emulator terminal is also error-free and reports the primary checkout and canonical export.
 - A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
   unexplained errors from the current run.
 

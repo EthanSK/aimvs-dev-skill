@@ -34,7 +34,7 @@ uncommitted main-checkout changes.
 - Use Safari first, then Firefox, Opera, and personal Chrome for concurrent nonzero stacks. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.
 - Reuse the shared main Firebase emulator stack for ordinary worktree tests. Trigger-changing worktrees require the
-  explicitly coordinated exclusive-emulator workflow.
+  explicitly coordinated exclusive shared-emulator refresh workflow.
 - Never run `npm run rules:test` while shared Storage `:9199` is listening. Distinct emulator ports do not isolate
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request

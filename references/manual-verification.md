@@ -15,9 +15,10 @@ For feature testing, prove the behavior at all four layers before calling it don
   controls, loading/disabled states, snackbars, dialogs, and absence of stale feedback after refresh.
 - Screenshot pixels: load every captured PNG with a read-only image tool and personally inspect the actual image.
   File existence, dimensions, captions, DOM, Accessibility state, and logs do not prove visual correctness.
-- Emulator state: query the active Firestore/Storage emulator session—shared normally or exclusive for a
-  trigger-changing worktree—after each important flow and confirm the expected documents, counters, operation
-  statuses, links, and storage side effects. Use the staging project namespace when connecting to the local emulator.
+- Emulator state: query the active Firestore/Storage emulator session—shared normally or temporarily refreshed from
+  main under exclusive coordination for a trigger-changing worktree—after each important flow and confirm the expected
+  documents, counters, operation statuses, links, and storage side effects. Use the staging project namespace when
+  connecting to the local emulator.
 - Logs: inspect the stack frontend debug log (`frontend-debug.log` for stack 0, `frontend-debug-N.log` for stack
   N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
   backend exceptions as test failures unless they are already known and irrelevant to the touched code.
