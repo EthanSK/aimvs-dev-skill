@@ -119,6 +119,12 @@ field, but the upload/copy implementations omit it and metadata PATCH ignores it
 real staging GCS bucket can prove lifecycle expiry. Do not change working production lifecycle code to satisfy this
 emulator gap, and print only selected metadata fields because the full object metadata contains a download token.
 
+Do not use the Admin Storage SDK's server-side `copy()` to build disposable local fixtures without reading the
+destination back. The emulator can resolve the call successfully without creating the destination object; this was
+reproduced while preparing Asset-download failure/retry fixtures. For a small task-owned fixture, read the source
+bytes with `download()`, write the exact destination with `save()`, and verify that destination before starting the
+test. This is fixture setup only: never replace production copy behavior merely to satisfy the emulator.
+
 ## Firestore WebChannel wedge recovery
 
 A stopped frontend does not stop its already-loaded browser page. Stale AIMVS pages from stopped stacks can keep

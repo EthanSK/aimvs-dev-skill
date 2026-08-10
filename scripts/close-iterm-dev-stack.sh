@@ -36,6 +36,7 @@ PORTS=(
   "$((3000 + STACK_INDEX))"
   "$((9230 + STACK_INDEX))"
   "$((9476 + STACK_INDEX))"
+  "$((8787 + STACK_INDEX))"
 )
 
 osascript - "$WINDOW_ID" <<'APPLESCRIPT'

@@ -23,6 +23,11 @@ For feature testing, prove the behavior at all four layers before calling it don
   N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
   backend exceptions as test failures unless they are already known and irrelevant to the touched code.
 
+When verifying a ZIP download in Safari, its **Open safe files after downloading** setting may automatically extract
+the archive and leave only the extensionless output folder in Downloads. Confirm completion in Safari's download
+list, then validate the extracted file count, names, types, and sizes; do not treat the missing `.zip` as a product
+failure or change Ethan's Safari setting merely to retain the archive.
+
 Treat every dev fixture button as a durable emulator mutation. In particular, **Create 40 Test Project Notices**
 writes 40 server-owned documents under the selected project and can leave its latest synthetic bulk notice visible
 below the generation button long after the test. Run it only against an exact disposable project in the agent's

@@ -111,6 +111,11 @@ stack URL, and worktree banner. Use element-index actions and app-targeted key p
 typing stay scoped to that window. Never foreground the browser for routine testing, and never send global keyboard
 or pointer input.
 
+Opera can expose the same page twice in one fresh Accessibility tree; the first subtree's element ids reject actions
+as invalid while the later subtree contains the focused HTML content. When exact controls are duplicated, act only on
+the occurrence in the focused page subtree and refresh state after every interaction instead of selecting the first
+text match.
+
 If a native file chooser is visibly attached to the verified task window but its Accessibility action times out,
 use a screenshot-derived coordinate click on its visible **Cancel** button and re-query the exact browser window
 before treating the chooser as blocked. Do not leave a recoverable chooser for Ethan to dismiss or switch to an

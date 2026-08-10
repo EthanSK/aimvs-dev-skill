@@ -17,6 +17,11 @@
 | standalone API              | 3000                  | 3000 + N |
 | standalone API inspector    | 9230                  | 9230 + N |
 | frontend debug-log receiver | 9476                  | 9476 + N |
+| download-assets-worker      | 8787                  | 8787 + N |
+
+The download-assets-worker (`npm run serve:download-assets-worker -- --dev-stack-index=N`) is only needed when
+testing Download selected ZIP archives; it runs the Cloudflare Worker locally with wrangler against the shared
+MinIO and requires `wrangler` from a completed `npm install`.
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
@@ -31,7 +36,7 @@ with shell tools first; do not open or operate VS Code/Computer Use merely to re
 this file on server start, so it represents the current API session. If stack 0 is missing or unhealthy, report it
 to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action. Agents
 must never invoke `Restore Terminals` for stack 0 on their own.
-Every stack-0 terminal group in `.vscode/settings.json` must set `cwd` to
+Every stack-0 terminal group in `.vscode/restore-terminals.json` must set `cwd` to
 `${workspaceFolder:ai-music-video-studio}`, and every restored shell command must source the primary sibling's
 `tools/scripts/set-main-worktree-dir.sh` before starting. This second guard corrects a terminal that still inherits
 the active linked worktree and refuses to continue if the primary checkout is unavailable or not on `main`.
@@ -122,14 +127,14 @@ folders before continuing.
 3. **Pick the next free nonzero agent stack index** before starting anything, including tests from main:
 
    ```bash
-   lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -sTCP:LISTEN
+   lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -iTCP:8787-8797 -sTCP:LISTEN
    ```
 
-   Treat index `N` as used if `4200+N` or `3000+N` is listening. Use the next free nonzero `N`, keep that same
-   index for the frontend/API/watch commands, and always pass `--dev-stack-index=N`. Never use `0`: it belongs to
-   Ethan, even when the agent is testing code directly from the main checkout.
+   Treat index `N` as used if `4200+N`, `3000+N`, or `8787+N` is listening. Use the next free nonzero `N`, keep
+   that same index for the frontend/API/watch/Worker commands, and always pass `--dev-stack-index=N`. Never use
+   `0`: it belongs to Ethan, even when the agent is testing code directly from the main checkout.
 
-4. **Per worktree, pass the SAME `--dev-stack-index=N` to all three worktree processes**.
+4. **Per worktree, pass the SAME `--dev-stack-index=N` to every worktree process**.
 
    Give every nonzero stack its own Nx workspace-data directory, including when the agent is testing from the main
    checkout. Without this, stack 0 and an agent stack in the same checkout can share Nx's running-task records and
@@ -140,7 +145,7 @@ folders before continuing.
    session, not in a Codex tool session that disappears when the chat/tool process exits. iTerm2 is installed
    at `/Applications/iTerm.app`, but its AppleScript application name is `iTerm`; target the bundle id below so
    the script also works when iTerm is not already running. Use ONE iTerm2 window per worktree stack and put the
-   three worktree processes in separate tabs. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
+   three standard processes plus the optional download Worker in separate tabs. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
    commands instead of synthetic keyboard shortcuts or clipboard paste; Ghostty keyboard automation has been
    unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
    that tab's session; passing commands directly to `create tab with default profile command ...` can open and
@@ -150,7 +155,8 @@ folders before continuing.
    though the tab was created in the new window. Snapshot existing iTerm window ids first
    so session restoration or an already-open iTerm window does not steal the worktree tabs. Record the exact new
    window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
-   position, or whichever iTerm window is active.
+   position, or whichever iTerm window is active. Download selected archive tests add a fourth Worker tab; omit
+   only that exact fourth tab for unrelated tests that do not exercise ZIP downloads.
 
    Creating an iTerm window briefly foregrounds iTerm even when the AppleScript omits `activate`, so it is not a
    background-safe operation. Send the normal macOS heads-up before launch, remember the previously frontmost app,
@@ -163,7 +169,7 @@ folders before continuing.
    STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
    DEV_COLOR_ENV="NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
 
-   (cd "$WORKTREE_DIR" && NX_WORKSPACE_DATA_DIRECTORY=".nx/workspace-data-stack-${STACK_INDEX}" npx nx build api --configuration=development)
+   (cd "$WORKTREE_DIR" && NX_WORKSPACE_DATA_DIRECTORY=".nx/workspace-data-stack-${STACK_INDEX}" npm exec -- nx build api --configuration=development)
 
    iterm_command() {
      local title="$1"
@@ -175,7 +181,8 @@ folders before continuing.
    DEV_WINDOW_ID="$(osascript - \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API watch" "${DEV_COLOR_ENV} npm run watch:api -- --dev-stack-index=${STACK_INDEX}")" \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API server" "${DEV_COLOR_ENV} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")" \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
+     "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" \
+     "$(iterm_command "AIMVS stack ${STACK_INDEX} download worker" "${DEV_COLOR_ENV} npm run serve:download-assets-worker -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
    on list_contains(candidateList, candidateValue)
      repeat with existingValue in candidateList
        if (existingValue as integer) is (candidateValue as integer) then return true
@@ -217,6 +224,12 @@ folders before continuing.
        set devWindow to first window whose id is devWindowId
        set frontendSession to current session of last tab of devWindow
        tell frontendSession to write text (item 3 of argv) newline yes
+
+       tell devWindow to create tab with default profile
+       delay 0.5
+       set devWindow to first window whose id is devWindowId
+       set downloadWorkerSession to current session of last tab of devWindow
+       tell downloadWorkerSession to write text (item 4 of argv) newline yes
        return devWindowId
      end tell
    end run
@@ -242,6 +255,7 @@ folders before continuing.
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run watch:api -- --dev-stack-index=1                 # build + watch the API
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:api:standalone:debug -- --dev-stack-index=1 # standalone API on :3001, inspector :9231
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
+   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:download-assets-worker -- --dev-stack-index=1 # Worker on :8788; required for Download selected ZIP tests
    ```
 
    The prebuild before window creation is intentional: without it, a fresh worktree starts the standalone API
@@ -252,10 +266,16 @@ folders before continuing.
    calls hit the `:3001` API, and generated links/routing use the offset ports too.
 
    For API changes, `watch:api` only rebuilds `dist/apps/api`; restart `serve:api:standalone:debug` for the same
-   index before testing so the running Node process loads the rebuilt code. If no API is listening on the computed
-   `3000 + N` port, the indexed frontend still loads but `/api` calls fail. Verify the port actually closes before
-   relaunching: signaling only the npm wrapper can leave `run-standalone.js` orphaned, in which case terminate that
-   exact stack's listener PID and wait for the port to close before rerunning the command in the preserved session.
+   index before testing so the running Node process loads the rebuilt code. Immediately before every API-server
+   restart, explicitly run `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm exec -- nx build api
+--configuration=development`: another task can overwrite the shared `dist/apps/api` with a production build,
+   and restarting that artifact makes localhost requests fail CORS even though the source and stack index are
+   correct. After restart, require the latest startup output to say `Current API environment: development` and
+   verify a localhost-origin preflight returns `Access-Control-Allow-Origin` before continuing. If no API is
+   listening on the computed `3000 + N` port, the indexed frontend still loads but `/api` calls fail. Verify the
+   old port actually closes before relaunching: signaling only the npm wrapper can leave `run-standalone.js`
+   orphaned, in which case terminate that exact stack's listener PID and wait for the port to close before rerunning
+   the command in the preserved session.
 
 5. **Open `STACK_URL`** in that stack's assigned browser. For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red
@@ -266,14 +286,16 @@ folders before continuing.
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
 process restart, inspect the current output of every tab in that exact worktree's tracked iTerm stack window without
-raising it. Require the API-watch, API-server, and frontend tabs to show the exact worktree path and the same nonzero
-`--dev-stack-index=N`, then verify all of the following from their latest/current runs:
+raising it. Require the API-watch, API-server, frontend, and any download-Worker tab to show the exact worktree path
+and the same nonzero `--dev-stack-index=N`, then verify all of the following from their latest/current runs:
 
 - API watch completed its latest build successfully and is still watching.
 - The standalone API completed Nest startup, listens on `3000 + N` with its inspector on `9230 + N`, and has no
   unresolved startup or current-run errors.
 - The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
   receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
+- When testing Download selected, the download-assets-worker says `Ready`, listens on `8787 + N`, and a POST with
+  no grant reaches that Worker and returns its expected `400` without current-run errors.
 - The required emulator ports are listening. For a coordinated trigger-changing test, the current run in the exact
   owning main VS Code emulator terminal is also error-free and reports the primary checkout and canonical export.
 - A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
@@ -319,6 +341,6 @@ object after a successful close, so `exists` is not a valid success check. Do no
 confirm an unverified iTerm prompt.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
-verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
-window. Never quit a terminal app or close an unrelated window. Remove the worktree from VS Code and Git afterward
-only when removal is part of the task.
+verify ports `4200 + N`, `3000 + N`, `9230 + N`, `9476 + N`, and `8787 + N` have no listeners, then close those tabs
+and their window. Never quit a terminal app or close an unrelated window. Remove the worktree from VS Code and Git
+afterward only when removal is part of the task.

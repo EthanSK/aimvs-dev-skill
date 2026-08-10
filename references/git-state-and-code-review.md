@@ -7,3 +7,7 @@ stages manually afterward.
 When preserving a dirty worktree through a stash or rebase, restore with `git stash apply --index` when safe and
 verify the staged and unstaged patches separately before dropping the recovery stash. Restored file contents alone
 do not prove that the index was restored.
+
+Capture the new stash's immutable commit hash immediately and use that hash for every later inspect/apply command.
+Stash ordinals such as `stash@{0}` are shared across worktrees and can move when another task creates a stash, so a
+saved ordinal can silently replay another task's state into a recovery worktree.
