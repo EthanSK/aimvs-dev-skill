@@ -5,6 +5,7 @@
 - [Durable recovery memory](#durable-recovery-memory)
 - [Shared emulator ownership](#shared-emulator-ownership)
 - [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
+- [Host memory and swap contention](#host-memory-and-swap-contention)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
@@ -73,6 +74,28 @@ grew by 40 bytes while Bash was waiting for Firebase; after Firebase exited, Bas
 and executed the newly exposed `ort-on-exit="$EMULATOR_EXPORT_DATA_DIR"` suffix as a separate command. Stop the owning
 terminal before changing the script, or treat the edit as applying only to the next launch. If this suffix error occurs,
 check for an orphan Firestore process on `:8080` before retrying startup.
+
+## Host memory and swap contention
+
+When emulator document reads are slow but repeated Admin or REST reads become fast and current logs show no lock or
+transport failures, measure host paging before blaming Firestore. Several concurrent dev stacks can keep multi-gigabyte
+frontend compiler working sets compressed while the Firestore JVM itself has hundreds of megabytes swapped out. Check
+`vm.swapusage`, `memory_pressure`, a short `iostat` sample, `top` with `mem`, `cmprs`, and `pageins`, and
+`vmmap -summary <firestore-pid>`. High used-swap alone is historical state, not proof of active contention; require
+coincident page-ins, disk or system-CPU pressure, and a slow server-side read while the symptom is happening. Warm one
+persistent Admin client before timing queries because its first request includes gRPC channel setup; do not report that
+setup time as Firestore cold-read latency. Compare repeated real reads without printing document data, and treat a fast
+control window with similar swap use as evidence against swap being the direct on/off cause.
+
+Treat periodic export load as a separate timing question. Split the snapshot with
+`du -sh emulator-export-data/firestore_export emulator-export-data/storage_export` before describing its size because
+Storage blobs can account for nearly all bytes. Correlate the actual `firebase emulators:export` child, canonical metadata
+mtime, Firestore CPU and resident-memory change, and the complaint window. A completed short export can add a brief spike
+and leave more pages compressed or swapped, but it does not explain continuous slowness while the exporter is sleeping.
+
+If warm reads are fast, the live JVM has no `BLOCKED` threads, and socket queues are empty, prefer a coordinated clean
+shutdown of verified unused nonzero stacks and their exact task-owned browser pages over restarting the shared emulator.
+Do not kill Nx daemons individually or close browser pages until their owning worktree and active task are verified.
 
 ## Persisted data and object drift
 
