@@ -6,6 +6,7 @@
 - [Shared emulator ownership](#shared-emulator-ownership)
 - [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
 - [Host memory and swap contention](#host-memory-and-swap-contention)
+- [Firestore performance diagnostics](#firestore-performance-diagnostics)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
@@ -75,6 +76,11 @@ and executed the newly exposed `ort-on-exit="$EMULATOR_EXPORT_DATA_DIR"` suffix 
 terminal before changing the script, or treat the edit as applying only to the next launch. If this suffix error occurs,
 check for an orphan Firestore process on `:8080` before retrying startup.
 
+Preserve npm's `node_modules/.bin` symlinks when freezing the Functions build. On macOS, lowercase `cp -r` dereferences
+`node_modules/.bin/firebase-functions` into a regular file, so its relative `../_virtual/rolldown_runtime.js` import
+resolves from `.bin` and Functions discovery fails. Use `cp -R`; if this error returns, compare `ls -l` and `readlink`
+for the source and copied binaries before restarting the shared emulators.
+
 ## Host memory and swap contention
 
 When emulator document reads are slow but repeated Admin or REST reads become fast and current logs show no lock or
@@ -96,6 +102,39 @@ and leave more pages compressed or swapped, but it does not explain continuous s
 If warm reads are fast, the live JVM has no `BLOCKED` threads, and socket queues are empty, prefer a coordinated clean
 shutdown of verified unused nonzero stacks and their exact task-owned browser pages over restarting the shared emulator.
 Do not kill Nx daemons individually or close browser pages until their owning worktree and active task are verified.
+
+Multiple idle browser sockets are not proof of Firestore contention. When the Firebase Emulator UI feels slow but an
+owner-authorized REST or warmed Admin read of the same collection is fast, verify that the UI route still names an
+existing document after the last import, then capture the slow request in browser DevTools. `Queueing` or `Stalled`
+time isolates the browser connection pool; `Waiting (TTFB)` only implicates the emulator when a simultaneous warmed
+server-side control read is also slow.
+
+## Firestore performance diagnostics
+
+The 30-second Firestore lock-timeout JAR patch is deliberately manual opt-in. Normal `postinstall` must not run
+`patch:firestore-emulator`; keep Firebase's stock 2-second JAR for ordinary development and use the patch command only
+for a controlled comparison. Replacing the cached JAR does not change an already-running emulator JVM, so restart only
+through the verified owning terminal when Ethan authorizes that stack-0 action.
+
+The normal `serve:emulators` and `serve:emulators:standalone-server` commands enable the feature-flagged Firestore
+OpenTelemetry launcher for the next start without rewriting the Firebase emulator JAR. Set
+`AIMVS_FIRESTORE_DIAGNOSTICS=0` before either npm command only when a clean no-agent comparison is required. The Java
+agent adds some measurement overhead, so use the disabled comparison if the diagnostic run itself becomes suspect.
+
+Each emulator session writes sanitized NDJSON spans under `firestore-diagnostics/`. The receiver retains method names,
+durations, trace/span correlation, status, process ID, and a small allow-list of protocol/thread attributes; it omits
+request bodies, document values, document IDs, and document paths. Old session files are pruned after 24 hours while
+the launcher is running, and each session stops writing after 1 GiB. The pinned agent/API downloads live under
+`.firebase/firestore-diagnostics/`, while a small supported agent extension re-allows only the four selected classes that
+OpenTelemetry otherwise excludes through its broad `com.google.cloud.*` performance ignore. A small bootstrap agent
+keeps the full OpenTelemetry runtime out of the Storage rules JVM even though Firebase passes `JAVA_TOOL_OPTIONS` to
+both Java children, and startup fails visibly if an emulator upgrade removes any selected class or method.
+
+Use trace IDs to compare the outer Firestore gRPC request with selected internal spans. A long
+`ReactiveLockManager.acquireLocks` span is direct lock-wait evidence; a long `FirestoreEmulatorQueryExecutor.performScans`
+span points at query scanning; a long `ListenStreamManager.notifyQueryListeners` span points at listener fan-out. If
+the recorded gRPC and internal spans stay fast while the UI is slow, continue with browser/WebChannel, standalone API,
+frontend rendering, and host-pressure controls instead of attributing the pause to emulator locking.
 
 ## Persisted data and object drift
 

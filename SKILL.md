@@ -22,7 +22,7 @@ Use this skill as the AIMVS source of truth for every Computer Use interaction, 
 emulator investigation, authentication flow, code review, dirty Git-state operation, and prior manual-test evidence
 question. It overrides global browser-testing defaults for AIMVS. Stack 0 belongs to Ethan's main VS Code environment
 and is never an agent test target. Every agent-run test uses a free nonzero stack index, including tests of
-uncommitted main-checkout changes.
+uncommitted changes in the primary worktree.
 
 ## Universal safeguards
 
@@ -68,7 +68,7 @@ linked directly here so an agent never needs to discover operating instructions 
 
 ## Core workflow
 
-1. Confirm the requested action is authorized, identify the exact checkout/worktree, preserve its staged, unstaged,
+1. Confirm the requested action is authorized, identify the exact worktree, preserve its staged, unstaged,
    untracked, ignored, browser, emulator, and dev-stack state, then read all matching references above.
 2. For a manual test, select a free nonzero stack and assigned browser, prepare ignored local dependencies, start or
    reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
@@ -87,11 +87,11 @@ linked directly here so an agent never needs to discover operating instructions 
 ## Completion handoff
 
 End every completed AIMVS task or review with this compact field list. Keep every field on its own bullet so the
-handoff stays easy to scan; never combine the worktree or checkout, branch, stack, or frontend URL into one sentence.
-Make the worktree or checkout path and frontend URL clickable. Use exactly one of these forms for the first field:
+handoff stays easy to scan; never combine the worktree, branch, stack, or frontend URL into one sentence. Make the
+worktree path and frontend URL clickable. Use this form for the first field whether the task uses the primary or a
+linked worktree:
 
-- Linked Git worktree: `- Worktree: [<worktree name>](<absolute worktree path>)`
-- Repository's primary checkout: `- Checkout: [<checkout name>](<absolute checkout path>)`
+- `- Worktree: [<worktree name>](<absolute worktree path>)`
 
 ```markdown
 - Branch: <branch name>
@@ -99,7 +99,7 @@ Make the worktree or checkout path and frontend URL clickable. Use exactly one o
 - Frontend: [<localhost URL>](<localhost URL>)
 ```
 
-When no dev stack for that exact checkout or worktree is running, write `Not running` for both **Dev stack** and
+When no dev stack for that exact worktree is running, write `Not running` for both **Dev stack** and
 **Frontend** instead of omitting either line.
 
 Also end every completed implementation or review with a **Manual checks** section containing one to three concise,
