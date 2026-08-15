@@ -23,6 +23,14 @@ For feature testing, prove the behavior at all four layers before calling it don
   N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
   backend exceptions as test failures unless they are already known and irrelevant to the touched code.
 
+For a viewport-height overlay, drawer, menu, or dialog, test at least one short-height viewport where fixed toolbar,
+padding, safe-area, or anchor offsets dominate; a tall portrait viewport can hide a missing fixed subtraction inside
+unused proportional space. Measure the live viewport, overlay panel, document, and intended inner scroller instead of
+approving fit from screenshot pixels alone: require the panel bottom to stay within `window.innerHeight`, require the
+panel and document client/scroll heights to be equal, and require only the intended inner scroller's scroll height to
+exceed its client height. A window screenshot can crop overflow and therefore records the visible state but does not
+by itself prove the overlay's bottom boundary. (Codex task: 019fec1a-20b1-7e91-9b3b-20f3925bea2e)
+
 When verifying a ZIP download in Safari, its **Open safe files after downloading** setting may automatically extract
 the archive and leave only the extensionless output folder in Downloads. Confirm completion in Safari's download
 list, then validate the extracted file count, names, types, and sizes; do not treat the missing `.zip` as a product
