@@ -4,6 +4,7 @@
 
 - [Ports per stack](#ports-per-stack)
 - [Ethan's main environment](#ethans-main-environment)
+- [Create a linked worktree](#create-a-linked-worktree)
 - [VS Code workspace membership](#vs-code-workspace-membership)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
@@ -11,17 +12,19 @@
 
 ## Ports per stack
 
-| Thing                       | Base (stack 0 = main) | Stack N  |
-| --------------------------- | --------------------- | -------- |
-| frontend                    | 4200                  | 4200 + N |
-| standalone API              | 3000                  | 3000 + N |
-| standalone API inspector    | 9230                  | 9230 + N |
-| frontend debug-log receiver | 9476                  | 9476 + N |
-| download-assets-worker      | 8787                  | 8787 + N |
+| Thing                       | Base (stack 0 = main) | Stack N       |
+| --------------------------- | --------------------- | ------------- |
+| frontend                    | 4200                  | 4200 + N      |
+| standalone API              | 3000                  | 3000 + N      |
+| standalone API inspector    | 9230                  | 9230 + N      |
+| frontend debug-log receiver | 9476                  | 9476 + N      |
+| download-assets-worker      | 8787                  | 8787 (shared) |
 
-The download-assets-worker (`npm run serve:download-assets-worker -- --dev-stack-index=N`) is only needed when
-testing Download selected ZIP archives; it runs the Cloudflare Worker locally with wrangler against the shared
-MinIO and requires `wrangler` from a completed `npm install`.
+The main Restore Terminals setup owns one download-assets-worker on `:8787`. Every frontend stack reuses that
+stateless Wrangler process against the shared MinIO; never start an indexed copy with the worktree stack. If a task
+changes Worker source and needs isolated manual testing, coordinate replacing the shared Worker with Ethan first
+instead of silently creating a second Worker that ordinary frontends do not target. (Codex task:
+019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
@@ -51,6 +54,12 @@ resize/rearrange panels for convenience. Use the terminal at its existing size; 
 restore the immediately preceding layout as soon as the interaction is complete. Do not change the active editor,
 terminal tab, panel, or workspace focus unless the task actually requires it.
 
+## Create a linked worktree
+
+Name every new linked AIMVS worktree directory `aimvs-<task-slug>`, not
+`ai-music-video-studio-<task-slug>`. This applies to the directory only; keep the established branch naming convention,
+such as `codex/<task-slug>`. Do not rename existing worktrees merely to apply the new convention.
+
 ## VS Code workspace membership
 
 Whenever Codex creates or starts using an AIMVS worktree, add that worktree folder to the currently active AIMVS
@@ -75,16 +84,19 @@ folders before continuing.
 
 ## Run an agent-owned stack
 
-1. **Reuse the shared main emulator stack.** Check its required ports before starting a worktree:
+1. **Reuse the shared main emulator stack and download Worker.** Check the required shared ports before starting a
+   worktree:
 
    ```bash
-   lsof -nP -iTCP:5001 -iTCP:8080 -iTCP:9199 -sTCP:LISTEN
+   lsof -nP -iTCP:5001 -iTCP:8080 -iTCP:9199 -iTCP:8787 -sTCP:LISTEN
    ```
 
    If those emulators are already listening, reuse them. If they are not running, ask Ethan to start them in his
    main environment and wait for them to become ready. Do not invoke `Restore Terminals` or start a second shared
    emulator from a worktree. A trigger-changing test must use the coordinated main-checkout shared-emulator refresh
-   workflow routed from the main `SKILL.md`.
+   workflow routed from the main `SKILL.md`. The Worker on `:8787` is required only for Download selected ZIP tests;
+   if that shared process is missing, ask Ethan to start the main Worker rather than launching an indexed worktree
+   copy.
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -127,12 +139,12 @@ folders before continuing.
 3. **Pick the next free nonzero agent stack index** before starting anything, including tests from main:
 
    ```bash
-   lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -iTCP:8787-8797 -sTCP:LISTEN
+   lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -sTCP:LISTEN
    ```
 
-   Treat index `N` as used if `4200+N`, `3000+N`, or `8787+N` is listening. Use the next free nonzero `N`, keep
-   that same index for the frontend/API/watch/Worker commands, and always pass `--dev-stack-index=N`. Never use
-   `0`: it belongs to Ethan, even when the agent is testing code directly from the main checkout.
+   Treat index `N` as used if `4200+N` or `3000+N` is listening. Use the next free nonzero `N`, keep that same index
+   for the frontend/API/watch commands, and always pass `--dev-stack-index=N`. Never use `0`: it belongs to Ethan,
+   even when the agent is testing code directly from the main checkout.
 
 4. **Per worktree, pass the SAME `--dev-stack-index=N` to every worktree process**.
 
@@ -145,7 +157,8 @@ folders before continuing.
    session, not in a Codex tool session that disappears when the chat/tool process exits. iTerm2 is installed
    at `/Applications/iTerm.app`, but its AppleScript application name is `iTerm`; target the bundle id below so
    the script also works when iTerm is not already running. Use ONE iTerm2 window per worktree stack and put the
-   three standard processes plus the optional download Worker in separate tabs. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
+   three stack-owned processes in separate tabs. The shared download Worker stays in Ethan's main environment and
+   must not be added to the worktree window. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
    commands instead of synthetic keyboard shortcuts or clipboard paste; Ghostty keyboard automation has been
    unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
    that tab's session; passing commands directly to `create tab with default profile command ...` can open and
@@ -155,8 +168,7 @@ folders before continuing.
    though the tab was created in the new window. Snapshot existing iTerm window ids first
    so session restoration or an already-open iTerm window does not steal the worktree tabs. Record the exact new
    window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
-   position, or whichever iTerm window is active. Download selected archive tests add a fourth Worker tab; omit
-   only that exact fourth tab for unrelated tests that do not exercise ZIP downloads.
+   position, or whichever iTerm window is active.
 
    Creating an iTerm window briefly foregrounds iTerm even when the AppleScript omits `activate`, so it is not a
    background-safe operation. Send the normal macOS heads-up before launch, remember the previously frontmost app,
@@ -181,8 +193,7 @@ folders before continuing.
    DEV_WINDOW_ID="$(osascript - \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API watch" "${DEV_COLOR_ENV} npm run watch:api -- --dev-stack-index=${STACK_INDEX}")" \
      "$(iterm_command "AIMVS stack ${STACK_INDEX} API server" "${DEV_COLOR_ENV} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")" \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} download worker" "${DEV_COLOR_ENV} npm run serve:download-assets-worker -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
+     "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
    on list_contains(candidateList, candidateValue)
      repeat with existingValue in candidateList
        if (existingValue as integer) is (candidateValue as integer) then return true
@@ -224,12 +235,6 @@ folders before continuing.
        set devWindow to first window whose id is devWindowId
        set frontendSession to current session of last tab of devWindow
        tell frontendSession to write text (item 3 of argv) newline yes
-
-       tell devWindow to create tab with default profile
-       delay 0.5
-       set devWindow to first window whose id is devWindowId
-       set downloadWorkerSession to current session of last tab of devWindow
-       tell downloadWorkerSession to write text (item 4 of argv) newline yes
        return devWindowId
      end tell
    end run
@@ -255,7 +260,6 @@ folders before continuing.
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run watch:api -- --dev-stack-index=1                 # build + watch the API
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:api:standalone:debug -- --dev-stack-index=1 # standalone API on :3001, inspector :9231
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
-   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:download-assets-worker -- --dev-stack-index=1 # Worker on :8788; required for Download selected ZIP tests
    ```
 
    The prebuild before window creation is intentional: without it, a fresh worktree starts the standalone API
@@ -279,8 +283,9 @@ folders before continuing.
 
 5. **Open `STACK_URL`** in that stack's assigned browser. For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red
-   `WORKTREE <NAME> · STACK #1 :4201` banner, where `<NAME>` is the uppercased checkout directory minus
-   the `ai-music-video-studio-` prefix, so you never confuse a worktree browser page for main or another worktree.
+   `WORKTREE <NAME> · STACK #1 :4201` banner. New `aimvs-<task-slug>` directory names remain fully visible in
+   `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
+   browser page distinguishable from main and other worktrees.
 
 ## Mandatory pre-Computer-Use health gate
 
@@ -294,8 +299,8 @@ and the same nonzero `--dev-stack-index=N`, then verify all of the following fro
   unresolved startup or current-run errors.
 - The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
   receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
-- When testing Download selected, the download-assets-worker says `Ready`, listens on `8787 + N`, and a POST with
-  no grant reaches that Worker and returns its expected `400` without current-run errors.
+- When testing Download selected, the shared main download-assets-worker says `Ready`, listens on `8787`, and a POST
+  with no grant reaches that Worker and returns its expected `400` without current-run errors.
 - The required emulator ports are listening. For a coordinated trigger-changing test, the current run in the exact
   owning main VS Code emulator terminal is also error-free and reports the primary checkout and canonical export.
 - A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
@@ -332,8 +337,9 @@ bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
 ```
 
 The helper sends Ctrl-C to every tab first, waits for the frontend, API, inspector, and debug-log ports to stop
-listening, and refuses to close the window if any remain. Only then does it close the terminal sessions and their
-exact tracked window. It closes the stopped sessions individually because closing a multi-tab window directly
+listening, and refuses to close the window if any remain. It deliberately leaves the shared Worker on `:8787`
+alone. Only then does it close the terminal sessions and their exact tracked window. It closes the stopped sessions
+individually because closing a multi-tab window directly
 shows iTerm's `Close Window #…` confirmation. If iTerm still shows that prompt, the helper uses Accessibility to
 require exactly one matching prompt and one `OK` button before pressing it, then verifies the tracked window is
 no longer visible; iTerm can retain an invisible stale scripting
@@ -341,6 +347,6 @@ object after a successful close, so `exists` is not a valid success check. Do no
 confirm an unverified iTerm prompt.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
-verify ports `4200 + N`, `3000 + N`, `9230 + N`, `9476 + N`, and `8787 + N` have no listeners, then close those tabs
-and their window. Never quit a terminal app or close an unrelated window. Remove the worktree from VS Code and Git
-afterward only when removal is part of the task.
+verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
+window. Never stop the shared Worker, quit a terminal app, or close an unrelated window. Remove the worktree from VS
+Code and Git afterward only when removal is part of the task.

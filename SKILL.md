@@ -35,6 +35,8 @@ uncommitted changes in the primary worktree.
   profiles only; never substitute a fresh or isolated browser context.
 - Reuse the shared main Firebase emulator stack for ordinary worktree tests. Trigger-changing worktrees require the
   explicitly coordinated exclusive shared-emulator refresh workflow.
+- Reuse the main-owned download-assets-worker on `:8787` for every dev stack. Never start an indexed Wrangler copy;
+  Worker-source tests require explicit coordination to replace the shared process.
 - Never run `npm run rules:test` while shared Storage `:9199` is listening. Distinct emulator ports do not isolate
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request

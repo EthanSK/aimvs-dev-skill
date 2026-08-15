@@ -46,15 +46,17 @@ knob needed to keep that worktree's frontend and standalone API paired.
 Run only one `export-emulator-data-periodically` process against the shared emulator hub. `firebase emulators:export`
 exports whichever dataset is live on `:4400`; it does not care which checkout launched the exporter. A main-checkout
 exporter can therefore overwrite main's canonical export while a worktree-owned emulator is running. Before changing
-emulator ownership, stop every periodic exporter and verify none remain. Restart exactly one exporter only after the
-main emulator command's `--import` and `--export-on-exit` paths both resolve to main's canonical
-`emulator-export-data`.
+emulator ownership, stop every periodic exporter and verify none remain. Restore Terminals changes into the main
+worktree before starting the exporter so its relative `emulator-export-data` path resolves to the canonical dataset.
 
-The periodic exporter runs one export immediately when its terminal starts, then waits for its configured interval
-(normally 30 minutes). Repeated Restore Terminals runs or manual terminal restarts therefore create extra immediate
-exports even when only one exporter remains afterward. Large snapshots can briefly add enough Firestore and disk load
-to make clients sluggish, so correlate each export's actual start/completion window with the client errors; an error
-that began before the export is not caused by it.
+The periodic exporter is intentionally started by Restore Terminals even when the emulator hub is not running. It runs
+one export immediately; a missing hub makes that attempt fail, but the exporter stays alive and retries after its
+configured interval (normally 30 minutes). Each export is deliberately started asynchronously and the interval begins
+immediately instead of waiting for completion. Do not add a hub preflight, Bash wrapper, process lock, or awaited export
+because Ethan explicitly chose the original direct TypeScript behavior. Repeated Restore Terminals runs or manual
+terminal restarts can therefore create extra immediate exports. Large snapshots can briefly add enough Firestore and
+disk load to make clients sluggish, so correlate each export's actual start/completion window with the client errors;
+an error that began before the export is not caused by it.
 
 If the wrong live dataset has already overwritten the canonical export, stop all exporters first, export the current
 live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its ports close. Move
@@ -103,6 +105,16 @@ If warm reads are fast, the live JVM has no `BLOCKED` threads, and socket queues
 shutdown of verified unused nonzero stacks and their exact task-owned browser pages over restarting the shared emulator.
 Do not kill Nx daemons individually or close browser pages until their owning worktree and active task are verified.
 
+Also check for duplicate orphaned Nx serve wrappers before blaming Firestore. A detached wrapper can have parent PID 1,
+revoked standard streams, no listening socket, and still burn one CPU core while the real terminal-owned serve tree is
+healthy. Compare the duplicate commands, working directories, process trees, terminal ownership, listening ports, and
+CPU-time deltas; do not stop either process until the orphan and the live owner are unambiguous.
+
+Do not fingerprint an AIMVS worktree with an unrestricted `find .` followed by one `git ls-files` process per file. That
+walk includes large ignored dependency, build, diagnostics, and emulator-export trees and can sustain tens of thousands
+of disk operations per second while every local stack becomes sluggish. Use scoped Git-native queries such as
+`git status --porcelain=v1 --untracked-files=all` or `git ls-files --others --exclude-standard` instead.
+
 Multiple idle browser sockets are not proof of Firestore contention. When the Firebase Emulator UI feels slow but an
 owner-authorized REST or warmed Admin read of the same collection is fast, verify that the UI route still names an
 existing document after the last import, then capture the slow request in browser DevTools. `Queueing` or `Stalled`
@@ -113,8 +125,10 @@ server-side control read is also slow.
 
 The 30-second Firestore lock-timeout JAR patch is deliberately manual opt-in. Normal `postinstall` must not run
 `patch:firestore-emulator`; keep Firebase's stock 2-second JAR for ordinary development and use the patch command only
-for a controlled comparison. Replacing the cached JAR does not change an already-running emulator JVM, so restart only
-through the verified owning terminal when Ethan authorizes that stack-0 action.
+for a controlled comparison. Older worktrees can still contain the stale lifecycle patch and every worktree writes to
+the same Firebase JAR cache, so the normal emulator launcher verifies the official SHA-256 and atomically restores the
+verified `.orig` before startup. Replacing the cached JAR does not change an already-running emulator JVM, so restart
+only through the verified owning terminal when Ethan authorizes that stack-0 action.
 
 The normal `serve:emulators` and `serve:emulators:standalone-server` commands enable the feature-flagged Firestore
 OpenTelemetry launcher for the next start without rewriting the Firebase emulator JAR. Set
@@ -247,18 +261,14 @@ ordinary delete or replacement request can remove the source file halfway throug
 evidence that a rules-codegen worktree changed the running emulator; verify the emulator command's checkout and
 loaded rules paths separately before attributing the failure to another worktree.
 
-This repository patches that Firebase Tools export loop through `tools/scripts/patch-storage-emulator.ts`; the
-normal `postinstall` applies it. The bug is present in the installed `15.13.0` and was reverified in a clean
-`15.24.0` package. Run `npm run patch:storage-emulator` after a dependency refresh or when diagnosing this exact
-error. The command is idempotent and makes only the blob/metadata snapshot loop synchronous. Storage mutations are
-synchronous after their async Rules checks, so one no-yield loop keeps the in-memory file map and disk blobs aligned;
-periodic export briefly pauses Storage request handling instead of writing a corrupt snapshot. Run the focused
-regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register
-tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase Tools. Restart only
-through the terminal that owns the shared emulator, then prove recovery with clean export/shutdown cycles and
-matching Storage metadata/blob counts. Firebase regenerates internal blob UUID filenames during export, so compare
-logical object counts, size multisets, or sampled content hashes instead of expecting those filenames to stay the
-same. Do not delete the shared export as a first response because that hides the race and loses reusable local state.
+Firebase Tools still has this narrow live-delete export race, but AIMVS deliberately does not patch the export loop:
+making a multi-gigabyte snapshot synchronous blocks ordinary Storage requests for the whole copy. The normal
+`postinstall` patch keeps only the larger Storage upload-body limit and actively restores any legacy server/export
+patches left in `node_modules`. Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
+-r ts-node/register tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
+Tools. Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live
+state and logs and retry only after stopping concurrent Storage mutations; do not delete the shared export as a first
+response because that hides the race and loses reusable local state.
 
 Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. The script checks
 that port before generating rules and exits if it is occupied. Normal dev-stack startup, `npm test`, local Git hooks,
