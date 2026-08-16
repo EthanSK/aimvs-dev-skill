@@ -60,13 +60,27 @@ Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
-After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action
-to wake or find a browser. If a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
-`Transition was aborted because of invalid state`, report that its View Transition requires a foreground document
-instead of taking focus. Before acting on a fresh Computer Use state, require its accessibility tree to show the
-expected stack URL. If it shows another window or stack, stop rather than activating the assigned browser or changing
-which window is frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing
-external-display windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
+After setup, prefer background control so Ethan can keep using the Mac; do not repeatedly run display/focus scripts
+or use an app-level Computer Use `Raise` merely to wake or find a browser. If a Chromium AIMVS route remains blank
+while `frontend-debug-N.log` reports `Transition was aborted because of invalid state`, first try the normal
+background interaction. When the verified controller genuinely needs the test document foregrounded, use one brief,
+announced focus change on `TEST_WINDOW_ID` and complete only the blocked interaction. Restore the previously frontmost
+app only when `TEST_WINDOW_ID` is still the frontmost window; if any other window or app is frontmost, preserve it
+because Ethan may have resumed work during the interaction. Do not reintroduce app-level or unconditional focus
+restoration because either can override Ethan's newer same-app window or app choice. (Codex task:
+01a000ff-9a55-7e93-a300-1b6e91ab3dc6) Before acting on fresh Computer Use state, require its accessibility tree to
+show the exact stack URL; if it shows another window or stack, re-establish and verify the tracked window before
+interacting. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display
+windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
+
+`@oai/sky` currently targets Safari by app and can return whichever Safari window is frontmost; it does not accept the
+saved Safari window ID as an interaction target. If fresh state therefore returns another Safari window, prefer the
+non-activating ScreenCaptureKit helper for read-only evidence. When an interaction genuinely requires `@oai/sky`, a
+brief targeted `activate`/`set index` or Computer Use `Raise` is acceptable after the normal macOS heads-up: verify the
+numeric `TEST_WINDOW_ID`, remember the previously frontmost app, perform the smallest interaction, then restore that
+app only if `TEST_WINDOW_ID` is still the frontmost Safari window. If focus has moved elsewhere, leave it there. Never
+keep Safari foregrounded or repeatedly reclaim focus; if Ethan is actively using Safari or focus changes again, defer
+with the focus-instability backoff below or choose the next available browser.
 
 Background Safari may defer an async completion or repaint until its page receives another interaction. Before
 reporting a stuck loader, use one harmless in-page interaction such as opening and closing an existing filter,
@@ -101,15 +115,19 @@ The user may keep working in other apps and browser windows throughout the test.
 actions do not need a macOS heads-up.
 
 An explicit request to run a Computer Use test authorizes clicking, typing, and navigating inside that test's exact
-dedicated browser window. It does not authorize activating, raising, moving, resizing, or reordering the window. Do
-not ask for separate keyboard or mouse permission; the ordinary Computer Use confirmation policy still applies to
-consequential actions such as credentials, payments, permanent deletion, or sensitive-data transmission.
+dedicated browser window. Prefer keeping it in the background, but the request also authorizes one brief, announced
+activation or raise when the verified controller genuinely requires foreground state; restore the previously
+frontmost app afterward only when `TEST_WINDOW_ID` remains the frontmost window. It does not authorize sustained
+foreground control, moving, resizing, or reordering the window. Do not ask for separate keyboard or mouse permission;
+the ordinary Computer Use confirmation policy still applies to consequential actions such as credentials, payments,
+permanent deletion, or sensitive-data transmission.
 
 Keep the tracked window unminimized on `Built-in Retina Display`; a minimized Safari window drops out of Computer
 Use targeting. Before every action, require the current Computer Use state to show the tracked window UUID, exact
 stack URL, and worktree banner. Use element-index actions and app-targeted key presses so clicks, scrolling, and
-typing stay scoped to that window. Never foreground the browser for routine testing, and never send global keyboard
-or pointer input.
+typing stay scoped to that window. Keep routine testing in the background where possible; when a brief foreground
+interaction is necessary, follow the bounded focus-and-restore workflow above. Never send global keyboard or pointer
+input.
 
 Opera can expose the same page twice in one fresh Accessibility tree; the first subtree's element ids reject actions
 as invalid while the later subtree contains the focused HTML content. When exact controls are duplicated, act only on
@@ -130,13 +148,14 @@ screenshot capture, and report generation in the background. Use the same stack 
 and App Check debug token as the normal visible browser; do not switch to an isolated browser mode.
 
 If an action unexpectedly steals focus, targets a different window, or is changed by the user's simultaneous input,
-stop that sequence and re-check the exact window and URL read-only. Retry only through a focus-preserving background
-path. Do not repeatedly interrupt Ethan or ask for exclusive control as the fallback; report a controller limitation
-when the required interaction cannot be completed safely in the background.
+stop that sequence and re-check the exact window and URL read-only. Prefer a focus-preserving background retry; use at
+most one deliberate, announced foreground retry through the bounded workflow above when the controller requires it.
+Do not repeatedly interrupt Ethan or ask for exclusive control as the fallback; defer or report a controller
+limitation when the required interaction still cannot be completed safely.
 
-Foreground control is opt-in only when Ethan explicitly asks for it. The narrow Chromium View Transitions exception
-above still requires that explicit permission and a macOS heads-up because it intentionally keeps the test document
-frontmost.
+Sustained foreground control is opt-in only when Ethan explicitly asks for it. A brief focus change required by the
+verified controller is part of an authorized manual test, but still needs the macOS heads-up. Restore the previously
+frontmost app only when `TEST_WINDOW_ID` remains the frontmost window; otherwise preserve Ethan's newer focus choice.
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
