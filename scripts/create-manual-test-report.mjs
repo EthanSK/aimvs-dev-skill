@@ -2,7 +2,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import {
   assertSafeRelativeFilename,
@@ -14,6 +14,7 @@ import {
   insertionMarker,
   pad,
   readReportSource,
+  readUntrackedFingerprintContents,
   resolveReportWorkspace,
   titleFromSlug,
   writeFileAtomically,
@@ -48,7 +49,11 @@ if (
   fail(`${workspace.directoryName} contains more than one insertion marker`);
 }
 
-validateScreenshotFiles(options.screenshots, workspace.reportDirectory, repoRoot);
+validateScreenshotFiles(
+  options.screenshots,
+  workspace.reportDirectory,
+  repoRoot,
+);
 const entry = `<!-- aimvs-manual-test-entry -->
 
 \`\`\`yaml
@@ -257,7 +262,9 @@ function createWorkingTreeFingerprint(repoRoot, status, baseCommit) {
     hash.update('\0');
     hash.update(untrackedPath);
     hash.update('\0');
-    hash.update(readFileSync(join(repoRoot, untrackedPath)));
+    hash.update(
+      readUntrackedFingerprintContents(join(repoRoot, untrackedPath)),
+    );
   }
   return hash.digest('hex');
 }

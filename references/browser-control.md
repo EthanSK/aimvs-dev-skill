@@ -61,16 +61,24 @@ one-time setup while the tracked window exists. The Safari helper technically de
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
 After setup, do not repeatedly run display/focus scripts and do not use an app-level Computer Use `Raise` action
-to wake or find a browser. If a Chromium AIMVS route remains blank while `frontend-debug-N.log` reports
-`Transition was aborted because of invalid state`, report that its View Transition requires a foreground document
-instead of taking focus. Before acting on a fresh Computer Use state, require its accessibility tree to show the
+to wake or find a browser. Before acting on a fresh Computer Use state, require its accessibility tree to show the
 expected stack URL. If it shows another window or stack, stop rather than activating the assigned browser or changing
 which window is frontmost. Never invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing
 external-display windows belong to the user: never raise, navigate, move, close, or otherwise interact with them.
 
-Background Safari may defer an async completion or repaint until its page receives another interaction. Before
-reporting a stuck loader, use one harmless in-page interaction such as opening and closing an existing filter,
-then read fresh Computer Use state; do not activate or raise Safari to wake it.
+The browser must skip a View Transition when `document.visibilityState` is `hidden`. A background Safari window can
+therefore complete Angular route activation and expose the destination Accessibility tree while its captured pixels
+remain blank or stale. For background route changes, navigate the tracked window directly to the exact destination
+URL so Safari performs a full document load without the Router transition, then verify the URL, Accessibility tree,
+pixels, and fresh logs again. Do not misdiagnose this as an emulator delay or retry the same in-app navigation. If the
+test specifically needs the Router transition itself, stop and request foreground permission instead. A direct URL
+load is only valid for setting up visual evidence; never use it to claim that in-app navigation is reliable or to
+investigate a blank RouterOutlet, because it bypasses the exact transition path under test.
+
+Background Safari may also defer an async completion or repaint until its page receives another interaction. Before
+reporting a stuck loader on a route that did not use a View Transition, use one harmless in-page interaction such as
+opening and closing an existing filter, then read fresh Computer Use state; do not activate or raise Safari to wake
+it.
 
 ## Browser assignment
 
@@ -134,9 +142,8 @@ stop that sequence and re-check the exact window and URL read-only. Retry only t
 path. Do not repeatedly interrupt Ethan or ask for exclusive control as the fallback; report a controller limitation
 when the required interaction cannot be completed safely in the background.
 
-Foreground control is opt-in only when Ethan explicitly asks for it. The narrow Chromium View Transitions exception
-above still requires that explicit permission and a macOS heads-up because it intentionally keeps the test document
-frontmost.
+Foreground control is opt-in only when Ethan explicitly asks for it. A View Transition test in any browser still
+requires that explicit permission and a macOS heads-up because it intentionally keeps the test document frontmost.
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven

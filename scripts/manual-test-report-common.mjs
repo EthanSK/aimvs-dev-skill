@@ -1,8 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  readlinkSync,
   readdirSync,
   renameSync,
   rmSync,
@@ -160,6 +162,12 @@ export function writeFileAtomically(path, contents) {
 
 export function readReportSource(path) {
   return readFileSync(path, 'utf8');
+}
+
+export function readUntrackedFingerprintContents(path) {
+  if (lstatSync(path).isSymbolicLink())
+    return Buffer.from(`symlink\0${readlinkSync(path)}`); // Bug: reading an untracked directory symlink follows it and fails with EISDIR; fingerprint the link itself without traversing its target. (Codex task: 019fe81d-3690-71d3-820f-2a1ca360dcb4)
+  return readFileSync(path);
 }
 
 export function titleFromSlug(slug) {
