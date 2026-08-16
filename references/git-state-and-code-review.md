@@ -8,6 +8,13 @@ When preserving a dirty worktree through a stash or rebase, restore with `git st
 verify the staged and unstaged patches separately before dropping the recovery stash. Restored file contents alone
 do not prove that the index was restored.
 
+If the rebase or later dirty-state restoration reports conflicts, stop with every conflicting path unresolved and
+unmerged so Ethan can inspect it. Never resolve, stage, `git add`, continue, skip, abort, or choose ours/theirs unless
+Ethan explicitly asks. Git represents visible conflicts as unmerged index entries rather than ordinary unstaged
+files; treat that unmerged state as the required meaning of "leave conflicts unstaged," restore only proven
+non-conflicting staged/unstaged boundaries, and keep the exact recovery stash until the conflicts are resolved and
+the restored state is verified.
+
 Capture the new stash's immutable commit hash immediately and use that hash for every later inspect/apply command.
 Stash ordinals such as `stash@{0}` are shared across worktrees and can move when another task creates a stash, so a
 saved ordinal can silently replay another task's state into a recovery worktree.
