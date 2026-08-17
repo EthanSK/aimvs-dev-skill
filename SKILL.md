@@ -46,6 +46,18 @@ uncommitted changes in the primary worktree.
   per-origin localStorage override persists across reloads and later uses of the same stack.
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
+- Never remove a worktree until its tracked browser window and native stack processes are closed and any isolated
+  backend has completed its guarded stop from that still-existing worktree. A failed export, live port, running
+  container, or ambiguous owner blocks worktree removal; preserve the private Docker volumes. (Codex task:
+  019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+- Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
+  `export-emulator-data` command only when the shared backend itself is stopping; an ordinary frontend/API stack that
+  leaves the shared backend running does not export it. Stop an isolated stack's native writers before its guarded
+  `stop` command exports and verifies that stack's private snapshot.
+- Main's Restore Terminals owns exactly one 30-minute shared-emulator exporter for crash recovery. Never start that
+  periodic exporter from a linked worktree or isolated backend; those stacks keep private data through their guarded
+  stop/export flow. The periodic snapshot does not replace the verified one-shot export immediately before stopping
+  or restarting the shared backend. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 ## Required routing
 
@@ -82,7 +94,8 @@ linked directly here so an agent never needs to discover operating instructions 
    pre-existing UI. Also inspect emulator state, frontend/API/emulator logs, and relevant UI state;
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, generate and inspect the durable report, close the exact
-   test window, stop the agent-owned stack, and verify cleanup.
+   test window, stop and verify the native stack processes, then export and stop any isolated backend while the
+   worktree still exists. Verify cleanup before removing the worktree.
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 

@@ -57,3 +57,9 @@ After deleting an exact temporary emulator project, wait for in-flight Functions
 again. A clip or project trigger that started before deletion can recreate a skeletal project document or derived
 subcollection after the first cleanup check; recursively delete only the known temporary ID again and reverify it is
 absent instead of assuming the first successful delete is final.
+
+After closing the tracked test browser, stop and verify the native frontend/API processes before running `npm run
+isolated-backend -- stop --dev-stack-index=N`; require its verified private export and all-containers-stopped line.
+Before an authorized stop or restart of the shared Firebase backend, run and verify `npm run export-emulator-data`
+once. Do not export the shared backend merely because an ordinary nonzero frontend/API test stack is closing; it
+remains live for every other stack.

@@ -12,19 +12,24 @@
 
 ## Ports per stack
 
-| Thing                       | Base (stack 0 = main) | Stack N       |
-| --------------------------- | --------------------- | ------------- |
-| frontend                    | 4200                  | 4200 + N      |
-| standalone API              | 3000                  | 3000 + N      |
-| standalone API inspector    | 9230                  | 9230 + N      |
-| frontend debug-log receiver | 9476                  | 9476 + N      |
-| download-assets-worker      | 8787                  | 8787 (shared) |
+| Thing                       | Base (stack 0 = main) | Ordinary stack N  | Isolated-backend stack N |
+| --------------------------- | --------------------- | ----------------- | ------------------------ |
+| frontend                    | 4200                  | 4200 + N          | 4200 + N                 |
+| standalone API              | 3000                  | 3000 + N          | 3000 + N                 |
+| standalone API inspector    | 9230                  | 9230 + N          | 9230 + N                 |
+| frontend debug-log receiver | 9476                  | 9476 + N          | 9476 + N                 |
+| Functions                   | 5001                  | 5001 (shared)     | 15000 + N                |
+| Firestore                   | 8080                  | 8080 (shared)     | 18080 + N                |
+| Firebase Storage            | 9199                  | 9199 (shared)     | 16000 + N                |
+| Firebase Auth               | real staging Auth     | real staging Auth | real staging Auth        |
+| MinIO                       | 9000                  | 9000 (shared)     | 17000 + N                |
+| download-assets-worker      | 8787                  | 8787 (shared)     | 18780 + N                |
 
 The main Restore Terminals setup owns one download-assets-worker on `:8787`. Every frontend stack reuses that
 stateless Wrangler process against the shared MinIO; never start an indexed copy with the worktree stack. If a task
 changes Worker source and needs isolated manual testing, coordinate replacing the shared Worker with Ethan first
-instead of silently creating a second Worker that ordinary frontends do not target. (Codex task:
-019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+or use the explicit full isolated-backend workflow below. Never silently create a second native Worker that ordinary
+frontends do not target. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
@@ -97,6 +102,26 @@ folders before continuing.
    workflow routed from the main `SKILL.md`. The Worker on `:8787` is required only for Download selected ZIP tests;
    if that shared process is missing, ask Ethan to start the main Worker rather than launching an indexed worktree
    copy.
+
+   Use a full private backend only when Ethan asks for it or the task needs isolated trigger/data behavior. Start it
+   before the native worktree processes, then pass the same explicit flag to every normal stack command:
+
+   ```bash
+   npm run isolated-backend -- start --dev-stack-index=N --seed=empty
+   AIMVS_ISOLATED_BACKEND=1 npm run watch:api -- --dev-stack-index=N
+   AIMVS_ISOLATED_BACKEND=1 npm run serve:api:standalone:debug -- --dev-stack-index=N
+   AIMVS_ISOLATED_BACKEND=1 npm run serve:frontend:standalone-server -- --dev-stack-index=N
+   ```
+
+   The API watcher does not replace the Functions bundle baked into the isolated Firebase image. After changing a
+   Function definition or trigger-local code, run the guarded isolated-backend `stop`, then `start` again before
+   testing the trigger; ordinary standalone API changes still use the normal native rebuild-and-restart workflow.
+
+   `canonical` is also supported for the first seed. It reads main's canonical Firebase export and live MinIO but
+   writes only to that stack's private named volumes. Stop it with
+   `npm run isolated-backend -- stop --dev-stack-index=N`; that guarded stop exports and verifies the private Firebase
+   snapshot before returning. Use `npm run isolated-backend -- export --dev-stack-index=N` for a one-shot private
+   snapshot without stopping. Never delete its volumes or merge its data into main.
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -327,8 +352,12 @@ current run.
 
 Stop and close the agent-owned nonzero stack in each case: at the end of every Computer Use manual-test session,
 whenever finished using a worktree's dev stack, and before removing its worktree. This applies to passed, failed,
-partial, blocked, and interrupted tests unless Ethan explicitly asks to keep that exact stack running. Finish the
-report and browser cleanup first, then stop the processes before closing any terminal tab or window:
+partial, blocked, and interrupted tests unless Ethan explicitly asks to keep that exact stack running. Worktree removal
+is blocked until this whole sequence succeeds; the isolated launcher and Compose file live in the worktree, so never
+delete or move it first.
+
+Finish the report and task-fixture cleanup, then close and verify the exact tracked browser window. Stop the native
+frontend/API processes next so they cannot issue another write while Firebase creates its final private export:
 
 ```bash
 bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
@@ -346,7 +375,29 @@ no longer visible; iTerm can retain an invisible stale scripting
 object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
 confirm an unverified iTerm prompt.
 
+If this stack owns an isolated backend, run its guarded stop only after the native ports are closed:
+
+```bash
+npm run isolated-backend -- stop --dev-stack-index="$STACK_INDEX"
+```
+
+Require `Verified the private Firebase export completed.` when Firebase reached readiness, followed by `Verified all
+isolated backend containers stopped; private volumes preserved.` A container that failed before readiness instead
+prints `Firebase never became ready; no private export was required.` so its Worker and MinIO can still be cleaned up.
+The command keeps the stack-indexed Firebase and MinIO volumes for its next start. An already-stopped Firebase
+container that previously reached readiness is safe only when its latest lifecycle has a clean exit and a verified
+export-on-exit; a container that never existed needs no export. If export verification fails, any container remains
+live, or ownership is ambiguous, stop cleanup and keep the worktree; never bypass the command with raw `docker stop`,
+`docker compose down`, or volume deletion. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+
+An ordinary nonzero frontend/API stack does not own the shared Firebase backend, so closing it must not trigger a
+shared export. Before an authorized manual stop or restart of the shared backend itself, run `npm run
+export-emulator-data` once from the primary main worktree and require Firebase's own `Export complete` output; main's
+30-minute periodic exporter is only crash protection and does not prove the latest writes were persisted.
+
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
 verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
-window. Never stop the shared Worker, quit a terminal app, or close an unrelated window. Remove the worktree from VS
-Code and Git afterward only when removal is part of the task.
+window. Never stop the shared Worker, quit a terminal app, or close an unrelated window. Only after every applicable
+browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
+Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any
+failure blocks removal instead of becoming a warning.

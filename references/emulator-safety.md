@@ -4,12 +4,13 @@
 
 - [Durable recovery memory](#durable-recovery-memory)
 - [Shared emulator ownership](#shared-emulator-ownership)
-- [Periodic exporter ownership and recovery](#periodic-exporter-ownership-and-recovery)
+- [Main periodic and one-shot exporter ownership](#main-periodic-and-one-shot-exporter-ownership)
 - [Host memory and swap contention](#host-memory-and-swap-contention)
 - [Firestore performance diagnostics](#firestore-performance-diagnostics)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
+- [Container-isolated emulator experiments](#container-isolated-emulator-experiments)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
 
@@ -41,33 +42,32 @@ Node-side wiring lives in `apps/frontend/plugins/dev-stack-config.cjs` (pure con
 (the CLI the npm scripts call). In ordinary shared-emulator mode, `--dev-stack-index=N` on any script is the only
 knob needed to keep that worktree's frontend and standalone API paired.
 
-## Periodic exporter ownership and recovery
+## Main periodic and one-shot exporter ownership
 
-Run only one `export-emulator-data-periodically` process against the shared emulator hub. `firebase emulators:export`
-exports whichever dataset is live on `:4400`; it does not care which checkout launched the exporter. A main-checkout
-exporter can therefore overwrite main's canonical export while a worktree-owned emulator is running. Before changing
-emulator ownership, stop every periodic exporter and verify none remain. Restore Terminals changes into the main
-worktree before starting the exporter so its relative `emulator-export-data` path resolves to the canonical dataset.
+Main's Restore Terminals deliberately owns one periodic Firebase exporter that snapshots the shared backend every 30
+minutes for crash recovery. Firebase Tools rewrites the whole combined export, including every Storage object, so
+correlate its actual run window before attributing a slowdown and never start another copy from a linked worktree or
+isolated backend. Before an authorized manual stop or restart of the shared backend, still run `npm run
+export-emulator-data` once from the primary main worktree and require Firebase's own `Export complete` output. This
+keeps main's original one-line export command; the separate TypeScript wrapper was rejected as unnecessary divergence
+and must not be reintroduced. An ordinary nonzero frontend/API stack does not own or stop the shared backend, so closing
+it must not export shared data. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
-The periodic exporter is intentionally started by Restore Terminals even when the emulator hub is not running. It runs
-one export immediately; a missing hub makes that attempt fail, but the exporter stays alive and retries after its
-configured interval (normally 30 minutes). Each export is deliberately started asynchronously and the interval begins
-immediately instead of waiting for completion. Do not add a hub preflight, Bash wrapper, process lock, or awaited export
-because Ethan explicitly chose the original direct TypeScript behavior. Repeated Restore Terminals runs or manual
-terminal restarts can therefore create extra immediate exports. Large snapshots can briefly add enough Firestore and
-disk load to make clients sluggish, so correlate each export's actual start/completion window with the client errors;
-an error that began before the export is not caused by it.
+For an isolated backend, `npm run isolated-backend -- export --dev-stack-index=N` writes one private snapshot without
+stopping. Its guarded `stop` command already persists and verifies the private snapshot through Firebase's clean
+shutdown path. Never point either command at main's canonical directory or merge isolated data back into main.
 
-If the wrong live dataset has already overwritten the canonical export, stop all exporters first, export the current
-live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its ports close. Move
-the overwritten canonical export to a separate preservation path before restoring a known-good snapshot. Restart the
+If the wrong live dataset has already overwritten the canonical export, stop the verified main periodic exporter first,
+export the current live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its
+ports close. Move the overwritten canonical export to a separate preservation path before restoring a known-good
+snapshot. Restart the
 emulators from main, then use the Admin SDK with project id `ai-music-video-studio-staging` to verify the affected
-Channel, private Channel, collaborator, Assets, and Projects instead of trusting open ports alone. Only then restart
-one main-checkout exporter and verify its first export completes. Never delete or reuse either recovery copy during
+Channel, private Channel, collaborator, Assets, and Projects instead of trusting open ports alone. Only then run one
+verified canonical export. Never delete or reuse either recovery copy during
 the restore.
 
 If the hub is gone but an orphan Firestore Java process still owns `:8080`, the Firebase CLI cannot export it. After
-stopping every periodic exporter, call Firestore's `/emulator/v1/projects/<project-id>:export` endpoint with a unique
+stopping the verified main periodic exporter, call Firestore's `/emulator/v1/projects/<project-id>:export` endpoint with a unique
 `export_directory` and `export_name`, verify the resulting overall-export metadata, then stop only that verified
 orphan PID. Preserve the canonical export separately before restoring main; an open Firestore port alone is not a
 healthy shared emulator.
@@ -95,20 +95,28 @@ persistent Admin client before timing queries because its first request includes
 setup time as Firestore cold-read latency. Compare repeated real reads without printing document data, and treat a fast
 control window with similar swap use as evidence against swap being the direct on/off cause.
 
-Treat periodic export load as a separate timing question. Split the snapshot with
+Treat export load as a separate timing question. Split the snapshot with
 `du -sh emulator-export-data/firestore_export emulator-export-data/storage_export` before describing its size because
 Storage blobs can account for nearly all bytes. Correlate the actual `firebase emulators:export` child, canonical metadata
 mtime, Firestore CPU and resident-memory change, and the complaint window. A completed short export can add a brief spike
-and leave more pages compressed or swapped, but it does not explain continuous slowness while the exporter is sleeping.
+and leave more pages compressed or swapped, but it does not explain continuous slowness outside the export window.
 
 If warm reads are fast, the live JVM has no `BLOCKED` threads, and socket queues are empty, prefer a coordinated clean
 shutdown of verified unused nonzero stacks and their exact task-owned browser pages over restarting the shared emulator.
 Do not kill Nx daemons individually or close browser pages until their owning worktree and active task are verified.
 
-Also check for duplicate orphaned Nx serve wrappers before blaming Firestore. A detached wrapper can have parent PID 1,
-revoked standard streams, no listening socket, and still burn one CPU core while the real terminal-owned serve tree is
-healthy. Compare the duplicate commands, working directories, process trees, terminal ownership, listening ports, and
-CPU-time deltas; do not stop either process until the orphan and the live owner are unambiguous.
+Treat every report of a slow emulator as authorization to sweep for orphaned or zombie AIMVS dev processes before
+blaming Firestore or restarting it. Compare duplicate commands, working directories, parent/child trees, TTY and stream
+state, terminal/task ownership, listening ports, and CPU-time deltas. A true `Z` zombie is already dead, uses no CPU, and
+cannot be killed; leave it alone unless its parent is independently proven orphaned. An active process is proven orphaned
+only when it is detached from its dead terminal or parent, owns no listener, has no useful live child, has no active task
+owner, and the real serving process is separately identified. Do not ask Ethan for permission once every check proves
+that ownership boundary: verify the exact PID again, stop only the orphan with `INT`, then `TERM`, and use `KILL` only if
+both softer signals fail and it still satisfies every orphan check. Recheck every live emulator, API, frontend, MinIO,
+and Worker port plus a warmed Firestore control afterward; continue diagnosing if the symptom remains. If any ownership
+check is ambiguous, preserve the process and report the blocker. Never restart Firestore, MinIO, or the real Worker merely
+to remove an orphan. The verified download-Worker wrappers that motivated this rule survived under PID 1 with revoked
+streams, no listener, and one CPU core each. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 Do not fingerprint an AIMVS worktree with an unrestricted `find .` followed by one `git ls-files` process per file. That
 walk includes large ignored dependency, build, diagnostics, and emulator-export trees and can sustain tens of thousands
@@ -223,11 +231,50 @@ the expected rows render and the progress bar disappears. Require no fresh WebCh
 or Firestore logs. Never quit Chrome, close ambiguous/user-owned pages, delete emulator data, or call the issue fixed
 from the HTML shell's load time alone.
 
+## Container-isolated emulator experiments
+
+Treat the opt-in full backend as isolated only when it has a unique Compose project, loopback-only host ports, a
+nonzero dev-stack index, and private named volumes for Firebase and MinIO. It includes Functions built from that exact
+worktree, Firestore, Firebase Storage, MinIO, and the Download Assets Worker; real staging Firebase Auth stays shared
+and the normal App Check debug-token setup is reused. A new frontend port is a separate browser origin and can require
+one normal sign-in the first time; backend restarts must not replace Auth with private emulator state. The frontend and
+hot-reloading standalone API remain native. Its first launch may use a read-only canonical seed or empty data, but
+every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
+requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
+the shared canonical directory.
+Separate containers let the host schedule backend processes across cores, but do not promise faster single-request
+Firestore execution and add real CPU/RAM load.
+
+Docker Desktop's CPU setting is a ceiling, its memory setting controls the RAM visible to the shared Linux VM rather
+than permanently pinning that many host bytes, and its disk setting is only the maximum sparse-image size. Current
+Docker Desktop releases return freed container memory to macOS, but a running VM can still use or cache memory up to
+that limit. Stopped isolated containers use no CPU or RAM, but their private named volumes still use disk. Main's
+continuously running `aimvs-minio` container also prevents Docker Resource Saver from stopping that VM, even when every
+isolated backend is stopped. During host slowness, compare the current Docker Desktop settings, VM/guest memory,
+`docker stats`, and running-container inventory before attributing the configured maximum to one isolated stack. Never
+stop main MinIO or apply a lower global memory setting without Ethan's approval because both interrupt every stack that
+uses the shared backend. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+
+Mount the persistent volume at a parent such as `/data` and give Firebase a replaceable child such as `/data/export`.
+Firebase removes and recreates its export directory; pointing `--export-on-exit` at the volume mount itself fails with
+`EBUSY`. Run Firebase and one-shot exports from another directory on that same volume, such as `/data/runtime`, because
+Firebase stages the whole snapshot under its current working directory before replacing `/data/export`; a container-
+layer working directory turns the swap into a second multi-gigabyte cross-filesystem copy. When a staging directory
+remains, name and preserve it: continue from `/data/export` only when that prior snapshot still has valid metadata,
+otherwise refuse startup instead of silently reseeding. Persist readiness from the successful healthcheck in the
+private volume rather than inferring it later from rotatable Docker logs. Set the container stop signal to `SIGINT` and
+allow enough grace time for the export because Firebase CLI's clean shutdown path is tied to Ctrl-C. After every ready-
+state stop, require Firebase's own `Export complete` log line and reject `Export failed`; Docker can report that the
+container stopped successfully even when Firebase lost the snapshot. A container that never reached readiness was
+never handed off as a supported writable stack; keep its last good snapshot and clean it up through guarded stop.
+(Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+
 ## Worktrees that change emulator triggers
 
-The frontend and standalone API intentionally use the standard emulator ports, so a trigger-changing worktree
-cannot run an isolated emulator concurrently with the shared main emulator. Isolate it in time while keeping the
-same ports:
+The frontend and standalone API use the standard emulator ports by default. An explicitly started full isolated
+backend safely owns that worktree's Functions triggers and private data. If the worktree is using the ordinary shared
+backend instead, a trigger-changing worktree still cannot run its full behavior concurrently with the shared main
+emulator; isolate it in time while keeping the same ports:
 
 1. Confirm the worktree actually changes Functions, Firestore, or Storage trigger behavior. Do not take exclusive
    emulator ownership for ordinary frontend or standalone API changes.
