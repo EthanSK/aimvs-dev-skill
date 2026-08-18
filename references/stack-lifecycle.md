@@ -30,6 +30,12 @@ stateless Wrangler process against the shared MinIO; never start an indexed copy
 changes Worker source and needs isolated manual testing, coordinate replacing the shared Worker with Ethan first
 or use the explicit full isolated-backend workflow below. Never silently create a second native Worker that ordinary
 frontends do not target. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+Launch the shared Worker only through `npm run serve:download-assets-worker`, which starts the locked local Nx CLI as
+its direct child and forwards terminal shutdown signals. Do not put `npx` between `run-dev-stack.cjs` and any
+long-running Nx task: when Restore Terminals replaced the Worker terminal, Wrangler stopped but that indirect Nx
+process survived under PID 1, lost its listener, ignored ordinary termination, and continuously consumed one CPU
+core. Nx remains the normal Worker task owner because it shuts down Wrangler and Workerd correctly when it receives
+the forwarded signal. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
