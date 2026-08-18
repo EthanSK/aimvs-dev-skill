@@ -41,9 +41,9 @@ uncommitted changes in the primary worktree.
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
-- Keep preview rendering disabled on every nonzero stack unless the requested test specifically verifies preview
-  generation. Enable **Preview Rendering** only for that test, then disable it again before cleanup because its
-  per-origin localStorage override persists across reloads and later uses of the same stack.
+- Keep **Preview Rendering** enabled by default on nonzero stacks. Disable it only for a deliberate lean-mode or
+  performance-isolation test, then enable it again before cleanup because its per-origin localStorage override persists
+  across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
 - Never remove a worktree until its tracked browser window and native stack processes are closed and any isolated

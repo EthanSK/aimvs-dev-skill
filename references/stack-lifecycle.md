@@ -23,7 +23,7 @@
 | Firebase Storage            | 9199                  | 9199 (shared)     | 16000 + N                |
 | Firebase Auth               | real staging Auth     | real staging Auth | real staging Auth        |
 | MinIO                       | 9000                  | 9000 (shared)     | 17000 + N                |
-| download-assets-worker      | 8787                  | 8787 (shared)     | 18780 + N                |
+| download-assets-worker      | 8787                  | 8787 (shared)     | 18800 + N                |
 
 The main Restore Terminals setup owns one download-assets-worker on `:8787`. Every frontend stack reuses that
 stateless Wrangler process against the shared MinIO; never start an indexed copy with the worktree stack. If a task

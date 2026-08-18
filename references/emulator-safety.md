@@ -57,6 +57,17 @@ For an isolated backend, `npm run isolated-backend -- export --dev-stack-index=N
 stopping. Its guarded `stop` command already persists and verifies the private snapshot through Firebase's clean
 shutdown path. Never point either command at main's canonical directory or merge isolated data back into main.
 
+Treat a user-authorized fresh shared-dataset reset as a preservation operation, not ordinary slowness cleanup. Stop the
+verified main periodic exporter, run `npm run export-emulator-data`, record representative Firestore collection counts
+and the Storage object count, copy the complete canonical export to a unique ignored backup, and verify its file count
+and metadata hashes before stopping the owning stack-0 terminal cleanly. Preserve the final export-on-exit snapshot
+separately, create an empty canonical `emulator-export-data` directory, and rerun the normal command in that same
+terminal. Require Firebase Tools to report that it skipped the missing import metadata, then prove all three emulators
+are ready, Firestore has no root collections, and Storage has no objects. Large persisted Storage bytes make full
+exports expensive but do not by themselves slow idle Firestore document reads; use the fresh dataset as a controlled
+comparison, not proof of causality. Never reset shared data without Ethan explicitly authorizing that exact reset.
+(Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+
 If the wrong live dataset has already overwritten the canonical export, stop the verified main periodic exporter first,
 export the current live state to a uniquely named recovery directory, stop the wrong emulator cleanly, and verify its
 ports close. Move the overwritten canonical export to a separate preservation path before restoring a known-good
@@ -242,6 +253,21 @@ hot-reloading standalone API remain native. Its first launch may use a read-only
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
+Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
+Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
+on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal
+keeps the document with Removed status, so never add a missing-document Rules allowance or silently treat absence as
+normal removal. Keep Auth and App Check intact; remove only `channelIdLoggedIn` and `userIdForLoggedInChannel` from that
+origin's sessionStorage and localStorage, reload, and require the current private dataset's active Channel, a fresh
+`dateLastLoggedIn`, and no fresh permission errors. Do not clear all localhost site data or create a fake Channel with
+the old ID. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+For an empty isolated dataset, create the Channel with its final `Dev Stack N` name before its default profile picture is
+generated, and give every stack its own Channel, active collaborator, and picture object. Do not create a placeholder
+AOEU Channel and rename its Firestore document afterward: the picture generator seeds the color and initial from the
+name at render time, while a later rename deliberately does not regenerate that object. If a test setup already did
+this, use the normal Channel Settings remove-and-save flow once after the final rename, then require a new versioned
+profile-picture path and visually distinct rendered picture on that stack's Assets page. (Codex task:
+019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 Separate containers let the host schedule backend processes across cores, but do not promise faster single-request
 Firestore execution and add real CPU/RAM load.
 
