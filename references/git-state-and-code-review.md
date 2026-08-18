@@ -4,6 +4,12 @@ Review the effective working tree by default. Do not report staged-versus-unstag
 as code-review findings unless Ethan explicitly asks for an index or staging audit; he normally reviews first and
 stages manually afterward.
 
+When Ethan asks to move dirty changes from main into an owning worktree, a verified copy is only the preservation
+checkpoint, not completion. After proving that every staged, unstaged, and untracked item exists in the destination,
+remove only those exact duplicates from main in the same task when the request authorizes the move; preserve unrelated
+Git boundaries, use recoverable deletion for discarded artifacts, and report the operation as a copy if main remains
+dirty for any reason.
+
 When preserving a dirty worktree through a stash or rebase, restore with `git stash apply --index` when safe and
 verify the staged and unstaged patches separately before dropping the recovery stash. Restored file contents alone
 do not prove that the index was restored.
