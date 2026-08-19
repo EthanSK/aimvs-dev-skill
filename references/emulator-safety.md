@@ -281,6 +281,17 @@ isolated backend is stopped. During host slowness, compare the current Docker De
 stop main MinIO or apply a lower global memory setting without Ethan's approval because both interrupt every stack that
 uses the shared backend. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
+Use the standalone API's normal host cache as the single GCP-secret source for isolated Functions. Before Docker starts,
+the host launcher must reuse that loader so a missing cache is populated through the Mac's existing Google
+authentication, then write an ignored stack-specific Functions `.secret.local` containing only `API_TOKEN` and mount
+that prepared file read-only. If the cache lacks `API_TOKEN`, force one host refresh before failing so an unsuccessful
+initial fetch cannot poison every later start. Never mount host Google credentials, the mixed repo-root `.secret.local`, or the complete
+cache into Docker: Firebase rejects the root file's reserved `FIREBASE_APPCHECK_DEBUG_TOKEN`, while copying every other
+entry would expose test-login credentials to Functions. Verify secret availability through presence or behavior without
+printing values. After changing the preparation or its Compose wiring, run
+`TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register -r tsconfig-paths/register tools/scripts/prepare-isolated-functions-secrets.spec.ts`.
+(Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+
 Mount the persistent volume at a parent such as `/data` and give Firebase a replaceable child such as `/data/export`.
 Firebase removes and recreates its export directory; pointing `--export-on-exit` at the volume mount itself fails with
 `EBUSY`. Run Firebase and one-shot exports from another directory on that same volume, such as `/data/runtime`, because
