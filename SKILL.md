@@ -31,7 +31,8 @@ uncommitted changes in the primary worktree.
   action. Read-only port and log inspection is allowed.
 - Keep every AIMVS browser interaction in one exact agent-owned window on `Built-in Retina Display`. Preserve every
   pre-existing browser window, external-display workspace, active media window, and unrelated app.
-- Use Safari first, then Firefox, Opera, and personal Chrome for concurrent nonzero stacks. Use existing persistent
+- Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
+  AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.
 - Reuse the shared main Firebase emulator stack for ordinary worktree tests. Trigger-changing worktrees require the
   explicitly coordinated exclusive shared-emulator refresh workflow.
@@ -46,6 +47,9 @@ uncommitted changes in the primary worktree.
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
+- Treat a verified 24-hour idle-cleanup check as part of starting every agent-owned nonzero stack. If the host cannot
+  schedule that check, the stack must be closed before the task ends; never leave it running without a cleanup owner.
+  The check never applies to Ethan-owned stack 0. (Codex task: 01a016b1-fc04-7150-a318-493d65f7111c)
 - Never remove a worktree until its tracked browser window and native stack processes are closed and any isolated
   backend has completed its guarded stop from that still-existing worktree. A failed export, live port, running
   container, or ambiguous owner blocks worktree removal; preserve the private Docker volumes. (Codex task:

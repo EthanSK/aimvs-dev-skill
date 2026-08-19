@@ -7,6 +7,7 @@
 - [Create a linked worktree](#create-a-linked-worktree)
 - [VS Code workspace membership](#vs-code-workspace-membership)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
+- [Schedule the 24-hour idle-cleanup check](#schedule-the-24-hour-idle-cleanup-check)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
 - [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack)
 
@@ -329,6 +330,57 @@ folders before continuing.
    `WORKTREE <NAME> · STACK #1 :4201` banner. New `aimvs-<task-slug>` directory names remain fully visible in
    `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
    browser page distinguishable from main and other worktrees.
+
+6. **Schedule and verify the 24-hour idle-cleanup check** described below. Starting a persistent nonzero stack is not
+   complete until the scheduler readback proves that the exact task and stack have a cleanup owner.
+
+## Schedule the 24-hour idle-cleanup check
+
+Immediately after starting any agent-owned nonzero stack, create a one-time follow-up attached to the exact owning
+task for 24 hours after the verified start time. In Codex Desktop, use the supported heartbeat automation through
+`automation_update`; in another host, use its native task-follow-up scheduler. Never implement this with `sleep`,
+`nohup`, a loose cron entry, a LaunchAgent, or a detached watchdog process. If no supported scheduler is available,
+do not leave the stack running after the active task ends.
+
+Give the follow-up a unique name containing the worktree basename and stack index. Put these non-secret ownership
+facts in its prompt so a compacted or resumed task can still act safely:
+
+- exact task/thread identifier and visible title;
+- absolute worktree path and stack index;
+- tracked `DEV_WINDOW_ID` and assigned browser/window identity when one exists;
+- verified stack start time and whether it owns an isolated backend;
+- expected native ports and, for an isolated backend, its exact Compose project;
+- an instruction to follow this section and [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack).
+
+Read the scheduler state back before relying on it. Require the exact owning task, prompt identifiers, one run only,
+and a next-run time 24 hours after stack start. A completed-looking create/update call is not proof that the timer was
+persisted. Keep the automation identifier in the task context, and recover it later by the unique worktree/stack name
+if compaction removed that context.
+
+When the follow-up runs, ignore the heartbeat's own turn when judging activity and prove all of the following before
+calling the stack unused:
+
+- the owning task has had no non-heartbeat work for at least 24 hours;
+- the exact stack has had no meaningful frontend/API request, build, log, browser-interaction, or source-work activity
+  for at least 24 hours;
+- no user or other active task currently owns or uses the exact worktree, browser window, terminal window, or stack;
+- no upload, generation, rendering, export, migration, or other state-changing operation is still running; and
+- the current processes, ports, terminal window, browser window, and isolated containers still match the recorded
+  ownership facts.
+
+A merely loaded stale browser page is not proof of current use, but a focused page, recent interaction, active task,
+or any ownership ambiguity blocks automatic cleanup. If recent use is proven, replace the consumed follow-up with a
+new one-time check 24 hours after the latest confirmed use. If ownership or activity is ambiguous, preserve everything
+and schedule the next check 24 hours after the current one; report the exact ambiguity instead of guessing.
+
+When inactivity is proven, invoke `$macos-heads-up-notification`, close and verify only the tracked browser window,
+then use the normal guarded stop sequence below. Stop an isolated backend only through its verified export-and-stop
+command. Never stop stack 0, the shared Firebase emulators, shared MinIO, or the shared Worker. Require the indexed
+native ports and exact isolated Compose project to be gone before marking the cleanup complete.
+
+Whenever normal task cleanup closes the stack before the follow-up fires, cancel or retire its exact scheduled check
+and read scheduler state back to prove it is no longer active. Never leave a stale timer that can later wake and act on
+reused ports or a different stack owner.
 
 ## Mandatory pre-Computer-Use health gate
 

@@ -29,10 +29,11 @@ swift .agents/skills/aimvs-dev/scripts/inspect-browser-displays.swift
 ```
 
 The script identifies displays by `NSScreen.localizedName`, converts their live frames into the same coordinate
-system as browser windows, and prints the numeric identity and display of each substantial
-Safari/Chrome/Firefox/Opera window. Record the pre-existing window IDs and whether the assigned browser app was
-already running; never claim they were created by the test. Do not infer the display from a window's size, a
-negative X coordinate, or whichever display is currently main.
+system as browser windows, and prints the numeric identity and display of each substantial Safari, Firefox, Opera,
+or Chrome window. Chrome is included only so its user-owned windows can be inventoried and preserved; never assign
+it to an AIMVS test. Record the pre-existing window IDs and whether the assigned browser app was already running;
+never claim they were created by the test. Do not infer the display from a window's size, a negative X coordinate,
+or whichever display is currently main.
 
 When Safari is assigned, create exactly one dedicated test window and navigate it to the exact stack URL in the
 same operation with:
@@ -47,9 +48,9 @@ This derives the window bounds from the live `Built-in Retina Display` frame, cr
 navigates it, and prints its numeric ID. The helper must never activate Safari, raise a window, or require Safari
 to remain frontmost after setup.
 
-When Firefox, Opera, or personal Chrome is assigned to a concurrent stack, use that browser's normal persistent
-profile with the applicable Computer Use/browser controller—never a fresh or isolated profile. After recording
-the existing window IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
+When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile with the
+applicable Computer Use/browser controller—never a fresh or isolated profile. After recording the existing window
+IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
 `Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window only when one new ID
 for the assigned browser appears on that display and the controller state shows `STACK_URL`; save that ID as
 `TEST_WINDOW_ID`. This creation-and-placement operation is the only browser action allowed before verification.
@@ -97,23 +98,25 @@ it.
 
 ## Browser assignment
 
-Use Safari first for the first agent-owned nonzero AIMVS test stack. This repo rule overrides any global preference
-for personal Chrome. Concurrent agent stacks must use different browsers so Firebase Auth persistence + App Check
-storage do not fight; assign them in this order: Safari → Firefox → Opera → personal Chrome. Never switch away
-from Safari merely because another browser is already logged in—use the test-account sign-in flow when Safari needs
-authentication. Stack 0 is not part of this assignment because agents never test against it.
+Use Safari first for the first agent-owned nonzero AIMVS test stack. Concurrent agent stacks must use different
+browsers so Firebase Auth persistence + App Check storage do not fight; assign them in this order: Safari → Firefox
+→ Opera. Never use Ethan's personal Chrome for AIMVS testing, even as a fallback, and never create a fresh or
+isolated Chrome profile to work around that rule. If all three permitted browsers are assigned, incompatible with
+the test, or unsafe to operate, stop and report the blocker. Never switch away from Safari merely because another
+browser is already logged in—use the test-account sign-in flow when Safari needs authentication. Stack 0 is not part
+of this assignment because agents never test against it.
 
 Treat a browser Ethan is actively using as unavailable, even when it would otherwise be next in the assignment
 order. Never commandeer or repeatedly foreground his active browser; choose the next browser compatible with the
-test, and stop if none is available. When a test specifically needs Chromium DevTools, use the first available
-Chromium browser—prefer Opera while Ethan is using personal Chrome.
+test, and stop if none is available. When a test specifically needs Chromium DevTools, use Opera and stop if Opera
+is unavailable; personal Chrome is not a fallback.
 
 With Ethan's `Dvorak - QWERTY ⌘` input source, character-based `Cmd+Option+I` automation may not toggle Opera
 DevTools. After verifying and focusing only the tracked Opera test window, use physical macOS key code `34` with
 Command+Option and then verify that docked DevTools actually appeared; do not keep retrying character `i` shortcuts.
 
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
-verified browser-controller flow for Firefox, Opera, or personal Chrome. Keep every test browser on
+verified browser-controller flow for Firefox or Opera. Keep every test browser on
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
 move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting.
 
