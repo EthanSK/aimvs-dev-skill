@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, code review, Git worktree or dirty rebase/stash maintenance, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, agent-owned nonzero stack selection, Git-state preservation, MacBook-display routing, shared or isolated Firebase emulators, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
+description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, code review, Git worktree or dirty rebase/stash maintenance, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, fully isolated nonzero stacks, Git-state preservation, MacBook-display routing, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
 ---
 
 # AIMVS Development
@@ -22,7 +22,8 @@ Use this skill as the AIMVS source of truth for every Computer Use interaction, 
 emulator investigation, authentication flow, code review, dirty Git-state operation, and prior manual-test evidence
 question. It overrides global browser-testing defaults for AIMVS. Stack 0 belongs to Ethan's main VS Code environment
 and is never an agent test target. Every agent-run test uses a free nonzero stack index, including tests of
-uncommitted changes in the primary worktree.
+uncommitted changes in the primary worktree. Stack 0 keeps Ethan's main native services; every nonzero stack uses its
+own private backend containers plus its own indexed native frontend/API processes.
 
 ## Universal safeguards
 
@@ -34,11 +35,11 @@ uncommitted changes in the primary worktree.
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
   AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.
-- Reuse the shared main Firebase emulator stack for ordinary worktree tests. Trigger-changing worktrees require the
-  explicitly coordinated exclusive shared-emulator refresh workflow.
-- Reuse the main-owned download-assets-worker on `:8787` for every dev stack. Never start an indexed Wrangler copy;
-  Worker-source tests require explicit coordination to replace the shared process.
-- Never run `npm run rules:test` while shared Storage `:9199` is listening. Distinct emulator ports do not isolate
+- Derive backend ownership only from the stack index: stack 0 uses Ethan's main Firebase, Storage, MinIO, and native
+  Download Assets Worker; every nonzero stack uses its own indexed Firebase, Storage, MinIO, and Worker containers.
+  The old per-command isolation opt-in was rejected because one omitted flag silently mixed private and stack-0 data;
+  never reintroduce shared mode for a nonzero stack. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
+- Never run `npm run rules:test` while stack 0's shared Storage `:9199` is listening. Distinct emulator ports do not isolate
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
@@ -47,6 +48,11 @@ uncommitted changes in the primary worktree.
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
+- For Safari, also track WebContent processes created by the test and verify they exit when the tracked window closes.
+  A missing window ID is not cleanup proof: a frozen AIMVS page once left its task-created renderer executing for a
+  day after the window disappeared. Resolve any surviving renderer immediately through the ownership-safe procedure
+  in `references/browser-control.md`; never defer it to the 24-hour stack check.
+  (Codex task: 01a01b02-4104-72a1-8611-5535ace7202a)
 - Treat a verified 24-hour idle-cleanup check as part of starting every agent-owned nonzero stack. If the host cannot
   schedule that check, the stack must be closed before the task ends; never leave it running without a cleanup owner.
   The check never applies to Ethan-owned stack 0. (Codex task: 01a016b1-fc04-7150-a318-493d65f7111c)
@@ -55,11 +61,10 @@ uncommitted changes in the primary worktree.
   container, or ambiguous owner blocks worktree removal; preserve the private Docker volumes. (Codex task:
   019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
-  `export-emulator-data` command only when the shared backend itself is stopping; an ordinary frontend/API stack that
-  leaves the shared backend running does not export it. Stop an isolated stack's native writers before its guarded
-  `stop` command exports and verifies that stack's private snapshot.
+  `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. Stop every nonzero stack's
+  native writers before its guarded `stop` command exports and verifies that stack's private snapshot.
 - Main's Restore Terminals owns exactly one 30-minute shared-emulator exporter for crash recovery. Never start that
-  periodic exporter from a linked worktree or isolated backend; those stacks keep private data through their guarded
+  periodic exporter from a linked worktree or nonzero backend; those stacks keep private data through their guarded
   stop/export flow. The periodic snapshot does not replace the verified one-shot export immediately before stopping
   or restarting the shared backend. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 

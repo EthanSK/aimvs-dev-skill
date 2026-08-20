@@ -3,14 +3,14 @@
 ## Contents
 
 - [Durable recovery memory](#durable-recovery-memory)
-- [Shared emulator ownership](#shared-emulator-ownership)
+- [Backend isolation and stack 0 ownership](#backend-isolation-and-stack-0-ownership)
 - [Main periodic and one-shot exporter ownership](#main-periodic-and-one-shot-exporter-ownership)
 - [Host memory and swap contention](#host-memory-and-swap-contention)
 - [Firestore performance diagnostics](#firestore-performance-diagnostics)
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
-- [Container-isolated emulator experiments](#container-isolated-emulator-experiments)
+- [Nonzero isolated backends](#nonzero-isolated-backends)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
 
@@ -22,25 +22,24 @@ cause, diagnostic, recovery step, or prevention rule, update the closest section
 procedural and current rather than adding a separate dated incident log; do not record guesses, credentials, signed
 URLs, private object contents, transient PIDs, or large raw logs.
 
-## Shared emulator ownership
+## Backend isolation and stack 0 ownership
 
-By default, run several worktrees' frontend + standalone API at once, all sharing one Firebase emulator stack. Each
-worktree runs on a "dev stack index" `N` that offsets every port by `N`, so stack 1's frontend is `:4201`,
-stack 2's is `:4202`, etc. This lets you test different branches side by side in different browsers.
-
-This works because we assume worktrees rarely change Firestore/Storage triggers, so the one shared emulator
-is fine for all of them. If a worktree changes Functions, Firestore, or Storage trigger behavior, use the exclusive
-emulator workflow below instead of the shared emulator.
+Stack 0 is Ethan's main VS Code environment and owns the native main Firebase, Storage, MinIO, and Download Assets
+Worker services. Every nonzero dev stack uses its own indexed native frontend/API processes and its own Docker Compose
+backend containing Functions, Firestore, Storage, MinIO, and the Worker. Real staging Auth remains shared. The stack
+index is the only backend-mode source of truth; never point a nonzero stack at stack 0 or add back the removed
+per-command isolation flag. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 Starting `serve:emulators` restores AIMVS's intentional single-emulator behavior: it runs `teardown-emulators` first,
 which stops Firebase processes and the standard emulator ports globally, then starts the requested checkout's suite.
-Coordinate exclusive ownership before starting it because every stack using the current shared emulator is interrupted.
+Use it only for Ethan-authorized stack-0 work; nonzero stacks use `npm run isolated-backend` instead. Coordinate
+exclusive ownership before starting it because it interrupts stack 0.
 The refusal-only teardown and multi-emulator ownership framework were tried and explicitly rejected in favor of this
 original behavior. (Codex task: 019faf46-16ac-7a90-b650-e988a2e6a505)
 
 Node-side wiring lives in `apps/frontend/plugins/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
-(the CLI the npm scripts call). In ordinary shared-emulator mode, `--dev-stack-index=N` on any script is the only
-knob needed to keep that worktree's frontend and standalone API paired.
+(the CLI the npm scripts call). `--dev-stack-index=N` pairs every native process with that index's private backend;
+native startup refuses a nonzero stack whose matching containers are absent.
 
 ## Main periodic and one-shot exporter ownership
 
@@ -50,8 +49,9 @@ correlate its actual run window before attributing a slowdown and never start an
 isolated backend. Before an authorized manual stop or restart of the shared backend, still run `npm run
 export-emulator-data` once from the primary main worktree and require Firebase's own `Export complete` output. This
 keeps main's original one-line export command; the separate TypeScript wrapper was rejected as unnecessary divergence
-and must not be reintroduced. An ordinary nonzero frontend/API stack does not own or stop the shared backend, so closing
-it must not export shared data. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+and must not be reintroduced. Nonzero stacks never export this dataset; their guarded stop exports only their private
+snapshot. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 For an isolated backend, `npm run isolated-backend -- export --dev-stack-index=N` writes one private snapshot without
 stopping. Its guarded `stop` command already persists and verifies the private snapshot through Firebase's clean
@@ -171,11 +171,11 @@ frontend rendering, and host-pressure controls instead of attributing the pause 
 
 ## Persisted data and object drift
 
-Shared emulator ownership does not isolate stored data from worktree behavior. A worktree can write a newer document
-or storage-path shape that main does not understand, then leave main failing after that worktree's stack stops even
-though every listener still belongs to the correct checkout. When main breaks after another stack's test, verify the
-affected emulator fields and object paths against both code versions before restarting processes; use disposable test
-data or restore compatible data when the worktree intentionally changes a persisted shape.
+Private nonzero backends prevent worktree tests from changing stack 0's documents or Storage objects. If stack 0
+contains a shape its current code does not understand, first verify whether it came from stack-0 activity or a legacy
+pre-isolation test; never reconnect a nonzero stack to stack 0 as a workaround. Within one private stack, persisted
+data can still outlive source changes, so compare its stored fields and object paths with that worktree before
+restarting processes.
 
 Do not confuse stale persisted data with stale emulator code. Moving source hunks into main and restarting the emulator
 can update the running Functions or Rules code, but it cannot repair incompatible Firestore documents or Storage
@@ -222,8 +222,8 @@ test. This is fixture setup only: never replace production copy behavior merely 
 
 ## Firestore WebChannel wedge recovery
 
-A stopped frontend does not stop its already-loaded browser page. Stale AIMVS pages from stopped stacks can keep
-Firestore WebChannels connected to the shared emulator, and after the emulator reports
+A stopped frontend does not stop its already-loaded browser page. A stale stack-0 page or legacy shared-mode page can
+keep Firestore WebChannels connected to stack 0, and after the emulator reports
 `too many pending messagings in the back channel (10001)`, `NETWORK_ERROR`, or transaction lock timeouts, those pages
 can immediately reconnect and leave a freshly restarted emulator looking slow again.
 
@@ -242,14 +242,15 @@ the expected rows render and the progress bar disappears. Require no fresh WebCh
 or Firestore logs. Never quit Chrome, close ambiguous/user-owned pages, delete emulator data, or call the issue fixed
 from the HTML shell's load time alone.
 
-## Container-isolated emulator experiments
+## Nonzero isolated backends
 
-Treat the opt-in full backend as isolated only when it has a unique Compose project, loopback-only host ports, a
-nonzero dev-stack index, and private named volumes for Firebase and MinIO. It includes Functions built from that exact
+Treat a nonzero backend as ready only when it has a unique Compose project, loopback-only host ports, a nonzero
+dev-stack index, and private named volumes for Firebase and MinIO. It includes Functions built from that exact
 worktree, Firestore, Firebase Storage, MinIO, and the Download Assets Worker; real staging Firebase Auth stays shared
 and the normal App Check debug-token setup is reused. A new frontend port is a separate browser origin and can require
 one normal sign-in the first time; backend restarts must not replace Auth with private emulator state. The frontend and
-hot-reloading standalone API remain native. Its first launch may use a read-only canonical seed or empty data, but
+hot-reloading standalone API remain native. A new stack defaults to the read-only canonical seed; empty data requires
+explicit `--seed=empty`. Its first launch may therefore use the canonical seed or empty data, but
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
@@ -274,12 +275,12 @@ Firestore execution and add real CPU/RAM load.
 Docker Desktop's CPU setting is a ceiling, its memory setting controls the RAM visible to the shared Linux VM rather
 than permanently pinning that many host bytes, and its disk setting is only the maximum sparse-image size. Current
 Docker Desktop releases return freed container memory to macOS, but a running VM can still use or cache memory up to
-that limit. Stopped isolated containers use no CPU or RAM, but their private named volumes still use disk. Main's
-continuously running `aimvs-minio` container also prevents Docker Resource Saver from stopping that VM, even when every
-isolated backend is stopped. During host slowness, compare the current Docker Desktop settings, VM/guest memory,
+that limit. Stopped isolated containers use no CPU or RAM, but their private named volumes still use disk. Stack 0's
+continuously running `aimvs-minio` container can prevent Docker Resource Saver from stopping that VM, even when every
+nonzero backend is stopped. During host slowness, compare the current Docker Desktop settings, VM/guest memory,
 `docker stats`, and running-container inventory before attributing the configured maximum to one isolated stack. Never
-stop main MinIO or apply a lower global memory setting without Ethan's approval because both interrupt every stack that
-uses the shared backend. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+stop stack 0's MinIO or apply a lower global memory setting without Ethan's approval because both interrupt his main
+environment. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 Use the standalone API's normal host cache as the single GCP-secret source for isolated Functions. Before Docker starts,
 the host launcher must reuse that loader so a missing cache is populated through the Mac's existing Google
@@ -308,33 +309,12 @@ never handed off as a supported writable stack; keep its last good snapshot and 
 
 ## Worktrees that change emulator triggers
 
-The frontend and standalone API use the standard emulator ports by default. An explicitly started full isolated
-backend safely owns that worktree's Functions triggers and private data. If the worktree is using the ordinary shared
-backend instead, a trigger-changing worktree still cannot run its full behavior concurrently with the shared main
-emulator; isolate it in time while keeping the same ports:
-
-1. Confirm the worktree actually changes Functions, Firestore, or Storage trigger behavior. Do not take exclusive
-   emulator ownership for ordinary frontend or standalone API changes.
-2. Resolve the live emulator process's command, checkout, owning VS Code terminal tab, and import/export paths. Inspect
-   the worktree and primary main checkout's staged, unstaged, and untracked state before changing either; open ports or
-   an old successful log line do not prove which source the current emulator loaded.
-3. Move only the exact source hunks the emulator needs from the worktree into the primary main checkout as unstaged,
-   uncommitted changes. Preserve every pre-existing main staged, unstaged, and untracked boundary exactly; never stage,
-   commit, overwrite an overlapping change, or copy unrelated frontend, standalone-API, test, or cleanup hunks. Stop for
-   Ethan's decision if the required hunk overlaps existing main work or cannot be transferred exactly.
-4. Ask Ethan before stopping the shared emulator because every running AIMVS stack depends on it. Do not continue until
-   he confirms that the other stacks can be interrupted and explicitly authorizes operating the exact stack-0 emulator
-   terminal.
-5. In the same shell in the same main VS Code terminal tab that already owns the emulator, stop the current command,
-   verify ports `5001`, `8080`, and `9199` are free, then rerun the emulator command there. Do not start it from a new
-   shell, another terminal tab or app, Restore Terminals, a linked worktree, or a blanket teardown. Reusing the owning
-   shell preserves its verified checkout, environment, canonical import/export paths, and visible process ownership.
-6. Verify the new emulator run reports the primary main checkout and canonical `emulator-export-data`, loaded the
-   transferred source, started without unresolved errors, and owns the expected ports. Then repeat the manual-test
-   health gate before using the browser.
-7. Run and test only the authorized worktree against this temporarily refreshed shared emulator session. Leave the
-   transferred main hunks unstaged and uncommitted for Ethan to review; do not silently remove, stage, or commit them
-   after testing.
+A nonzero stack's private Firebase image owns the Functions, Firestore Rules, and Storage Rules from that exact
+worktree. After changing trigger-local code or a Function definition, stop the stack's native writers, run the guarded
+private-backend stop, then start the same indexed backend again so Docker rebuilds the Function bundle. Verify the
+private containers and indexed ports before testing. Never copy worktree trigger hunks into main or restart stack 0
+for a nonzero test; that old shared-emulator workaround was rejected once every nonzero backend became isolated.
+(Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 ## Shared Storage emulator export failures
 

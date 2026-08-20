@@ -60,6 +60,5 @@ absent instead of assuming the first successful delete is final.
 
 After closing the tracked test browser, stop and verify the native frontend/API processes before running `npm run
 isolated-backend -- stop --dev-stack-index=N`; require its verified private export and all-containers-stopped line.
-Before an authorized stop or restart of the shared Firebase backend, run and verify `npm run export-emulator-data`
-once. Do not export the shared backend merely because an ordinary nonzero frontend/API test stack is closing; it
-remains live for every other stack.
+Before an authorized stop or restart of stack 0's Firebase backend, run and verify `npm run export-emulator-data`
+once. Every nonzero test stack exports and stops only its own private backend; it never uses or stops stack 0.

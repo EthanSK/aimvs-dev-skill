@@ -13,25 +13,23 @@
 
 ## Ports per stack
 
-| Thing                       | Base (stack 0 = main) | Ordinary stack N  | Isolated-backend stack N |
-| --------------------------- | --------------------- | ----------------- | ------------------------ |
-| frontend                    | 4200                  | 4200 + N          | 4200 + N                 |
-| standalone API              | 3000                  | 3000 + N          | 3000 + N                 |
-| standalone API inspector    | 9230                  | 9230 + N          | 9230 + N                 |
-| frontend debug-log receiver | 9476                  | 9476 + N          | 9476 + N                 |
-| Functions                   | 5001                  | 5001 (shared)     | 15000 + N                |
-| Firestore                   | 8080                  | 8080 (shared)     | 18080 + N                |
-| Firebase Storage            | 9199                  | 9199 (shared)     | 16000 + N                |
-| Firebase Auth               | real staging Auth     | real staging Auth | real staging Auth        |
-| MinIO                       | 9000                  | 9000 (shared)     | 17000 + N                |
-| download-assets-worker      | 8787                  | 8787 (shared)     | 18800 + N                |
+| Thing                       | Stack 0 = Ethan's main | Every nonzero stack N |
+| --------------------------- | ---------------------- | --------------------- |
+| frontend                    | 4200                   | 4200 + N              |
+| standalone API              | 3000                   | 3000 + N              |
+| standalone API inspector    | 9230                   | 9230 + N              |
+| frontend debug-log receiver | 9476                   | 9476 + N              |
+| Functions                   | 5001                   | 15000 + N             |
+| Firestore                   | 8080                   | 18080 + N             |
+| Firebase Storage            | 9199                   | 16000 + N             |
+| Firebase Auth               | real staging Auth      | real staging Auth     |
+| MinIO                       | 9000                   | 17000 + N             |
+| download-assets-worker      | 8787                   | 18800 + N             |
 
-The main Restore Terminals setup owns one download-assets-worker on `:8787`. Every frontend stack reuses that
-stateless Wrangler process against the shared MinIO; never start an indexed copy with the worktree stack. If a task
-changes Worker source and needs isolated manual testing, coordinate replacing the shared Worker with Ethan first
-or use the explicit full isolated-backend workflow below. Never silently create a second native Worker that ordinary
-frontends do not target. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
-Launch the shared Worker only through `npm run serve:download-assets-worker`, which starts the locked local Nx CLI as
+The main Restore Terminals setup owns stack 0's native download-assets-worker on `:8787`. Every nonzero stack owns
+an indexed Worker inside its private Docker backend; never point it at the main Worker or start a second native copy.
+(Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
+Launch stack 0's Worker only through `npm run serve:download-assets-worker`, which starts the locked local Nx CLI as
 its direct child and forwards terminal shutdown signals. Do not put `npx` between `run-dev-stack.cjs` and any
 long-running Nx task: when Restore Terminals replaced the Worker terminal, Wrangler stopped but that indirect Nx
 process survived under PID 1, lost its listener, ignored ordinary termination, and continuously consumed one CPU
@@ -108,39 +106,26 @@ folders before continuing.
 
 ## Run an agent-owned stack
 
-1. **Reuse the shared main emulator stack and download Worker.** Check the required shared ports before starting a
-   worktree:
+1. **Pick the first completely unused nonzero stack index** before starting anything, including tests from main.
+
+   For each candidate `N`, require all four native ports to be free, no running or stopped container with that exact
+   Compose project label, and no named volume whose name starts with that exact project prefix:
 
    ```bash
-   lsof -nP -iTCP:5001 -iTCP:8080 -iTCP:9199 -iTCP:8787 -sTCP:LISTEN
+   STACK_INDEX=N
+   for STACK_PORT in $((4200 + STACK_INDEX)) $((3000 + STACK_INDEX)) $((9230 + STACK_INDEX)) $((9476 + STACK_INDEX)); do
+     lsof -nP -iTCP:"$STACK_PORT" -sTCP:LISTEN
+   done
+   docker container ls --all --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
+   docker volume ls --format '{{.Name}}' | awk -v prefix="aimvs-isolated-backend-stack-${STACK_INDEX}_" 'index($0, prefix) == 1'
    ```
 
-   If those emulators are already listening, reuse them. If they are not running, ask Ethan to start them in his
-   main environment and wait for them to become ready. Do not invoke `Restore Terminals` or start a second shared
-   emulator from a worktree. A trigger-changing test must use the coordinated main-checkout shared-emulator refresh
-   workflow routed from the main `SKILL.md`. The Worker on `:8787` is required only for Download selected ZIP tests;
-   if that shared process is missing, ask Ethan to start the main Worker rather than launching an indexed worktree
-   copy.
-
-   Use a full private backend only when Ethan asks for it or the task needs isolated trigger/data behavior. Start it
-   before the native worktree processes, then pass the same explicit flag to every normal stack command:
-
-   ```bash
-   npm run isolated-backend -- start --dev-stack-index=N --seed=empty
-   AIMVS_ISOLATED_BACKEND=1 npm run watch:api -- --dev-stack-index=N
-   AIMVS_ISOLATED_BACKEND=1 npm run serve:api:standalone:debug -- --dev-stack-index=N
-   AIMVS_ISOLATED_BACKEND=1 npm run serve:frontend:standalone-server -- --dev-stack-index=N
-   ```
-
-   The API watcher does not replace the Functions bundle baked into the isolated Firebase image. After changing a
-   Function definition or trigger-local code, run the guarded isolated-backend `stop`, then `start` again before
-   testing the trigger; ordinary standalone API changes still use the normal native rebuild-and-restart workflow.
-
-   `canonical` is also supported for the first seed. It reads main's canonical Firebase export and live MinIO but
-   writes only to that stack's private named volumes. Stop it with
-   `npm run isolated-backend -- stop --dev-stack-index=N`; that guarded stop exports and verifies the private Firebase
-   snapshot before returning. Use `npm run isolated-backend -- export --dev-stack-index=N` for a one-shot private
-   snapshot without stopping. Never delete its volumes or merge its data into main.
+   All three commands must return no ownership evidence before assigning a new index. A stopped Compose project is
+   still owned: its containers retain the originating worktree path and its volumes retain private data. Preserve it
+   and choose another index. Reuse an existing index only for its verified owning worktree after comparing every
+   container's `com.docker.compose.project.working_dir` label and bind mount with the exact current worktree. Never use
+   `0`; it belongs to Ethan even when testing source from main. (Codex task:
+   019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -159,7 +144,8 @@ folders before continuing.
    Nest/Pino/sharp and standalone API builds can fail or produce worker/native-module path bugs. If you do
    not want a symlink, run `npm install` in the worktree instead.
 
-   The shared emulators are reused, but R2/Stripe local config still comes from ignored `apps/api/.env.local`.
+   The private backend does not replace ignored API config; R2/Stripe local config still comes from
+   `apps/api/.env.local`.
    The API startup should say `injecting env (4) from .env.local`; if it says `(0)`, R2 signing will fail
    with `No value provided for input HTTP label: Bucket`. Run `watch:api` after linking so the build copies it
    into `dist/apps/api/.env.local` before `serve:api:standalone:debug` starts.
@@ -180,15 +166,30 @@ folders before continuing.
    provider request objects, or unfiltered provider-error log sections; Axios request data can contain
    `Authorization` or `x-api-key` headers.
 
-3. **Pick the next free nonzero agent stack index** before starting anything, including tests from main:
+3. **Start the stack's private backend.** Every nonzero stack owns isolated Functions, Firestore, Storage, MinIO, and
+   Download Assets Worker containers. Start them before the native worktree processes:
 
    ```bash
-   lsof -nP -iTCP:4200-4210 -iTCP:3000-3010 -iTCP:9230-9240 -sTCP:LISTEN
+   npm run isolated-backend -- start --dev-stack-index=N
+   npm run watch:api -- --dev-stack-index=N
+   npm run serve:api:standalone:debug -- --dev-stack-index=N
+   npm run serve:frontend:standalone-server -- --dev-stack-index=N
    ```
 
-   Treat index `N` as used if `4200+N` or `3000+N` is listening. Use the next free nonzero `N`, keep that same index
-   for the frontend/API/watch commands, and always pass `--dev-stack-index=N`. Never use `0`: it belongs to Ethan,
-   even when the agent is testing code directly from the main checkout.
+   The stack index is the only backend-mode source of truth. Native nonzero launchers refuse to start until the
+   matching Compose backend exists; there is no shared-mode flag or fallback to stack 0. A genuinely new stack defaults
+   to the canonical stack-0 snapshot; use `--seed=empty` only when an empty first initialization is explicitly required.
+   Later starts always retain that stack's existing private Firebase export and MinIO volume, and an interrupted first
+   initialization retries with its already-persisted seed choice. Never delete its volumes, reseed it, or merge its data
+   into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105)
+
+   The API watcher does not replace the Functions bundle baked into the isolated Firebase image. After changing a
+   Function definition or trigger-local code, run the guarded isolated-backend `stop`, then `start` again before
+   testing the trigger; ordinary standalone API changes still use the normal native rebuild-and-restart workflow.
+
+   Stop it with `npm run isolated-backend -- stop --dev-stack-index=N`; that guarded stop exports and verifies the
+   private Firebase snapshot before returning. Use
+   `npm run isolated-backend -- export --dev-stack-index=N` for a one-shot private snapshot without stopping.
 
 4. **Per worktree, pass the SAME `--dev-stack-index=N` to every worktree process**.
 
@@ -201,8 +202,8 @@ folders before continuing.
    session, not in a Codex tool session that disappears when the chat/tool process exits. iTerm2 is installed
    at `/Applications/iTerm.app`, but its AppleScript application name is `iTerm`; target the bundle id below so
    the script also works when iTerm is not already running. Use ONE iTerm2 window per worktree stack and put the
-   three stack-owned processes in separate tabs. The shared download Worker stays in Ethan's main environment and
-   must not be added to the worktree window. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
+   three native stack-owned processes in separate tabs. The indexed Worker stays inside the private backend and must
+   not be added to the worktree window. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
    commands instead of synthetic keyboard shortcuts or clipboard paste; Ghostty keyboard automation has been
    unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
    that tab's session; passing commands directly to `create tab with default profile command ...` can open and
@@ -348,14 +349,23 @@ facts in its prompt so a compacted or resumed task can still act safely:
 - exact task/thread identifier and visible title;
 - absolute worktree path and stack index;
 - tracked `DEV_WINDOW_ID` and assigned browser/window identity when one exists;
-- verified stack start time and whether it owns an isolated backend;
-- expected native ports and, for an isolated backend, its exact Compose project;
+- verified stack start time and exact isolated Compose project;
+- expected native and private-backend ports;
 - an instruction to follow this section and [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack).
+
+Do not copy a mutable "latest task activity" timestamp into the prompt. It becomes stale as soon as the owning task
+runs again; the follow-up must resolve that value from actual task history when it executes.
 
 Read the scheduler state back before relying on it. Require the exact owning task, prompt identifiers, one run only,
 and a next-run time 24 hours after stack start. A completed-looking create/update call is not proof that the timer was
 persisted. Keep the automation identifier in the task context, and recover it later by the unique worktree/stack name
 if compaction removed that context.
+
+Encode a one-time target with its local calendar date as well as its local clock time, such as a one-count yearly rule
+with `BYMONTH` and `BYMONTHDAY`; a daily one-count rule can fire later the same day instead of tomorrow. Follow the
+scheduler tool's contract and write the user's local wall-clock fields directly rather than converting them to UTC.
+Still verify the scheduler's absolute next-run instant after saving, because the stored recurrence text alone does
+not prove that the host interpreted its timezone correctly.
 
 When the follow-up runs, ignore the heartbeat's own turn when judging activity and prove all of the following before
 calling the stack unused:
@@ -368,15 +378,27 @@ calling the stack unused:
 - the current processes, ports, terminal window, browser window, and isolated containers still match the recorded
   ownership facts.
 
+Resolve owning-task activity from the task's actual turn history, not from timestamps copied into the automation
+prompt. Read the newest turns, skip the current heartbeat and every earlier turn whose user message is a heartbeat,
+then use the latest real timestamp from the newest remaining turn (`completedAt` when present, otherwise `startedAt`).
+Treat prompt fields such as `Latest verified owning task activity`, automation `updated_at`, scheduler delivery time,
+and heartbeat rescheduling as hints or automation activity, never as proof of user or task activity. Parse ISO offsets
+or epoch values into absolute instants and compare those instants in UTC; never compare clock text or discard an
+offset. For example, `17:38:39Z` and `17:38:33+01:00` are one hour and six seconds apart, not six seconds. Require a
+full 24 elapsed hours before cleanup, and read back the rescheduled run as an absolute instant 24 hours after the
+verified activity rather than validating only its displayed clock time. If task history or the scheduler's absolute
+next-run instant cannot be read, treat activity as ambiguous and preserve the stack. (Codex task:
+01a016e3-6c55-7d42-b152-7c96b6916fdd)
+
 A merely loaded stale browser page is not proof of current use, but a focused page, recent interaction, active task,
 or any ownership ambiguity blocks automatic cleanup. If recent use is proven, replace the consumed follow-up with a
 new one-time check 24 hours after the latest confirmed use. If ownership or activity is ambiguous, preserve everything
 and schedule the next check 24 hours after the current one; report the exact ambiguity instead of guessing.
 
 When inactivity is proven, invoke `$macos-heads-up-notification`, close and verify only the tracked browser window,
-then use the normal guarded stop sequence below. Stop an isolated backend only through its verified export-and-stop
-command. Never stop stack 0, the shared Firebase emulators, shared MinIO, or the shared Worker. Require the indexed
-native ports and exact isolated Compose project to be gone before marking the cleanup complete.
+then use the normal guarded stop sequence below. Stop the nonzero backend only through its verified export-and-stop
+command. Never stop stack 0 or its Firebase emulators, MinIO, or Worker. Require the indexed native ports and exact
+isolated Compose project to be gone before marking the cleanup complete.
 
 Whenever normal task cleanup closes the stack before the follow-up fires, cancel or retire its exact scheduled check
 and read scheduler state back to prove it is no longer active. Never leave a stale timer that can later wake and act on
@@ -394,10 +416,10 @@ and the same nonzero `--dev-stack-index=N`, then verify all of the following fro
   unresolved startup or current-run errors.
 - The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
   receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
-- When testing Download selected, the shared main download-assets-worker says `Ready`, listens on `8787`, and a POST
-  with no grant reaches that Worker and returns its expected `400` without current-run errors.
-- The required emulator ports are listening. For a coordinated trigger-changing test, the current run in the exact
-  owning main VS Code emulator terminal is also error-free and reports the primary checkout and canonical export.
+- The indexed Download Assets Worker container reports healthy, listens on `18800 + N`, and, when testing Download
+  selected, a POST with no grant reaches that Worker and returns its expected `400` without current-run errors.
+- Indexed Functions `15000 + N`, Firestore `18080 + N`, Storage `16000 + N`, MinIO `17000 + N`, and Worker `18800 + N`
+  are listening, every private container reports healthy, and MinIO's `/minio/health/live` returns success.
 - A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
   unexplained errors from the current run.
 
@@ -436,8 +458,8 @@ bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
 ```
 
 The helper sends Ctrl-C to every tab first, waits for the frontend, API, inspector, and debug-log ports to stop
-listening, and refuses to close the window if any remain. It deliberately leaves the shared Worker on `:8787`
-alone. Only then does it close the terminal sessions and their exact tracked window. It closes the stopped sessions
+listening, and refuses to close the window if any remain. It does not touch stack 0's Worker or the private backend.
+Only then does it close the terminal sessions and their exact tracked window. It closes the stopped sessions
 individually because closing a multi-tab window directly
 shows iTerm's `Close Window #…` confirmation. If iTerm still shows that prompt, the helper uses Accessibility to
 require exactly one matching prompt and one `OK` button before pressing it, then verifies the tracked window is
@@ -445,7 +467,7 @@ no longer visible; iTerm can retain an invisible stale scripting
 object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
 confirm an unverified iTerm prompt.
 
-If this stack owns an isolated backend, run its guarded stop only after the native ports are closed:
+Run the stack's guarded backend stop only after the native ports are closed:
 
 ```bash
 npm run isolated-backend -- stop --dev-stack-index="$STACK_INDEX"
@@ -460,14 +482,14 @@ export-on-exit; a container that never existed needs no export. If export verifi
 live, or ownership is ambiguous, stop cleanup and keep the worktree; never bypass the command with raw `docker stop`,
 `docker compose down`, or volume deletion. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
-An ordinary nonzero frontend/API stack does not own the shared Firebase backend, so closing it must not trigger a
-shared export. Before an authorized manual stop or restart of the shared backend itself, run `npm run
-export-emulator-data` once from the primary main worktree and require Firebase's own `Export complete` output; main's
-30-minute periodic exporter is only crash protection and does not prove the latest writes were persisted.
+Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
+0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own
+`Export complete` output; main's 30-minute periodic exporter is only crash protection and does not prove the latest
+writes were persisted.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
 verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
-window. Never stop the shared Worker, quit a terminal app, or close an unrelated window. Only after every applicable
+window. Never stop stack 0's Worker, quit a terminal app, or close an unrelated window. Only after every applicable
 browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
 Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any
 failure blocks removal instead of becoming a warning.

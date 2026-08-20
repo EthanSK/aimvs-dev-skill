@@ -9,7 +9,8 @@ workflow intentionally reflect AIMVS. You are welcome to adapt them to your own 
 ## What it does
 
 - Assigns predictable frontend, API, inspector, and debug-log ports to concurrent Git worktrees.
-- Reuses a shared Firebase emulator stack, with a guarded exclusive workflow for trigger-changing branches.
+- Keeps stack 0 in Ethan's main environment and gives every nonzero stack its own private Firebase, Storage, MinIO,
+  and Download Assets Worker backend.
 - Routes each stack to a persistent real browser while keeping testing on the MacBook display and away from the
   user's active workspace or video.
 - Handles test-account authentication and App Check without committing credentials.

@@ -48,6 +48,14 @@ This derives the window bounds from the live `Built-in Retina Display` frame, cr
 navigates it, and prints its numeric ID. The helper must never activate Safari, raise a window, or require Safari
 to remain frontmost after setup.
 
+Immediately before creating the window, record the PID and launch time of every standard Safari
+`com.apple.WebKit.WebContent` process. Recheck after the first load and after every later full navigation, reload,
+forced reload, or replacement-window load; retain each process that appeared during that exact test action as a
+task-created renderer. Exclude `WebContent.EnhancedSecurity` and WebKit processes owned by other apps. If another
+Safari interaction occurred during the same boundary, treat attribution as ambiguous instead of claiming the new
+PID. This tracking is mandatory because Safari page processes are launchd children and can survive after their
+owning window disappears.
+
 When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile with the
 applicable Computer Use/browser controller—never a fresh or isolated profile. After recording the existing window
 IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
@@ -204,6 +212,16 @@ Safari AppleScript, require exactly one matching window, close that exact window
 inventory and require the ID to be gone. This Safari-only fallback preserves unrelated sheets and windows when
 Computer Use loses its original window target during the close.
 
+For Safari, window cleanup is still incomplete at this point. Wait up to ten seconds and require every
+task-created WebContent PID recorded during the test to exit. If one survives, inspect its unchanged PID, launch
+time, command, CPU, physical footprint, and Safari-container files; also require `TEST_WINDOW_ID` to be gone and
+the exact stack origin to be absent from every remaining Safari window. A renderer that appeared during the exact
+test action and still runs after those checks is a proven active orphan, not a `Z` zombie. Stop only that PID using
+`INT`, then `TERM`, then `KILL` if required, rechecking after each signal. Verify Safari's pre-existing windows and
+processes remain present afterward. If attribution, current tab ownership, or concurrent Safari activity is
+ambiguous, do not signal anything: report the cleanup blocker immediately and ask Ethan to quit Safari. Never let
+the task finish, open another Safari replacement, or rely on the 24-hour stack check while the renderer remains.
+
 After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
 The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,
 unless Ethan explicitly asked to keep that exact nonzero stack running.
@@ -218,6 +236,11 @@ repeat the assigned browser's creation-and-placement flow, record the new ID, an
 state again and continue from the last reliable checkpoint. Capture useful crash/report text or visible error
 details if available, then check frontend/API/emulator logs to decide whether the crash was browser instability
 or an app-triggered failure.
+
+When Safari reports a page as non-responsive, finish the renderer-exit procedure above before creating any
+replacement or switching browsers. A force reload that creates another renderer does not clean up the hung one.
+If the replacement is also blank, frozen, or non-responsive, close and verify it once, then stop using Safari for
+that run and continue only with the next safely assigned browser.
 
 After a crash or forced browser restart, always re-check emulator state and operation status docs before retrying
 the action. This avoids double-running a mutation while the previous backend operation actually succeeded.
