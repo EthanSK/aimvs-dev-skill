@@ -20,9 +20,8 @@ direct commits here can be replaced by its guarded publisher and are never impor
 - Verifies each feature at the UI, emulator-state, and frontend/API-log layers.
 - Captures important settled-state PNGs of only the exact dedicated browser window through ScreenCaptureKit—never
   reverted or recreated old behavior, the whole display, or a continuous recording.
-- Maintains one append-only Markdown evidence source per worktree and renders a double-clickable HTML report with
-  result counts, confidence summaries, coverage areas, independently captioned screenshot cards, and a fast
-  click-to-enlarge overlay that stays inside the browser viewport.
+- Maintains one append-only Markdown evidence source per worktree with independently captioned screenshot evidence.
+  Automatic HTML report rendering is currently disabled; the dormant renderer remains available for later use.
 - Requires the host repository to store manual-test PNGs through Git LFS so durable evidence does not bloat
   ordinary Git history.
 - Preserves durable setup, recovery, and testing discoveries through a continuous-improvement contract.
@@ -49,8 +48,7 @@ scripts/                             Window setup, screenshot capture, and repor
 - A host repository whose dev servers, emulator commands, credentials, and logs match—or have been adapted from—
   the AIMVS conventions routed by `SKILL.md`.
 
-The HTML renderer uses `marked`. Run `npm install` in this repository when the host project does not already
-provide that dependency.
+The dormant HTML renderer uses `marked`. Its dependency remains installed so the renderer can be re-enabled later.
 
 ## Install as an exact Git reference
 

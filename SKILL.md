@@ -48,6 +48,8 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
+- Keep manual-test evidence in Markdown and PNGs. HTML report generation is disabled; preserve but do not run the
+  dormant renderer, and leave existing `index.html` files unchanged unless Ethan explicitly re-enables it.
 - Keep **Preview Rendering** enabled by default on nonzero stacks. Disable it only for a deliberate lean-mode or
   performance-isolation test, then enable it again before cleanup because its per-origin localStorage override persists
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
@@ -107,9 +109,9 @@ linked directly here so an agent never needs to discover operating instructions 
    or changed by the current task and regressions those changes caused. Do not ask it to redesign or polish unrelated
    pre-existing UI. Also inspect emulator state, frontend/API/emulator logs, and relevant UI state;
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
-5. Remove only task-created fixtures and temporary hooks, generate and inspect the durable report, close the exact
-   test window, stop and verify the native stack processes, then export and stop any isolated backend while the
-   worktree still exists. Verify cleanup before removing the worktree.
+5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, close the
+   exact test window, stop and verify the native stack processes, then export and stop any isolated backend while
+   the worktree still exists. Verify cleanup before removing the worktree.
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 

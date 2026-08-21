@@ -19,7 +19,6 @@ Each checkout/worktree owns exactly one independent date-prefixed report folder:
 ```text
 manual-test-results/
 └── <YYYY-MM-DD>-<worktree-report-slug>/
-    ├── index.html
     ├── manual-test-results.md
     ├── <YYYY-MM-DD_HH-MM-SS>-<important-state-slug>.png
     └── <later-evidence-screenshots>.png
@@ -29,23 +28,20 @@ The first manual-test session's local date and slug name the folder. Reuse that 
 the same checkout/worktree, even when the date or test area changes. Never copy, move, merge, or consolidate report
 entries or screenshots between worktrees while recording or reviewing tests. Never create a second report folder for
 the same worktree. When Git integrates two branches that independently appended to the same canonical folder,
-preserve both entry streams in newest-first order, keep every screenshot that still represents current behavior, and
-regenerate `index.html`; choosing one side would silently erase valid evidence, while creating another folder would
-make the report tooling reject the checkout. Do not rewrite an integrated entry that still uses the older `proofs:`
-metadata except to remove a screenshot that later UI changes made inaccurate; the renderer shows each surviving
-legacy PNG as an independent evidence card and ignores deliberately removed files.
+preserve both entry streams in newest-first order and keep every screenshot that still represents current behavior;
+choosing one side would silently erase valid evidence, while creating another folder would make the report tooling
+reject the checkout. Do not rewrite an integrated entry that still uses the older `proofs:` metadata except to remove
+a screenshot that later UI changes made inaccurate; keep each surviving legacy PNG as independent evidence.
 The helpers record the owned folder name inside that checkout's private Git directory. Any checkout can still see
 tracked report folders inherited from other work, but it ignores clean inherited folders and creates its own folder
 on the first capture. When this marker is introduced after a checkout already started reporting, the helper adopts
 its one locally changed report folder; more than one is ambiguous and stops for review. Do not edit or copy the
-private assignment marker between worktrees; later capture, create, and render commands use it to select the same
-folder even when several inherited folders are visible.
+private assignment marker between worktrees; later capture and create commands use it to select the same folder even
+when several inherited folders are visible.
 
-`manual-test-results.md` is the append-only evidence source. `index.html` is the final reviewer-facing artifact and
-must be regenerated after every source edit. It uses relative links to the Markdown source and adjacent screenshots,
-so the reviewer can double-click it and review the results without a server. Keep the readable report markup before
-the embedded style block in generated source order so the latest confidence paragraph remains near the top of the
-HTML file while the report stays self-contained.
+`manual-test-results.md` is the append-only reviewer-facing artifact. HTML report generation is disabled: do not run
+`render-manual-test-report.mjs`, and do not create, update, or delete existing `index.html` files. Keep the dormant
+renderer code so Ethan can re-enable it later without rebuilding it.
 
 Store manual-test PNGs through Git LFS:
 
@@ -60,7 +56,7 @@ screenshots appear in `git lfs ls-files`. When introducing this rule to a reposi
 PNGs as ordinary blobs, include `git add --renormalize manual-test-results` in that explicitly requested staging
 operation; never stage or renormalize pre-emptively.
 
-Keep this exact visible guardrail directly below the Markdown title and surface it in the HTML report:
+Keep this exact visible guardrail directly below the Markdown title:
 
 > Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records, but remove screenshots that no longer represent current behavior.
 
@@ -77,15 +73,15 @@ current working copy.
 
 After further UI changes, the next manual test must audit this worktree's earlier task-owned screenshots before
 handoff. Delete each image that no longer represents current behavior, remove its `screenshots:` or legacy `proofs:`
-metadata from `manual-test-results.md`, and regenerate `index.html`. Keep older run text and every screenshot that
-still accurately documents the current change set; do not delete evidence merely because it is old.
+metadata from `manual-test-results.md`. Keep older run text and every screenshot that still accurately documents the
+current change set; do not delete evidence merely because it is old.
 
 Give every screenshot its own short title, literal caption, and narrow **What this proves** claim. The claim must not
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
 evidence in the scenario steps and supporting checks instead.
 
 Every retained evidence screenshot must burn one high-contrast yellow outline and short yellow review label into the
-final PNG so it is obvious in VS Code, source control, the HTML report, and any image viewer. This is mandatory even
+final PNG so it is obvious in VS Code, source control, and any image viewer. This is mandatory even
 when the evidence concerns the whole window or animation over time. If no safe label position exists, recapture a
 composition that can be annotated or document the verification without retaining that screenshot. Keep highlights
 narrow and use at most one per screenshot. The agent chooses the rectangle, one concise explanatory sentence, and the
@@ -140,8 +136,8 @@ bash .agents/skills/aimvs-dev/scripts/highlight-manual-test-screenshot.sh \
 To convert a pixel rectangle or label position, divide each horizontal value by the screenshot width and each vertical
 value by its height, then multiply by 100. `--label-position` is the label's horizontal center and top edge. Put it in
 the nearest clean empty space beside the outline, not over controls, text, visible media, or the highlighted evidence.
-The helper rewrites the PNG itself while preserving its dimensions and original metadata. It does not add report
-metadata or an HTML-only overlay.
+The helper rewrites the PNG itself while preserving its dimensions and original metadata. It does not add a
+viewer-only overlay.
 
 If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual evidence
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
@@ -151,7 +147,7 @@ overwrite an earlier screenshot.
 
 After every capture, load each PNG into the model's visual context with a read-only image inspection tool such as
 `view_image`. The agent performing the test must actually look at and reason from the pixels. A successful capture,
-nonzero dimensions, captions, report rendering, DOM or Accessibility state, and logs do not prove that the UI looks
+nonzero dimensions, captions, Markdown metadata, DOM or Accessibility state, and logs do not prove that the UI looks
 right.
 
 Inspect the whole visible app window at useful detail, not only the control under test. Check the target behavior and
@@ -194,8 +190,8 @@ own pixel inspection.
 
 ## Add the evidence entry
 
-After emulator and log verification, generate the newest entry and initial HTML. Describe each independent screenshot
-with its own title, filename, caption, and quick-glance claim:
+After emulator and log verification, generate the newest Markdown entry. Describe each independent screenshot with
+its own title, filename, caption, and quick-glance claim:
 
 ```bash
 node .agents/skills/aimvs-dev/scripts/create-manual-test-report.mjs \
@@ -235,42 +231,24 @@ marker, and leaves older entries byte-for-byte below it. Complete only the new e
 - Keep bug explanations easy to scan: state the bug/reproduction first, then the solution and retest.
 - Never include credentials, tokens, signed URLs, personal data, secrets, or transient local state.
 
-Regenerate the final page after filling the entry:
-
-```bash
-node .agents/skills/aimvs-dev/scripts/render-manual-test-report.mjs
-```
-
 Before finishing, verify that:
 
-- `index.html` contains the newest result, confidence, scenarios, aggregate counts, coverage areas, and evidence
-  screenshot count;
-- the latest confidence `<p>` appears before the embedded `<style>` block in `index.html`, near the top of the file;
-- every screenshot appears as a large independent card with its title, caption, and **What this proves** text, in a
-  two-column desktop grid that stacks on narrow screens;
+- `manual-test-results.md` contains the newest result, confidence, scenarios, coverage areas, screenshot metadata,
+  and **Points of weirdness**;
+- every screenshot has its own title, caption, and **What this proves** metadata in the newest Markdown entry;
 - every retained evidence PNG visibly contains exactly one high-contrast yellow outline and a brief yellow
   reviewer-friendly label without obscuring the evidence; recapture or omit any screenshot that cannot be annotated
   safely, and document the verification gap in the report;
-- clicking any screenshot opens it in an in-page browser-viewport overlay, clicking the enlarged image or pressing
-  Escape closes it immediately, native browser fullscreen is never used, and the trigger is keyboard-accessible;
 - every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
   agent, shows only the dedicated browser window at the intended moment, supports its evidence claim, and has no
   unaddressed task-caused visual defect;
 - `git check-attr filter -- <each-png>` reports `lfs` so future commits cannot store it as a normal Git blob;
-- the newest run is expanded and older runs remain available;
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
+- no `index.html` file was created, updated, or deleted;
 - the folder contains no credentials, logs, PID/state files, recordings, temporary captures, or unrelated artifacts.
 
 Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
-automatically open `index.html` or any evidence file at the end of the task. When renderer layout itself changed,
-verify the generated HTML in the already assigned dedicated test-browser window without raising it, then leave a
-clickable report link in the final response so Ethan decides whether to open it. Do not enable Safari's **Allow
-JavaScript from Apple Events** setting merely to scroll or inspect a report; leave browser security settings intact
-and combine non-activating visual inspection with deterministic HTML/file checks.
-
-When the personal `ethansk.open-index-in-system-browser` VS Code extension is installed, Ethan can right-click the
-report's `index.html` row in the Source Control pane and choose **Open index.html in System Browser**. Treat that as a
-user-initiated convenience only; never invoke the command or open the report automatically during handoff.
+automatically open any evidence file at the end of the task.
 
 Do not stage or commit the folder unless the user asks. When they request the related implementation commit, keep the
 report folder and screenshots with those code changes unless he explicitly excludes the images.
@@ -280,8 +258,8 @@ opening the report. State `None` explicitly when the section is empty.
 
 ## Reading past evidence
 
-Search the relevant checkout/worktree's one report folder first. Use `index.html` for quick review and
-`manual-test-results.md` for exact text/fingerprints. If a question spans worktrees, read and label each folder
-separately; never merge their histories. Report only what the entries and attached screenshots prove, distinguish
-clean-commit evidence from dirty-tree evidence, and state gaps instead of inferring coverage. Never auto-open the
-report or Preview while answering a history question.
+Search the relevant checkout/worktree's one report folder first and use `manual-test-results.md` for exact
+text/fingerprints. If a question spans worktrees, read and label each folder separately; never merge their histories.
+Report only what the entries and attached screenshots prove, distinguish clean-commit evidence from dirty-tree
+evidence, and state gaps instead of inferring coverage. Never auto-open the report or Preview while answering a
+history question.

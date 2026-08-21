@@ -19,7 +19,6 @@ import {
   titleFromSlug,
   writeFileAtomically,
 } from './manual-test-report-common.mjs';
-import { renderManualTestReport } from './render-manual-test-report.mjs';
 
 const options = parseOptions(process.argv.slice(2));
 const repoRoot = getRepoRoot();
@@ -117,11 +116,9 @@ intentional-but-non-obvious behavior, or open question. Use "None" when appropri
 <!-- Meaningful gaps. Use "None" only when the intended scope was fully covered. -->`;
 const insertionIndex = markerIndex + insertionMarker.length;
 const updatedReport = `${existingReport.slice(0, insertionIndex)}\n\n${entry}${existingReport.slice(insertionIndex)}`; // Insert above the untouched prior entries so the history stays newest-first without rewriting old evidence.
-writeFileAtomically(workspace.sourcePath, updatedReport);
-await renderManualTestReport(workspace);
+writeFileAtomically(workspace.sourcePath, updatedReport); // HTML report generation was rejected because Ethan does not review the generated website; keep Markdown as the record and do not restore automatic rendering unless he re-enables it. (Codex task: 01a0249c-f335-7093-a658-918103ac4a76)
 
 console.log(`source=${workspace.sourcePath}`);
-console.log(`html=${workspace.htmlPath}`);
 
 function parseOptions(args) {
   const parsed = {
