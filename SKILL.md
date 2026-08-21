@@ -37,11 +37,14 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   action. Read-only port and log inspection is allowed.
 - Keep every AIMVS browser interaction in one exact agent-owned window on `Built-in Retina Display`. Preserve every
   pre-existing browser window, external-display workspace, active media window, and unrelated app.
-- While Ethan is actively using the Mac, a manual-test request authorizes only background browser interaction. It does
-  not authorize activating, raising, or making the test browser frontmost; request his explicit current approval for
-  the exact blocked interaction before any essential focus change. If an action unexpectedly foregrounds the browser
-  or attaches to the wrong window or URL, stop all further Computer Use for that browser session and do not retry it
-  automatically. (Codex task: 01a024ca-37e3-7883-89fe-f3233fb75a94)
+- While Ethan is actively using the Mac, keep manual testing in the background on a best-effort basis. Never call an
+  explicit activate, raise, unhide, or frontmost action. Prefer read-only evidence; when input is essential, use one
+  exact app-targeted action without activation, then immediately verify both the active app and window order. Sky may
+  still raise its input target automatically, especially for drag, so if the browser appears above Ethan's active
+  window, changes the active app, attaches to the wrong window or URL, or otherwise interrupts him, stop all further
+  Computer Use for that browser session and do not retry it automatically. Request his explicit current approval only
+  when an essential interaction cannot be attempted without a known focus change. (Codex tasks:
+  01a024ca-37e3-7883-89fe-f3233fb75a94, 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
   AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.

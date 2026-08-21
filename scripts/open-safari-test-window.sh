@@ -7,6 +7,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_URL="${1:-http://localhost:4200/}"
 EXISTING_WINDOW_ID="${2:-}"
 
+swift - <<'SWIFT'
+import AppKit
+import Foundation
+
+guard let safari = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == "com.apple.Safari" }) else { // Launching Safari can order a new window above Ethan's active app without activating Safari, so fail before AppleScript can launch it. (Codex task: 01a024f9-f80c-71c0-9005-51c76fc2e18d)
+  FileHandle.standardError.write(Data("Safari is not running; refusing to launch it during background browser testing.\n".utf8))
+  exit(1)
+}
+guard !safari.isHidden else { // NSRunningApplication.unhide() can overlap Ethan's active window without changing the active app, so a hidden Safari is unavailable for background testing. (Codex task: 01a024f9-f80c-71c0-9005-51c76fc2e18d)
+  FileHandle.standardError.write(Data("Safari is hidden; refusing to unhide it during background browser testing.\n".utf8))
+  exit(1)
+}
+SWIFT
+
 target_bounds="$({ TARGET_DISPLAY_NAME="$TARGET_DISPLAY_NAME" swift - <<'SWIFT'
 import AppKit
 import Foundation
@@ -30,8 +44,6 @@ SWIFT
 
 IFS=',' read -r left top right bottom <<<"$target_bounds"
 
-hidden_window_ids="$(osascript -e 'tell application "Safari" to get id of every window whose visible is false' | tr -d ' ')"
-
 window_id="$(osascript - "$left" "$top" "$right" "$bottom" "$TARGET_URL" "$EXISTING_WINDOW_ID" <<'APPLESCRIPT'
 on run argv
   set leftBound to item 1 of argv as integer
@@ -48,6 +60,7 @@ on run argv
       on error
         error "Safari test window " & existingWindowId & " no longer exists; refusing to create an untracked replacement"
       end try
+      if visible of testWindow is false then error "Safari test window " & existingWindowId & " is hidden; refusing to show it during background browser testing"
       set URL of current tab of testWindow to targetURL
     else
       set existingWindowIds to id of every window
@@ -61,7 +74,6 @@ on run argv
       end repeat
       if testWindow is missing value then error "Could not identify the newly created Safari window"
     end if
-    set visible of testWindow to true
     set bounds of testWindow to {leftBound, topBound, rightBound, bottomBound}
     set testWindowId to id of testWindow as text
   end tell
@@ -70,41 +82,6 @@ on run argv
 end run
 APPLESCRIPT
 )"
-
-swift - <<'SWIFT'
-import AppKit
-
-guard let safari = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == "com.apple.Safari" }) else {
-  fatalError("Safari is not running")
-}
-_ = safari.unhide()
-SWIFT
-
-osascript - "$window_id" "$hidden_window_ids" <<'APPLESCRIPT'
-on split_ids(joinedIds)
-  if joinedIds is "" then return {}
-  set previousDelimiters to AppleScript's text item delimiters
-  set AppleScript's text item delimiters to ","
-  set windowIds to text items of joinedIds
-  set AppleScript's text item delimiters to previousDelimiters
-  return windowIds
-end split_ids
-
-on run argv
-  set testWindowId to item 1 of argv as integer
-  set hiddenWindowIds to my split_ids(item 2 of argv)
-  tell application "Safari"
-    set visible of first window whose id is testWindowId to true
-    repeat with hiddenWindowId in hiddenWindowIds
-      if (hiddenWindowId as integer) is not testWindowId then
-        try
-          set visible of first window whose id is (hiddenWindowId as integer) to false
-        end try
-      end if
-    end repeat
-  end tell
-end run
-APPLESCRIPT
 
 sleep 0.5
 inspection="$(swift "$SCRIPT_DIR/inspect-browser-displays.swift")"
