@@ -6,6 +6,9 @@ This skill was built for the private **AI Music Video Studio (AIMVS)** repositor
 working reference rather than a framework: the commands, ports, browser order, Firebase conventions, and report
 workflow intentionally reflect AIMVS. You are welcome to adapt them to your own project.
 
+The AIMVS repository is the only authoring source for Ethan's copy. This public repository is an output-only mirror;
+direct commits here can be replaced by its guarded publisher and are never imported back into AIMVS.
+
 ## What it does
 
 - Assigns predictable frontend, API, inspector, and debug-log ports to concurrent Git worktrees.
@@ -65,8 +68,9 @@ After cloning the host repository:
 git submodule update --init --recursive
 ```
 
-To update the shared skill, commit and push inside the submodule first, then commit the updated submodule pointer
-in the host repository. Do not edit a detached submodule revision without creating or checking out a branch.
+To update an installed copy after Ethan publishes a new revision, fetch and check out that public revision, then
+commit the updated submodule pointer in the host repository. Fork the public repository before authoring your own
+adaptation; do not treat a direct commit to Ethan's public mirror as an upstream change to AIMVS.
 
 ## Adapt it to another project
 

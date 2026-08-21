@@ -25,6 +25,11 @@ and is never an agent test target. Every agent-run test uses a free nonzero stac
 uncommitted changes in the primary worktree. Stack 0 keeps Ethan's main native services; every nonzero stack uses its
 own private backend containers plus its own indexed native frontend/API processes.
 
+Author every change to this skill in the AIMVS repository. The public `EthanSK/aimvs-dev-skill` repository is an
+output-only mirror: publish to it through AIMVS's guarded publisher, never pull, merge, or otherwise import its
+history into AIMVS, and expect the publisher to replace any direct public-repository commits. (Codex task:
+01a0200e-ba77-7e42-8233-0fb4caa5bc70)
+
 ## Universal safeguards
 
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.

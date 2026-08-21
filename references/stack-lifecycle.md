@@ -146,8 +146,10 @@ folders before continuing.
 
    The private backend does not replace ignored API config; R2/Stripe local config still comes from
    `apps/api/.env.local`.
-   The API startup should say `injecting env (4) from .env.local`; if it says `(0)`, R2 signing will fail
-   with `No value provided for input HTTP label: Bucket`. Run `watch:api` after linking so the build copies it
+   Stack 0 API startup should say `injecting env (4) from .env.local`; a healthy nonzero stack says `(2)` because
+   `getDevStackEnv` deliberately pre-sets `CLOUDFLARE_R2_ENDPOINT` and `CLOUDFLARE_R2_BUCKET_NAME`. Both still require
+   the same four assignments in the source and copied `.env.local` files. If startup says `(0)`, R2 signing will fail
+   with `No value provided for input HTTP label: Bucket`. Run `watch:api` after linking so the build copies the file
    into `dist/apps/api/.env.local` before `serve:api:standalone:debug` starts.
 
    The frontend App Check debug token is also ignored local config. `apps/frontend/plugins/env-var-plugin.js`
@@ -182,6 +184,17 @@ folders before continuing.
    Later starts always retain that stack's existing private Firebase export and MinIO volume, and an interrupted first
    initialization retries with its already-persisted seed choice. Never delete its volumes, reseed it, or merge its data
    into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105)
+
+   The launcher creates the three exact private data volumes before Compose starts and declares them external so
+   Compose never offers to recreate preserved data merely because its volume configuration changed. For an ownerless
+   volume created by the earlier launcher, the first updated start still requires the complete correctly owned
+   container/mount proof; it then atomically records the worktree and all three volume creation identities inside the
+   backend-state volume. Later starts can verify that durable record even if the stopped containers were removed. If
+   Compose ever prints `Recreate (data will be lost)?`, do not answer it: stop and investigate because the guarded
+   launcher is designed to keep that destructive path unreachable. Any transient Docker writer that receives the
+   record through stdin must use `docker run --interactive` and read the JSON back before Compose starts; without the
+   flag, Docker closes stdin and `cat` silently creates a zero-byte record. (Codex task:
+   01a0200e-ba77-7e42-8233-0fb4caa5bc70)
 
    The API watcher does not replace the Functions bundle baked into the isolated Firebase image. After changing a
    Function definition or trigger-local code, run the guarded isolated-backend `stop`, then `start` again before
@@ -361,11 +374,14 @@ and a next-run time 24 hours after stack start. A completed-looking create/updat
 persisted. Keep the automation identifier in the task context, and recover it later by the unique worktree/stack name
 if compaction removed that context.
 
-Encode a one-time target with its local calendar date as well as its local clock time, such as a one-count yearly rule
-with `BYMONTH` and `BYMONTHDAY`; a daily one-count rule can fire later the same day instead of tomorrow. Follow the
-scheduler tool's contract and write the user's local wall-clock fields directly rather than converting them to UTC.
-Still verify the scheduler's absolute next-run instant after saving, because the stored recurrence text alone does
-not prove that the host interpreted its timezone correctly.
+Encode a one-time target with its calendar date as well as its clock time, such as a one-count yearly rule with
+`BYMONTH` and `BYMONTHDAY`; a daily one-count rule can fire later the same day instead of tomorrow. Do not assume that
+recurrence clock fields use the user's local timezone. Codex Desktop's verified heartbeat path on this host interprets
+`BYHOUR` as UTC: for a target of `2026-08-22T04:48:56+01:00`, `BYHOUR=4` incorrectly produced
+`2026-08-22T05:48:56+01:00`, while `BYHOUR=3` produced the exact target. Convert the desired absolute instant to the
+timezone required by the scheduler contract, then read back its absolute `next_run_at` and require exactly 86,400
+seconds after verified readiness. If the readback differs, correct the recurrence and read it back again; stored rule
+text alone is never proof. (Codex task: 01a0177f-6b75-7961-b422-b6eab7d19ded)
 
 When the follow-up runs, ignore the heartbeat's own turn when judging activity and prove all of the following before
 calling the stack unused:

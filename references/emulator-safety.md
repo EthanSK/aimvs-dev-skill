@@ -254,6 +254,11 @@ explicit `--seed=empty`. Its first launch may therefore use the canonical seed o
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
+The launcher creates those exact data volumes itself and marks them external to Compose so a configuration update
+cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes are adopted only after their exact
+worktree containers and mounts prove ownership; the launcher then records the worktree plus all three volume creation
+identities atomically in the backend-state volume. Reject any later identity mismatch, and never answer a Compose
+`Recreate (data will be lost)?` prompt. (Codex task: 01a0200e-ba77-7e42-8233-0fb4caa5bc70)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
 on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal
