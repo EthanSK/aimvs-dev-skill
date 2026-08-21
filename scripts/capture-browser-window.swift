@@ -64,6 +64,13 @@ private struct BrowserWindowCapture {
     "com.operasoftware.OperaGX",
     "org.mozilla.firefox",
   ])
+  private static let allowedBrowserOwnerNames = Set([
+    "Firefox",
+    "Google Chrome",
+    "Opera",
+    "Opera GX",
+    "Safari",
+  ])
 
   static func main() async {
     do {
@@ -97,9 +104,10 @@ private struct BrowserWindowCapture {
       )
     }
     let bundleId = window.owningApplication?.bundleIdentifier ?? ""
-    guard allowedBrowserBundleIds.contains(bundleId) else {
+    let ownerName = (CGWindowListCopyWindowInfo([.optionIncludingWindow], options.windowId) as? [[String: Any]])?.first?[kCGWindowOwnerName as String] as? String ?? "" // Bug: Safari can expose the exact window to ScreenCaptureKit without an owningApplication, which rejected valid evidence captures; accept the same window only when CoreGraphics independently identifies an approved browser owner. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
+    guard allowedBrowserBundleIds.contains(bundleId) || (bundleId.isEmpty && allowedBrowserOwnerNames.contains(ownerName)) else {
       throw CaptureError.invalidBrowserWindow(
-        "Window \(options.windowId) belongs to \(bundleId.isEmpty ? "an unknown app" : bundleId), not an approved test browser"
+        "Window \(options.windowId) belongs to \(bundleId.isEmpty ? (ownerName.isEmpty ? "an unknown app" : ownerName) : bundleId), not an approved test browser"
       )
     }
 
@@ -137,7 +145,7 @@ private struct BrowserWindowCapture {
       throw CaptureError.capture("Screenshot capture produced no image data")
     }
     print(
-      "capture-finished=window:\(options.windowId),bundle:\(bundleId),size:\(image.width)x\(image.height),bytes:\(size?.intValue ?? 0)"
+      "capture-finished=window:\(options.windowId),browser:\(bundleId.isEmpty ? ownerName : bundleId),size:\(image.width)x\(image.height),bytes:\(size?.intValue ?? 0)"
     )
   }
 }

@@ -61,7 +61,9 @@ applicable Computer Use/browser controller—never a fresh or isolated profile. 
 IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
 `Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window only when one new ID
 for the assigned browser appears on that display and the controller state shows `STACK_URL`; save that ID as
-`TEST_WINDOW_ID`. This creation-and-placement operation is the only browser action allowed before verification.
+`TEST_WINDOW_ID`. When Accessibility returns a window query or collection, bind the exact new window object before
+changing its position or size; reusing `item 1` after the first mutation can re-evaluate the query and resize a
+pre-existing window instead. This creation-and-placement operation is the only browser action allowed before verification.
 If the controller cannot create, identify, and place that exact new window without navigating, moving, raising,
 or closing a pre-existing window, stop and report the blocker instead of improvising.
 
