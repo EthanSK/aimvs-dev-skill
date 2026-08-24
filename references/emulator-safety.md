@@ -254,6 +254,15 @@ explicit `--seed=empty`. Its first launch may therefore use the canonical seed o
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
+If Docker reports `all predefined address pools have been fully subnetted` while creating a new isolated Compose
+network, do not prune networks, stop another stack, or reuse another stack's subnet. For stack indices 1 through 254,
+first prove that Docker has no network and macOS has no host route overlapping `10.250.N.0/24`, then create only
+`aimvs-isolated-backend-stack-N_default` as a bridge with subnet `10.250.N.0/24`, gateway `10.250.N.1`, and the Compose
+labels `com.docker.compose.project=aimvs-isolated-backend-stack-N` and `com.docker.compose.network=default`. Rerun the
+normal guarded start and require every indexed container, mount, and loopback port to pass its usual ownership checks;
+never use this recovery when the subnet overlaps, the index is outside that range, or ownership is ambiguous. Preserve
+the task-owned network with the stopped stack just like its private volumes. (Codex task:
+01a03564-7a64-7be2-a3f6-390ab477b9a6)
 The launcher creates those exact data volumes itself and marks them external to Compose so a configuration update
 cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes are adopted only after their exact
 worktree containers and mounts prove ownership; the launcher then records the worktree plus all three volume creation
