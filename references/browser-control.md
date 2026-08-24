@@ -74,17 +74,15 @@ Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
-After setup, keep manual testing in the background on a best-effort basis while Ethan uses the Mac; a manual-test
-request does not authorize activating, raising, or making the test browser frontmost. Never call an explicit
-`activate_window`, `Raise`, unhide, or frontmost action. Prefer non-activating screenshots, Accessibility state, and
-logs. When an input is essential, capture the frontmost app and a read-only CoreGraphics window-list snapshot showing
-the relative order of `TEST_WINDOW_ID` and that app's visible windows, use one exact app-targeted input without an
-activation call, then immediately verify that both states stayed unchanged. The installed Sky Window2 API says input
-methods activate their target, and an observed app-targeted `sky.drag` reordered Opera without changing the reported
-active app, so background preservation cannot be guaranteed. If the browser becomes active or appears above Ethan's
-active window, stop the browser-control sequence and do not retry it automatically. Ask for explicit current approval
-only when an essential interaction is known to require a focus change. Approval covers only the named interaction,
-one bounded activation, and its conditional restoration. Restore the previously frontmost app only when
+After setup, keep manual testing in the background on a best-effort basis while Ethan uses the Mac. An explicit
+current request for AIMVS manual browser or Computer Use testing authorizes the verified dedicated test window to
+become frontmost when required; do not ask for another approval solely for that focus change. Prefer non-activating
+screenshots, Accessibility state, and logs. Before a known foreground interaction, send one normal macOS heads-up,
+capture the frontmost app and a read-only CoreGraphics window-list snapshot, then verify `TEST_WINDOW_ID` and its
+exact URL immediately before and after input. The installed Sky Window2 API says input methods activate their target,
+and an observed app-targeted `sky.drag` reordered Opera without changing the reported active app, so treat either
+active-app or window-order movement as foregrounding but not as a reason to abandon an otherwise authorized test.
+Restore the previously frontmost app only when
 `TEST_WINDOW_ID` is still the frontmost window; if any other window or app is frontmost, preserve it because Ethan may
 have resumed work during the interaction. Do not reintroduce app-level or unconditional focus restoration because
 either can override Ethan's newer same-app window or app choice. (Codex tasks:
@@ -100,9 +98,9 @@ saved Safari window ID as an interaction target. If fresh state therefore return
 non-activating ScreenCaptureKit helper for read-only evidence and stop all further Safari Computer Use for that
 session. For one essential best-effort background Sky interaction, verify the numeric `TEST_WINDOW_ID`, record the
 frontmost app and the read-only CoreGraphics window order, perform only the exact app-targeted action without calling
-activation, then recheck both states. If the browser moved forward, stop; do not reclaim focus, restore apps
-automatically, or retry. When the only usable method is documented to activate its target, obtain Ethan's explicit
-current approval for that named focus change and send the normal macOS heads-up. Restore the previous app only if
+activation, then recheck both states. If the browser moved forward, reverify the exact task window before continuing;
+do not restore apps automatically. When the only usable method is documented to activate its target, rely on the
+current manual-test request and send the normal macOS heads-up instead of asking again. Restore the previous app only if
 `TEST_WINDOW_ID` is still the frontmost Safari window; if focus has moved elsewhere, leave it there.
 
 The browser must skip a View Transition when `document.visibilityState` is `hidden`. A background Safari window can
@@ -110,7 +108,8 @@ therefore complete Angular route activation and expose the destination Accessibi
 remain blank or stale. For background route changes, navigate the tracked window directly to the exact destination
 URL so Safari performs a full document load without the Router transition, then verify the URL, Accessibility tree,
 pixels, and fresh logs again. Do not misdiagnose this as an emulator delay or retry the same in-app navigation. If the
-test specifically needs the Router transition itself, stop and request foreground permission instead. A direct URL
+test specifically needs the Router transition itself, use the authorized task window in the foreground after the
+normal macOS heads-up. A direct URL
 load is only valid for setting up visual evidence; never use it to claim that in-app navigation is reliable or to
 investigate a blank RouterOutlet, because it bypasses the exact transition path under test.
 
@@ -149,16 +148,12 @@ The dedicated test window is agent-owned, so operate it in the background on a b
 for exclusive control. The user may keep working in other apps and browser windows throughout the test. Prefer fresh
 `get_app_state` state, exact-window ScreenCaptureKit captures, Accessibility queries, and logs before using input.
 
-An explicit request to run a Computer Use test authorizes one exact app-targeted input at a time inside the verified
-dedicated test window, provided the agent does not call explicit activation, raising, unhiding, or frontmost APIs.
-Before each input, record the frontmost app and a read-only CoreGraphics window-list snapshot showing the relative
-order of `TEST_WINDOW_ID` and that app's visible windows; immediately afterward, require both to remain unchanged
-before continuing. Sky's installed Window2 API says input methods automatically activate their target, and an
-app-targeted `sky.drag` has visibly reordered a browser without changing the reported active app, so prefer an
-available method that does not promise activation and treat background operation as best effort rather than
-guaranteed. If the browser becomes active or overlaps Ethan's active window, stop the browser-control sequence and do
-not retry. The ordinary Computer Use confirmation policy still applies to consequential actions such as credentials,
-payments, permanent deletion, or sensitive-data transmission. (Codex task:
+An explicit request to run a Computer Use test authorizes input inside the verified dedicated test window, including
+bounded foreground control when the browser technology requires it. Before each input, verify `TEST_WINDOW_ID`, the
+exact stack URL, and the current frontmost app; after each input, re-verify ownership and preserve any newer user focus
+choice. Prefer a non-activating method when it works, but do not stop or ask again merely because the exact task window
+becomes active or overlaps Ethan's active window. The ordinary Computer Use confirmation policy still applies to
+consequential actions such as credentials, payments, permanent deletion, or sensitive-data transmission. (Codex task:
 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
 Keep the tracked window unminimized on `Built-in Retina Display`; a minimized Safari window drops out of Computer
@@ -166,8 +161,8 @@ Use targeting. Before every input action, require the current Computer Use state
 exact stack URL, and worktree banner. Use element-index actions and app-targeted key presses so the action stays scoped
 to that window. If any identity is missing or mismatched, do not click coordinates, press keys, reload, close, or
 perform another Computer Use action in that browser session. Keep testing in the background on a best-effort basis;
-when a foreground interaction is essential and explicitly approved, follow the bounded focus-and-restore workflow
-above. Never send global keyboard or pointer input.
+when foreground interaction is required, send the heads-up once and follow the bounded focus-and-restore workflow
+above without requesting duplicate approval. Never send global keyboard or pointer input.
 
 Opera can expose the same page twice in one fresh Accessibility tree; the first subtree's element ids reject actions
 as invalid while the later subtree contains the focused HTML content. When exact controls are duplicated, act only on
@@ -187,24 +182,21 @@ Finish stack health, fixtures, uploads, and test sequencing before the first int
 screenshot capture, and report generation in the background. Use the same stack URL, `.secret.local` credentials,
 and App Check debug token as the normal visible browser; do not switch to an isolated browser mode.
 
-If an action unexpectedly steals focus, targets a different window, or is changed by the user's simultaneous input,
-stop all further Computer Use for that browser session. Re-check ownership, window identity, URL, logs, and pixels
-only through non-activating read-only methods. Do not retry after a delay, attempt a focus-preserving Computer Use
-retry, restore the page with keys or coordinates, or treat the manual-test request as permission for a foreground
-retry. Continue automated and terminal-side verification, then report the browser-control limitation or request
-explicit approval for one exact essential focus change.
+If an action foregrounds the verified task window, re-check ownership, window identity, URL, logs, and pixels before
+continuing; the current manual-test request already authorizes that bounded foreground interaction. If it targets a
+different window or is changed by the user's simultaneous input, stop input, preserve the user's newer state, and
+resume only after fresh read-only verification proves the exact task window again. Never restore the page or focus
+with ambiguous keys or coordinates.
 
 Treat the test browser window appearing above Ethan's active window as foregrounding even when System Events still
 reports another app as frontmost. The installed Sky API says Window2 input methods activate their target, while an
 observed app-targeted `sky.drag` reordered the target window without changing the reported active app. This is why the
-agent must check both active-app and ordered-window state, and why an overlap must stop further input rather than
-trigger a retry. (Codex task: 01a024f9-f80c-71c0-9005-51c76fc2e18d)
+agent must check both active-app and ordered-window state and reverify the exact task target before continuing.
+(Codex task: 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
-Sustained foreground control is opt-in only when Ethan explicitly asks for it. A brief focus change is not part of
-ordinary manual-test authorization; it requires explicit current approval for the exact blocked interaction and then
-the macOS heads-up. Restore the previously frontmost app only when `TEST_WINDOW_ID` remains the frontmost window;
-otherwise preserve Ethan's newer focus choice. A View Transition test in any browser requires explicit foreground
-permission because it intentionally keeps the test document frontmost.
+Keep foreground control bounded to the requested manual-test flow. The current request is sufficient authorization;
+send the macOS heads-up before taking focus and do not ask again. Restore the previously frontmost app only when
+`TEST_WINDOW_ID` remains the frontmost window; otherwise preserve Ethan's newer focus choice.
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
@@ -217,10 +209,10 @@ click: the click can activate a hidden dev or management action instead of expan
 exposed `Expand` secondary action once; if neither Accessibility state nor pixels change and coordinate input is
 unavailable, report the panel interaction as blocked instead of clicking the composite target.
 
-If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user
-changed the app mid-action, assume the user is using the computer. Stop the browser-control sequence and do not
-schedule retries or poll `get_app_state`; continue non-UI work instead. Resume Computer Use only after Ethan explicitly
-says the Mac is available for browser interaction or approves one exact essential focus change.
+If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user changed
+the app mid-action, assume the user is using the computer. Stop that input, preserve the newer focus choice, and
+continue non-UI work until fresh read-only state proves the dedicated task window can be targeted safely. Do not ask
+for duplicate approval; report a blocker only if exact targeting remains ambiguous.
 
 ## Close the dedicated test browser window
 
@@ -231,9 +223,9 @@ it open merely because development work will continue.
 Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory and require
 that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
 otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
-Keep closure in the background. If the controller cannot close the exact window without foregrounding the browser,
-report cleanup as blocked and request explicit approval rather than interrupting Ethan. If exact cleanup cannot be
-proven safe, report it as blocked instead of closing another window or app.
+Keep closure in the background when practical. The current manual-test request authorizes foregrounding solely to
+close the exact tracked task window; do not ask again. If exact cleanup cannot be proven safe, report it as blocked
+instead of closing another window or app.
 
 If a Safari Computer Use close times out and the next state attaches to an unrelated sheet or window, do not click
 the new state or send an app-wide `Cmd+W`. Re-read the tracked numeric `TEST_WINDOW_ID` and its exact URL with
@@ -269,8 +261,9 @@ or an app-triggered failure.
 When Safari reports a page as non-responsive, finish the renderer-exit procedure above before creating any
 replacement or switching browsers. A force reload that creates another renderer does not clean up the hung one.
 If the replacement is also blank, frozen, or non-responsive, close and verify it once, then stop using Safari for
-that run and continue only with the next safely assigned browser. Non-responsive state does not authorize foregrounding
-Safari; use the explicit-approval boundary above if an essential diagnostic genuinely depends on visibility.
+that run and continue only with the next safely assigned browser. Non-responsive state does not broaden the test
+scope, but the current manual-test request already authorizes bounded foreground diagnosis of the exact tracked Safari
+window after the normal macOS heads-up.
 
 After a crash or forced browser restart, always re-check emulator state and operation status docs before retrying
 the action. This avoids double-running a mutation while the previous backend operation actually succeeded.

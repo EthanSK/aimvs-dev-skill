@@ -37,14 +37,14 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   action. Read-only port and log inspection is allowed.
 - Keep every AIMVS browser interaction in one exact agent-owned window on `Built-in Retina Display`. Preserve every
   pre-existing browser window, external-display workspace, active media window, and unrelated app.
-- While Ethan is actively using the Mac, keep manual testing in the background on a best-effort basis. Never call an
-  explicit activate, raise, unhide, or frontmost action. Prefer read-only evidence; when input is essential, use one
-  exact app-targeted action without activation, then immediately verify both the active app and window order. Sky may
-  still raise its input target automatically, especially for drag, so if the browser appears above Ethan's active
-  window, changes the active app, attaches to the wrong window or URL, or otherwise interrupts him, stop all further
-  Computer Use for that browser session and do not retry it automatically. Request his explicit current approval only
-  when an essential interaction cannot be attempted without a known focus change. (Codex tasks:
-  01a024ca-37e3-7883-89fe-f3233fb75a94, 01a024f9-f80c-71c0-9005-51c76fc2e18d)
+- While Ethan is actively using the Mac, keep manual testing in the background on a best-effort basis and preserve
+  every unrelated window. An explicit current request for AIMVS manual browser or Computer Use testing also authorizes
+  the exact dedicated task window to become frontmost when required; do not ask for a second approval merely because
+  that bounded test window may cover or take focus from the active app. Send the normal macOS heads-up before a known
+  focus change, verify the exact task window and URL immediately before and after input, and never restore focus over
+  newer user input. Stop only when ownership becomes ambiguous, the controller targets another window or URL, or
+  continuing would interact with unrelated user state. (Codex tasks: 01a024ca-37e3-7883-89fe-f3233fb75a94,
+  01a024f9-f80c-71c0-9005-51c76fc2e18d, 019fe81d-3690-71d3-820f-2a1ca360dcb4)
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
   AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.
