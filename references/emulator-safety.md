@@ -341,12 +341,24 @@ loaded rules paths separately before attributing the failure to another worktree
 
 Firebase Tools still has this narrow live-delete export race, but AIMVS deliberately does not patch the export loop:
 making a multi-gigabyte snapshot synchronous blocks ordinary Storage requests for the whole copy. The normal
-`postinstall` patch keeps only the larger Storage upload-body limit and actively restores any legacy server/export
-patches left in `node_modules`. Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
+`postinstall` patch keeps the larger Storage upload-body limit, applies the upstream line-buffered Storage Rules
+response handling described below, and actively restores any legacy server/export patches left in `node_modules`.
+Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
 -r ts-node/register tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
 Tools. Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live
 state and logs and retry only after stopping concurrent Storage mutations; do not delete the shared export as a first
 response because that hides the race and loses reusable local state.
+
+Firebase Tools 15.24.0 can wedge authenticated Storage requests while every listener and Docker healthcheck stays
+green. Its Storage Rules bridge parses each child-process stdout chunk as one JSON object, but concurrent replies can
+arrive as multiple newline-delimited objects in one chunk; the decisive log signature is one Storage log message that
+contains two JSON objects separated by a newline. Compare an authenticated Firebase-client upload with an Admin
+Storage upload because Admin bypasses Storage Rules: if Admin finishes but the authenticated request stays at 100%,
+inspect this framing path before restarting or blaming cross-stack isolation. AIMVS patches 15.24.0 with Firebase
+Tools 15.25.0's line-buffered handler until the dependency and emulator-export compatibility gate can be upgraded
+together. Verify with concurrent authenticated uploads, then repeat one real browser GIF, animated WebP, and video
+upload and confirm their thumbnails and retained copies in the stack's private MinIO volume. (Codex task:
+01a000ff-9a55-7e93-a300-1b6e91ab3dc6)
 
 Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. The script checks
 that port before generating rules and exits if it is occupied. Normal dev-stack startup, `npm test`, local Git hooks,

@@ -67,6 +67,8 @@ stands on its own; do not manufacture or require a paired “before” state. A 
 can misleadingly imply that old product behavior was recreated. Capture a state only when it materially helps the
 reviewer see a result, warning, loading boundary, error path, or regression-sensitive UI.
 
+Keep decoded frames, contact-sheet inputs, generated fixtures, derivative media, probe outputs, and superseded recordings in a disposable temporary directory, never under `manual-test-results` or another reviewable repository path. Retain only the few annotated final screenshots and explicitly requested final recordings that a reviewer will actually open; remove the temporary media after extracting the result.
+
 Never revert, reimplement, or temporarily resurrect earlier product behavior solely to capture visual evidence. The
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
