@@ -59,16 +59,32 @@ Safari interaction occurred during the same boundary, treat attribution as ambig
 PID. This tracking is mandatory because Safari page processes are launchd children and can survive after their
 owning window disappears.
 
-When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile with the
-applicable Computer Use/browser controller—never a fresh or isolated profile. After recording the existing window
-IDs, create exactly one dedicated window at `STACK_URL`, place it within the live
-`Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window only when one new ID
-for the assigned browser appears on that display and the controller state shows `STACK_URL`; save that ID as
-`TEST_WINDOW_ID`. When Accessibility returns a window query or collection, bind the exact new window object before
-changing its position or size; reusing `item 1` after the first mutation can re-evaluate the query and resize a
-pre-existing window instead. This creation-and-placement operation is the only browser action allowed before verification.
-If the controller cannot create, identify, and place that exact new window without navigating, moving, raising,
-or closing a pre-existing window, stop and report the blocker instead of improvising.
+When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile—never a fresh
+or isolated profile. After recording the existing window IDs, create exactly one dedicated window at `STACK_URL`,
+place it within the live `Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window
+only when one new ID for the assigned browser appears on that display and the controller state shows `STACK_URL`;
+save that ID as `TEST_WINDOW_ID`. When Accessibility returns a window query or collection, bind the exact new window
+object before changing its position or size; reusing `item 1` after the first mutation can re-evaluate the query and
+resize a pre-existing window instead. This creation-and-placement operation is the only browser action allowed before
+verification. If the controller cannot create, identify, and place that exact new window without navigating, moving,
+raising, or closing a pre-existing window, stop and report the blocker instead of improvising.
+
+Opera 141 foregrounds itself and returns AppleEvent error `-10000` from `make new window` even though it creates the
+window. Never interpret that error alone as failure and never improvise a second window. After Ethan explicitly
+approves that exact foreground interaction and the macOS heads-up succeeds, use the guarded helper:
+
+```bash
+inspection="$(bash .agents/skills/aimvs-dev/scripts/open-opera-test-window.sh "$STACK_URL" --allow-foreground)"
+printf '%s\n' "$inspection"
+TEST_WINDOW_ID="$(sed -n 's/^window=//p' <<<"$inspection")"
+OPERA_SCRIPTING_WINDOW_ID="$(sed -n 's/^scripting_window=//p' <<<"$inspection")"
+```
+
+The helper accepts `-10000` only when delayed before/after inventories prove exactly one new Opera scripting window,
+then navigates and sizes that exact object in a later AppleEvent and independently resolves one new CoreGraphics ID.
+It closes the newly identified scripting window on every later setup failure. This preserves pre-existing Opera
+windows and turns the false error into verified window ownership rather than a retry. (Codex task:
+01a0345e-6001-7353-b097-5527ecae7eca)
 
 Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window creation and placement are a
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
@@ -226,6 +242,13 @@ otherwise stopped browser app, quit it only after the tracked window closes and 
 Keep closure in the background when practical. The current manual-test request authorizes foregrounding solely to
 close the exact tracked task window; do not ask again. If exact cleanup cannot be proven safe, report it as blocked
 instead of closing another window or app.
+
+For an Opera window created by the guarded helper, close and verify both tracked identities with:
+
+```bash
+bash .agents/skills/aimvs-dev/scripts/close-opera-test-window.sh \
+  "$TEST_WINDOW_ID" "$OPERA_SCRIPTING_WINDOW_ID"
+```
 
 If a Safari Computer Use close times out and the next state attaches to an unrelated sheet or window, do not click
 the new state or send an app-wide `Cmd+W`. Re-read the tracked numeric `TEST_WINDOW_ID` and its exact URL with
