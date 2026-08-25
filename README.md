@@ -88,10 +88,10 @@ At minimum, review and change:
 Add these rules to the host repository's `.gitattributes` before capturing evidence:
 
 ```gitattributes
-manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
+_manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
 ```
 
-If the host already tracks manual-test binaries without LFS, run `git add --renormalize manual-test-results` as
+If the host already tracks manual-test binaries without LFS, run `git add --renormalize _manual-test-results` as
 part of the next intentional staging operation, then verify the staged paths with `git lfs ls-files`.
 
 Keep the safety boundaries: never publish credentials, capture an entire display as a fallback, run a continuous

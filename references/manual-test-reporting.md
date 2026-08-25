@@ -17,7 +17,7 @@ and blocked sessions.
 Each checkout/worktree owns exactly one independent date-prefixed report folder:
 
 ```text
-manual-test-results/
+_manual-test-results/
 └── <YYYY-MM-DD>-<worktree-report-slug>/
     ├── manual-test-results.md
     ├── <YYYY-MM-DD_HH-MM-SS>-<important-state-slug>.png
@@ -46,14 +46,14 @@ renderer code so Ethan can re-enable it later without rebuilding it.
 Store manual-test PNGs through Git LFS:
 
 ```gitattributes
-manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
+_manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
 ```
 
 The report generator refuses screenshots whose resolved `filter` attribute is not `lfs`, preventing a later commit
 from silently adding large binary blobs to ordinary Git history. Before a requested commit, verify the relevant
 paths with `git check-attr filter -- <path>`; after staging only when explicitly requested, verify the staged
 screenshots appear in `git lfs ls-files`. When introducing this rule to a repository that already tracks manual-test
-PNGs as ordinary blobs, include `git add --renormalize manual-test-results` in that explicitly requested staging
+PNGs as ordinary blobs, include `git add --renormalize _manual-test-results` in that explicitly requested staging
 operation; never stage or renormalize pre-emptively.
 
 Keep this exact visible guardrail directly below the Markdown title:
@@ -67,7 +67,7 @@ stands on its own; do not manufacture or require a paired “before” state. A 
 can misleadingly imply that old product behavior was recreated. Capture a state only when it materially helps the
 reviewer see a result, warning, loading boundary, error path, or regression-sensitive UI.
 
-Keep decoded frames, contact-sheet inputs, generated fixtures, derivative media, probe outputs, and superseded recordings in a disposable temporary directory, never under `manual-test-results` or another reviewable repository path. Retain only the few annotated final screenshots and explicitly requested final recordings that a reviewer will actually open; remove the temporary media after extracting the result.
+Keep decoded frames, contact-sheet inputs, generated fixtures, derivative media, probe outputs, and superseded recordings in a disposable temporary directory, never under `_manual-test-results` or another reviewable repository path. Retain only the few annotated final screenshots and explicitly requested final recordings that a reviewer will actually open; remove the temporary media after extracting the result.
 
 Never revert, reimplement, or temporarily resurrect earlier product behavior solely to capture visual evidence. The
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the

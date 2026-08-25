@@ -231,7 +231,7 @@ function validateScreenshotFiles(screenshots, reportDirectory, repoRoot) {
     });
     if (!lfsAttribute.endsWith(': filter: lfs')) {
       fail(
-        `Evidence screenshot must use Git LFS. Add "manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text" to .gitattributes: ${repoRelativePath}`,
+        `Evidence screenshot must use Git LFS. Add "_manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text" to .gitattributes: ${repoRelativePath}`,
       );
     }
   }

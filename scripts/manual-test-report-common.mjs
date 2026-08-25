@@ -27,10 +27,10 @@ export function getRepoRoot() {
 }
 
 export function resolveReportWorkspace({ repoRoot, slug, create }) {
-  const reportRoot = join(repoRoot, 'manual-test-results');
+  const reportRoot = join(repoRoot, '_manual-test-results');
   if (create) mkdirSync(reportRoot, { recursive: true });
   if (!existsSync(reportRoot)) {
-    fail('This checkout/worktree has no manual-test-results directory');
+    fail('This checkout/worktree has no _manual-test-results directory');
   }
 
   const entries = readdirSync(reportRoot, { withFileTypes: true });
@@ -66,7 +66,7 @@ export function resolveReportWorkspace({ repoRoot, slug, create }) {
             '--short',
             '--untracked-files=all',
             '--',
-            join('manual-test-results', directoryName),
+            join('_manual-test-results', directoryName),
           ],
           { cwd: repoRoot },
         ),
