@@ -1,6 +1,6 @@
 # AIMVS Dev Skill
 
-> A project-specific Codex skill for running several Git worktrees as isolated local dev stacks, safely controlling real desktop browsers, verifying Firebase-backed behavior, and producing screenshot-based reviewer-friendly manual-test reports.
+> A project-specific Codex skill for running several Git worktrees as isolated local dev stacks, safely controlling persistent desktop browsers or task-scoped in-app Browser overflow sessions, verifying Firebase-backed behavior, and producing screenshot-based reviewer-friendly manual-test reports.
 
 This skill was built for the private **AI Music Video Studio (AIMVS)** repository. It is public as a complete,
 working reference rather than a framework: the commands, ports, browser order, Firebase conventions, and report
@@ -14,12 +14,14 @@ direct commits here can be replaced by its guarded publisher and are never impor
 - Assigns predictable frontend, API, inspector, and debug-log ports to concurrent Git worktrees.
 - Keeps stack 0 in Ethan's main environment and gives every nonzero stack its own private Firebase, Storage, MinIO,
   and Download Assets Worker backend.
-- Routes each stack to a persistent real browser while keeping testing on the MacBook display and away from the
-  user's active workspace or video.
+- Routes each stack through Safari, Firefox, or Opera first, then through task-scoped in-app Browser sessions without
+  imposing a three-browser concurrency cap. Desktop testing stays on the MacBook display and away from the user's
+  active workspace or video.
 - Handles test-account authentication and App Check without committing credentials.
 - Verifies each feature at the UI, emulator-state, and frontend/API-log layers.
-- Captures important settled-state PNGs of only the exact dedicated browser window through ScreenCaptureKit—never
-  reverted or recreated old behavior, the whole display, or a continuous recording.
+- Captures important settled-state PNGs through exact-window ScreenCaptureKit for desktop browsers or the tracked
+  in-app Browser tab's viewport API—never reverted or recreated old behavior, the whole display, or a continuous
+  recording.
 - Maintains one append-only Markdown evidence source per worktree with independently captioned screenshot evidence.
   Automatic HTML report rendering is currently disabled; the dormant renderer remains available for later use.
 - Requires the host repository to store manual-test PNGs through Git LFS so durable evidence does not bloat
@@ -45,7 +47,7 @@ scripts/                             Window setup, screenshot capture, and repor
 ## Requirements
 
 - macOS 14 or newer for ScreenCaptureKit's window-only screenshot API.
-- Codex with Computer Use for visible browser interaction.
+- Codex with Computer Use and the in-app Browser skill for visible or overflow browser interaction.
 - Git worktrees, Git LFS, Node.js, npm, Swift, and the browsers used by your adapted workflow.
 - A host repository whose dev servers, emulator commands, credentials, and logs match—or have been adapted from—
   the AIMVS conventions routed by `SKILL.md`.
@@ -93,8 +95,8 @@ If the host already tracks manual-test binaries without LFS, run `git add --reno
 part of the next intentional staging operation, then verify the staged paths with `git lfs ls-files`.
 
 Keep the safety boundaries: never publish credentials, capture an entire display as a fallback, run a continuous
-recorder, auto-open Preview, replace a requested logged-in browser with an isolated profile, or overwrite older
-evidence entries.
+recorder, auto-open Preview, replace a requested logged-in desktop browser with an ad hoc isolated profile, reuse
+another task's in-app Browser tab, or overwrite older evidence entries.
 
 ## Security and privacy
 

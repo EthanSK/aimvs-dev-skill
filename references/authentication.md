@@ -8,8 +8,8 @@ a staging sign-up/user unless the user explicitly asks.
 
 Read both credentials from ignored repo-root `.secret.local`: `AIMVS_TEST_LOGIN_EMAIL` and
 `AIMVS_TEST_LOGIN_PASSWORD`. If either variable is missing, stop and ask the user to add it; never invent a
-fallback account. Never print or commit these values. Use the persistent browser profile for the stack so App
-Check/Auth state survives between runs.
+fallback account. Never print or commit these values. Use the assigned desktop browser's persistent profile or the
+task-scoped in-app Browser binding for the stack so App Check/Auth state can survive the current run.
 
 Before spending time debugging browser focus, verify the saved email exists in staging Auth when ADC is available:
 
@@ -40,6 +40,11 @@ email field, type with real keyboard input (`Cmd-A`, literal keystrokes), refres
 field, type the password with real keyboard input, refresh app state, then click the visible Sign In submit button.
 Do not rely on `Tab`/`Enter` order in Firefox: it can land on the Forgot Password control and switch the form to
 Reset Password instead of submitting.
+
+When the in-app Browser is assigned, follow its current confirmation policy before transmitting credentials, then
+use semantic Browser locators to fill the visible Angular fields and click the visible Sign In button. Never inspect
+browser storage, password stores, cookies, or profiles, and never emit credential values through tool output. Verify
+the authenticated redirect and account-only UI exactly as for a desktop browser.
 
 Safari may cover the app with Auto-Complete or `Update Password` popovers during and after sign-in. Press Escape
 to dismiss each popover, then refresh Computer Use accessibility state before deciding whether sign-in failed or

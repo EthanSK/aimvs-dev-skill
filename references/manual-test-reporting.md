@@ -107,8 +107,8 @@ If Chromium DevTools was opened during the test, reset any temporary network pre
 tracked window shows only the app before capturing. Never retain a DevTools screenshot: its Console can expose the
 App Check debug token even when the tested panel itself looks harmless.
 
-After creating and verifying the dedicated test-browser window and `TEST_WINDOW_ID`, wait for an important state to
-settle and capture it:
+After creating and verifying the dedicated desktop-browser window and `TEST_WINDOW_ID`, wait for an important state
+to settle and capture it:
 
 ```bash
 screenshot_info="$(bash .agents/skills/aimvs-dev/scripts/capture-manual-test-screenshot.sh \
@@ -123,6 +123,18 @@ The capture helper uses ScreenCaptureKit's `desktopIndependentWindow` filter and
 captures one PNG of only that exact window at up to 1920 pixels wide, without activating, raising, moving, or resizing
 it, then exits immediately. Never start a continuous recorder or fall back to display capture, rectangle capture,
 Preview, OBS, QuickTime, or another capture path.
+
+For a task-scoped in-app Browser session, do not invent `TEST_WINDOW_ID` or call the ScreenCaptureKit helper. Prepare
+the worktree's assigned report directory with `prepare-manual-test-report.mjs`, call the tracked agent tab's
+`screenshot({ fullPage: false })` through `$browser:control-in-app-browser`, and save those returned PNG bytes under a
+new timestamped `.png` filename in that exact report directory. The in-app Browser can return JPEG bytes even though
+the capture is destined for a PNG report; after inspecting the raw pixels, run
+`normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>` and require actual PNG bytes before annotation.
+Do not merely rename the extension or load the worktree's native `sharp` module inside the Browser runtime; macOS can
+reject that native module because the browser process and module signatures have different Team IDs. Capture only the
+app viewport, record the filename for the report generator, and verify the tab ID plus `STACK_URL` immediately before
+and after capture. Never use full-page or display capture as a substitute for the settled viewport the tester actually
+inspected. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
 
 After inspecting the raw PNG, always replace it atomically with one outlined and labelled version before retaining it
 as evidence. Express the rectangle as `left,top,width,height` percentages of the full screenshot:
@@ -242,8 +254,8 @@ Before finishing, verify that:
   reviewer-friendly label without obscuring the evidence; recapture or omit any screenshot that cannot be annotated
   safely, and document the verification gap in the report;
 - every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
-  agent, shows only the dedicated browser window at the intended moment, supports its evidence claim, and has no
-  unaddressed task-caused visual defect;
+  agent, shows only the dedicated desktop-browser window or task-owned in-app Browser viewport at the intended
+  moment, supports its evidence claim, and has no unaddressed task-caused visual defect;
 - `git check-attr filter -- <each-png>` reports `lfs` so future commits cannot store it as a normal Git blob;
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
 - no `index.html` file was created, updated, or deleted;

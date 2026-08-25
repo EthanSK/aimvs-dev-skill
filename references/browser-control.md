@@ -3,6 +3,7 @@
 ## Contents
 
 - [Display setup and browser placement](#display-setup-and-browser-placement)
+- [In-app Browser overflow fallback](#in-app-browser-overflow-fallback)
 - [Browser assignment](#browser-assignment)
 - [Background browser control while the user is using the Mac](#background-browser-control-while-the-user-is-using-the-mac)
 - [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
@@ -21,13 +22,18 @@ Ethan uses two setups. Inventory the connected displays before browser setup and
   preserve every external-display browser window and Space. A foreground fallback there is usually less intrusive,
   but it remains a fallback after a non-activating attempt.
 
+The task-scoped in-app Browser does not create a macOS window, so it is exempt from physical-display, CoreGraphics
+window-ID, and macOS focus rules; keep its exact task-owned agent tab hidden in the background unless visible
+interaction is genuinely useful.
+
 Never move, raise, resize, or reposition a Computer Use preview or dedicated test-browser window over a video
 the user is watching. Preserve the active playback area and leave the user's media window unobstructed; if the
 assigned browser cannot be operated without covering it, stop and report the blocker instead of moving the test
 or preview window across the video.
 
 Before the first browser action, assign the browser from the order in **Browser assignment**, set the exact stack
-URL, classify the display setup, and inventory the existing windows:
+URL, classify the display setup, and inventory the existing desktop windows to prove whether Safari, Firefox, or
+Opera is available:
 
 ```bash
 STACK_INDEX=1 # replace this with the selected free nonzero index for every agent-run test
@@ -102,12 +108,33 @@ Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
-After setup, follow the per-action escalation ladder below while Ethan uses the Mac. Prefer non-activating screenshots,
-Accessibility state, scripting, and logs. Before a known activating fallback, send the normal macOS heads-up, capture
-the frontmost app and a read-only CoreGraphics window-list snapshot, then verify `TEST_WINDOW_ID` and its exact URL
-immediately before and after input. The current explicit manual-test request authorizes that bounded fallback; do not
-ask for separate foreground permission solely because the verified task window must briefly become frontmost.
-The installed Sky Window2 API says input methods activate their target,
+## In-app Browser overflow fallback
+
+Use the in-app Browser after Safari, Firefox, and Opera are already assigned, actively used, incompatible, or unsafe.
+Do not report the old three-browser limit as a blocker while the in-app Browser skill is available. Each task uses its
+own in-app Browser binding and exactly one new agent-owned tab at its distinct nonzero `STACK_URL`, so concurrent
+manual tests are limited only by the available task/stack capacity rather than the three desktop apps.
+
+Invoke and follow `$browser:control-in-app-browser`, select the in-app Browser through that skill's current permitted
+selection path, and read its browser documentation before interaction. Use its explicit `iab` selector when Ethan's
+current request names the in-app Browser; otherwise let the skill select for `STACK_URL` and require that the result
+is the in-app Browser before continuing. Name the browser session with the worktree and stack, create one new agent
+tab, record its ID as `TEST_BROWSER_TAB_ID`, navigate it to `STACK_URL`, and verify the exact URL plus the visible
+`WORKTREE <NAME> · STACK #N :<PORT>` banner through fresh DOM and screenshot state. Never claim a user tab, reuse
+another task's tab, enumerate another task's browser state, or use an in-app Browser tab against stack 0.
+
+The in-app Browser is the explicitly permitted overflow context, not an ad hoc desktop profile. Its tab does not have
+`TEST_WINDOW_ID`, a macOS display, or a CoreGraphics identity. Keep it background-only unless live viewing helps the
+test, use semantic Browser locators before coordinate input, and reset any temporary viewport override before
+cleanup. If the in-app Browser skill or binding is unavailable, report that exact blocker; personal Chrome and a
+standalone automation profile are still not fallbacks. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
+
+After desktop-browser setup, follow the per-action escalation ladder below while Ethan uses the Mac. Prefer
+non-activating screenshots, Accessibility state, scripting, and logs. Before a known activating fallback, send the
+normal macOS heads-up, capture the frontmost app and a read-only CoreGraphics window-list snapshot, then verify
+`TEST_WINDOW_ID` and its exact URL immediately before and after input. The current explicit manual-test request
+authorizes that bounded fallback; do not ask for separate foreground permission solely because the verified task
+window must briefly become frontmost. The installed Sky Window2 API says input methods activate their target,
 and an observed app-targeted `sky.drag` reordered Opera without changing the reported active app, so treat either
 active-app or window-order movement as foregrounding but not as a reason to abandon an otherwise authorized test.
 Restore the previously frontmost app only when
@@ -157,16 +184,17 @@ it.
 
 Use Safari first for the first agent-owned nonzero AIMVS test stack. Concurrent agent stacks must use different
 browsers so Firebase Auth persistence + App Check storage do not fight; assign them in this order: Safari → Firefox
-→ Opera. Never use Ethan's personal Chrome for AIMVS testing, even as a fallback, and never create a fresh or
-isolated Chrome profile to work around that rule. If all three permitted browsers are assigned, incompatible with
-the test, or unsafe to operate, stop and report the blocker. Never switch away from Safari merely because another
-browser is already logged in—use the test-account sign-in flow when Safari needs authentication. Stack 0 is not part
-of this assignment because agents never test against it.
+→ Opera → a distinct task-scoped in-app Browser binding for each additional stack. Never use Ethan's personal Chrome
+for AIMVS testing, even as a fallback, and never create a fresh or isolated desktop-browser profile to work around
+that rule. Never switch away from Safari merely because another browser is already logged in—use the test-account
+sign-in flow when Safari needs authentication. Stack 0 is not part of this assignment because agents never test
+against it.
 
 Treat a browser Ethan is actively using as unavailable, even when it would otherwise be next in the assignment
-order. Never commandeer or repeatedly foreground his active browser; choose the next browser compatible with the
-test, and stop if none is available. When a test specifically needs Chromium DevTools, use Opera and stop if Opera
-is unavailable; personal Chrome is not a fallback.
+order. Never commandeer or repeatedly foreground his active browser; choose the next compatible desktop browser or
+the in-app Browser overflow fallback. When a test specifically needs Chromium DevTools, use Opera and stop if Opera
+is unavailable; the in-app Browser does not substitute for a DevTools-specific test, and personal Chrome is not a
+fallback.
 
 With Ethan's `Dvorak - QWERTY ⌘` input source, character-based `Cmd+Option+I` automation may not toggle Opera
 DevTools. After verifying and focusing only the tracked Opera test window, use physical macOS key code `34` with
@@ -175,7 +203,8 @@ Command+Option and then verify that docked DevTools actually appeared; do not ke
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
 verified browser-controller flow for Firefox or Opera. Keep every test browser on
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
-move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting.
+move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting. For the
+in-app Browser, follow the overflow section instead; do not invent a macOS window or display check for its agent tab.
 
 ## Background browser control while the user is using the Mac
 
@@ -183,6 +212,11 @@ The dedicated test window is agent-owned and should remain behind Ethan's curren
 completed and verified there. The user may keep working in other apps and browser windows throughout the test. Prefer
 fresh `get_app_state` state, exact-window ScreenCaptureKit captures, Accessibility queries, scripting, and logs before
 input.
+
+For an in-app Browser overflow session, operate only `TEST_BROWSER_TAB_ID` through the Browser skill. Its background
+tab does not require macOS focus, window-order, or display checks. Require a fresh URL and DOM or screenshot check
+before each material interaction, and stop if the tab is missing, stale, or no longer shows the exact stack origin;
+recover it only through the Browser skill's documented task-tab flow.
 
 For each discrete click, keypress, text entry, drag, navigation, or browser-control action:
 
@@ -244,7 +278,8 @@ prove duplicate prevention from request or emulator counts instead.
 
 Finish stack health, fixtures, uploads, and test sequencing before the first interaction. Keep waits, shell work,
 screenshot capture, and report generation in the background. Use the same stack URL, `.secret.local` credentials,
-and App Check debug token as the normal visible browser; do not switch to an isolated browser mode.
+and App Check debug token as the assigned browser surface; do not create any browser context beyond the permitted
+desktop profiles or the task-scoped in-app Browser overflow binding.
 
 If an action unexpectedly foregrounds the verified task window, stop that input and re-check ownership, window
 identity, URL, logs, pixels, and postcondition. Continue only when the exact task target remains proven and no newer
@@ -283,8 +318,13 @@ report a blocker when exact targeting remains ambiguous.
 ## Close the dedicated test browser window
 
 At the end of every Computer Use manual-test session—passed, failed, partial, or blocked—finish capturing and
-verifying the report evidence, then close the exact dedicated task tab/window identified by `TEST_WINDOW_ID` and
-`STACK_URL`. Do not leave it open merely because development work will continue.
+verifying the report evidence, then close the exact dedicated task page identified by `TEST_WINDOW_ID` or
+`TEST_BROWSER_TAB_ID` and `STACK_URL`. Do not leave it open merely because development work will continue.
+
+For an in-app Browser session, call `close()` only on the tracked agent tab, then require its ID to be absent from the
+current task's `browser.tabs.list()` result. Do not claim or close user tabs, and do not inspect other tasks to prove
+cleanup. Empty task-tab and user-tab lists are normal after closure and do not invalidate the reusable browser
+binding.
 
 Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory. Normally require
 that ID to be gone. If Ethan or another task added an unrelated tab to the tracked Safari window, preserve the shared
@@ -337,6 +377,11 @@ agent may make one final more-direct creation retry; ambiguity or another failur
 pre-existing window as the replacement. Verify authenticated state again and continue from the last reliable
 checkpoint. Capture useful crash/report text or visible error details if available, then check frontend/API/emulator
 logs to decide whether the crash was browser instability or an app-triggered failure.
+
+For an in-app Browser tab that becomes stale or disappears, keep the existing browser binding and follow the Browser
+skill's tab-recovery guidance: discard only the stale tab handle, create one replacement agent tab, record its new ID,
+and reverify `STACK_URL`, the worktree banner, authentication, and logs before continuing. Never reselect the browser
+merely to recover a tab.
 
 When Safari reports a page as non-responsive, finish the renderer-exit procedure above before creating any
 replacement or switching browsers. A force reload that creates another renderer does not clean up the hung one.

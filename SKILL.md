@@ -40,10 +40,11 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
   private-backend stop/rebuild/start. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
-- Ethan uses two display setups. When the MacBook is standalone, keep the verified test window on its sole
+- For desktop browsers, Ethan uses two display setups. When the MacBook is standalone, keep the verified test window on its sole
   `Built-in Retina Display` without pointless display movement. When external monitors are attached, keep the one
   agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media
-  window, and unrelated app.
+  window, and unrelated app. An in-app Browser overflow session stays in one exact task-owned agent tab and has no
+  macOS window or physical-display assignment; preserve every pre-existing browser tab.
 - While Ethan is actively using the Mac, try every discrete manual browser action once with the least activating
   exact-window method available. If it clearly fails and ownership remains exact, the agent may retry once or twice
   with progressively more direct app- or window-scoped control, using judgment and foregrounding only as the final
@@ -55,8 +56,12 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   019fe81d-3690-71d3-820f-2a1ca360dcb4, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
   01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
-  AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
-  profiles only; never substitute a fresh or isolated browser context.
+  AIMVS manual test. When those desktop browsers are already
+  assigned, actively used, incompatible, or unsafe, use a distinct task-scoped in-app Browser binding and agent tab
+  for every additional test. The in-app Browser is the intentional overflow context, so there is no artificial
+  three-session limit. Never use Ethan's personal Chrome for an AIMVS manual test or create an ad hoc isolated
+  desktop-browser profile; desktop browsers use their existing persistent profiles. (Codex task:
+  01a03a49-3424-7e93-bcd8-f261515ba730)
 - Derive backend ownership only from the stack index: stack 0 uses Ethan's main Firebase, Storage, MinIO, and native
   Download Assets Worker; every nonzero stack uses its own indexed Firebase, Storage, MinIO, and Worker containers.
   The old per-command isolation opt-in was rejected because one omitted flag silently mixed private and stack-0 data;
@@ -70,8 +75,9 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 - Keep **Preview Rendering** enabled by default on nonzero stacks. Disable it only for a deliberate lean-mode or
   performance-isolation test, then enable it again before cleanup because its per-origin localStorage override persists
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
-- Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
-  interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
+- Close only the tracked agent-owned browser page—its desktop window/tab or in-app Browser tab—and nonzero stack after
+  every passed, failed, partial, blocked, or interrupted manual-test session unless Ethan explicitly asks to keep that
+  exact stack running.
 - For Safari, record task-created WebContent processes at test-window creation and after an abnormal reload, crash, or
   non-responsive-page recovery. Ordinary healthy route changes do not need another renderer inventory. At cleanup,
   use the deep renderer procedure only when a recorded task-created process survives or the page showed abnormal
@@ -131,10 +137,11 @@ linked directly here so an agent never needs to discover operating instructions 
 1. Before choosing a task environment or worktree, follow `references/worktree-lifecycle.md`. Then confirm the
    requested action is authorized, identify the exact worktree, preserve its staged, unstaged, untracked, ignored,
    browser, emulator, and dev-stack state, and read every other matching reference above.
-2. For a manual test, select a free nonzero stack and assigned browser, prepare ignored local dependencies, start or
-   reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
-3. Create and verify one dedicated browser window for the exact worktree and stack URL before interacting. Stop if
-   the process, display, URL, window identity, or worktree banner is ambiguous.
+2. For a manual test, select a free nonzero stack and assigned browser surface, prepare ignored local dependencies,
+   start or reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
+3. Create and verify one dedicated browser page for the exact worktree and stack URL before interacting: one desktop
+   window on `Built-in Retina Display`, or one task-owned in-app Browser tab after the desktop browsers are exhausted.
+   Stop if the applicable process/window or tab identity, URL, or worktree banner is ambiguous.
 4. Test a compact set of high-value flows that maximizes meaningful surface area across the requested behavior.
    Inspect actual screenshot pixels yourself, then have the latest Claude Opus independently review only UI introduced
    or changed by the current task and regressions those changes caused. Do not ask it to redesign or polish unrelated
