@@ -2,17 +2,24 @@
 
 ## Contents
 
-- [Non-negotiable browser display](#non-negotiable-browser-display)
+- [Display setup and browser placement](#display-setup-and-browser-placement)
 - [Browser assignment](#browser-assignment)
 - [Background browser control while the user is using the Mac](#background-browser-control-while-the-user-is-using-the-mac)
 - [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
 - [Browser crash and recovery](#browser-crash-and-recovery)
 
-## Non-negotiable browser display
+## Display setup and browser placement
 
-Every AIMVS browser interaction must happen on the MacBook's display named `Built-in Retina Display`. Never test
-on either external display (including the ultrawide or the Dell), and never disturb an existing external-display
-browser window.
+Ethan uses two setups. Inventory the connected displays before browser setup and classify them by exact
+`NSScreen.localizedName`:
+
+- **Standalone MacBook:** `Built-in Retina Display` is the only connected display. Keep the verified test window on
+  that sole display without moving or recreating it merely for routing. Background-first control matters most because
+  raising the browser covers Ethan's current workspace.
+- **MacBook with external monitors:** `Built-in Retina Display` and one or more external displays are connected. Keep
+  every AIMVS interaction in one agent-owned window on the built-in display, never test on the external displays, and
+  preserve every external-display browser window and Space. A foreground fallback there is usually less intrusive,
+  but it remains a fallback after a non-activating attempt.
 
 Never move, raise, resize, or reposition a Computer Use preview or dedicated test-browser window over a video
 the user is watching. Preserve the active playback area and leave the user's media window unobstructed; if the
@@ -20,7 +27,7 @@ assigned browser cannot be operated without covering it, stop and report the blo
 or preview window across the video.
 
 Before the first browser action, assign the browser from the order in **Browser assignment**, set the exact stack
-URL, and inventory the existing windows:
+URL, classify the display setup, and inventory the existing windows:
 
 ```bash
 STACK_INDEX=1 # replace this with the selected free nonzero index for every agent-run test
@@ -71,8 +78,9 @@ verification. If the controller cannot create, identify, and place that exact ne
 raising, or closing a pre-existing window, stop and report the blocker instead of improvising.
 
 Opera 141 foregrounds itself and returns AppleEvent error `-10000` from `make new window` even though it creates the
-window. Never interpret that error alone as failure and never improvise a second window. After Ethan explicitly
-approves that exact foreground interaction and the macOS heads-up succeeds, use the guarded helper:
+window. Never interpret that error alone as failure and never improvise a second window. Try a safely assigned
+non-activating browser or creation method first. If Opera is required and that attempt cannot create the window, send
+the macOS heads-up and use the guarded helper as the bounded foreground fallback:
 
 ```bash
 inspection="$(bash .agents/skills/aimvs-dev/scripts/open-opera-test-window.sh "$STACK_URL" --allow-foreground)"
@@ -84,19 +92,22 @@ OPERA_SCRIPTING_WINDOW_ID="$(sed -n 's/^scripting_window=//p' <<<"$inspection")"
 The helper accepts `-10000` only when delayed before/after inventories prove exactly one new Opera scripting window,
 then navigates and sizes that exact object in a later AppleEvent and independently resolves one new CoreGraphics ID.
 It closes the newly identified scripting window on every later setup failure. This preserves pre-existing Opera
-windows and turns the false error into verified window ownership rather than a retry. (Codex task:
-01a0345e-6001-7353-b097-5527ecae7eca)
+windows and turns the false error into verified window ownership rather than a retry. Any nonzero helper result is
+followed by a fresh inventory before any retry. If exactly one task-created window exists, recover that window instead
+of creating another. If no window or side effect exists and ownership remains exact, the agent may retry the helper
+once; ambiguity or a second failure ends setup. (Codex tasks: 01a0345e-6001-7353-b097-5527ecae7eca,
+01a0357e-e591-7381-bc21-f9b5f93ccee7, 01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
 Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window creation and placement are a
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
 
-After setup, keep manual testing in the background on a best-effort basis while Ethan uses the Mac. An explicit
-current request for AIMVS manual browser or Computer Use testing authorizes the verified dedicated test window to
-become frontmost when required; do not ask for another approval solely for that focus change. Prefer non-activating
-screenshots, Accessibility state, and logs. Before a known foreground interaction, send one normal macOS heads-up,
-capture the frontmost app and a read-only CoreGraphics window-list snapshot, then verify `TEST_WINDOW_ID` and its
-exact URL immediately before and after input. The installed Sky Window2 API says input methods activate their target,
+After setup, follow the per-action escalation ladder below while Ethan uses the Mac. Prefer non-activating screenshots,
+Accessibility state, scripting, and logs. Before a known activating fallback, send the normal macOS heads-up, capture
+the frontmost app and a read-only CoreGraphics window-list snapshot, then verify `TEST_WINDOW_ID` and its exact URL
+immediately before and after input. The current explicit manual-test request authorizes that bounded fallback; do not
+ask for separate foreground permission solely because the verified task window must briefly become frontmost.
+The installed Sky Window2 API says input methods activate their target,
 and an observed app-targeted `sky.drag` reordered Opera without changing the reported active app, so treat either
 active-app or window-order movement as foregrounding but not as a reason to abandon an otherwise authorized test.
 Restore the previously frontmost app only when
@@ -130,6 +141,13 @@ normal macOS heads-up. A direct URL
 load is only valid for setting up visual evidence; never use it to claim that in-app navigation is reliable or to
 investigate a blank RouterOutlet, because it bypasses the exact transition path under test.
 
+Do not treat Opera's AppleScript `set URL of active tab of window id ...` as a background navigation or cleanup
+method. In a verified Opera 133 stack-window run, that exact window-scoped command changed the frontmost app from
+OBS++ to Opera even though it navigated the intended window successfully. Classify it as an activating fallback,
+send the normal heads-up before using it, and restore the previous app only under the exact-window focus rule above;
+do not retry it when keeping Opera behind Ethan's work is required. (Codex task:
+01a0357e-e591-7381-bc21-f9b5f93ccee7)
+
 Background Safari may also defer an async completion or repaint until its page receives another interaction. Before
 reporting a stuck loader on a route that did not use a View Transition, use one harmless in-page interaction such as
 opening and closing an existing filter, then read fresh Computer Use state; do not activate or raise Safari to wake
@@ -161,25 +179,54 @@ move only that new window to `Built-in Retina Display` and re-run the display in
 
 ## Background browser control while the user is using the Mac
 
-The dedicated test window is agent-owned, so operate it in the background on a best-effort basis without asking Ethan
-for exclusive control. The user may keep working in other apps and browser windows throughout the test. Prefer fresh
-`get_app_state` state, exact-window ScreenCaptureKit captures, Accessibility queries, and logs before using input.
+The dedicated test window is agent-owned and should remain behind Ethan's current work whenever the action can be
+completed and verified there. The user may keep working in other apps and browser windows throughout the test. Prefer
+fresh `get_app_state` state, exact-window ScreenCaptureKit captures, Accessibility queries, scripting, and logs before
+input.
 
-An explicit request to run a Computer Use test authorizes input inside the verified dedicated test window, including
-bounded foreground control when the browser technology requires it. Before each input, verify `TEST_WINDOW_ID`, the
-exact stack URL, and the current frontmost app; after each input, re-verify ownership and preserve any newer user focus
-choice. Prefer a non-activating method when it works, but do not stop or ask again merely because the exact task window
-becomes active or overlaps Ethan's active window. The ordinary Computer Use confirmation policy still applies to
-consequential actions such as credentials, payments, permanent deletion, or sensitive-data transmission. (Codex task:
-01a024f9-f80c-71c0-9005-51c76fc2e18d)
+For each discrete click, keypress, text entry, drag, navigation, or browser-control action:
+
+1. Refresh `TEST_WINDOW_ID`, exact stack URL, display, frontmost app, ordered-window state, and the relevant
+   postcondition without activating the browser.
+2. Attempt the action once with the least activating exact-window method available, then verify whether it worked.
+3. If it clearly did not work and ownership remains exact, retry once with a more direct app- or window-scoped method.
+   If necessary, the agent may make one final retry that activates or raises only the verified task window. Use
+   judgment and skip any retry that cannot add evidence or capability.
+4. Before a known activating fallback, send the normal macOS heads-up. The current explicit manual-test request
+   authorizes this bounded fallback; do not ask for separate permission solely because the verified task window must
+   briefly become frontmost.
+5. Re-verify ownership and the postcondition after every attempt, preserve newer user focus, and never retry a
+   consequential or state-changing action unless the postcondition proves the earlier attempt did not occur.
+
+For a harmless resize or drag, never infer the reached position from Sky's requested endpoint. Opera 133 visibly
+stopped one `sky.drag` at a mid-width boundary even though the requested endpoint was near the intended limit; inspect
+fresh pixels or measured state, then use at most one corrective edge drag when the first result is clearly partial and
+the exact window still owns the gesture. (Codex task: 01a0357e-e591-7381-bc21-f9b5f93ccee7)
+
+Never repeat the same ignored mechanism or send unscoped global keyboard/pointer input. The maximum is the initial
+non-activating attempt plus two progressively more direct retries. A mismatched window, URL, display, ambiguous side
+effect, or newer user action stops the sequence immediately. (Codex task:
+01a0361a-9cf7-7dc3-b1b6-381b783854d5)
+
+Do not use `CGEventPostToPid` as a background browser-input workaround. A verified Opera 133 run kept Ethan's app
+frontmost and preserved the exact task window and URL, but Opera ignored the process-directed double-key shortcut;
+do not repeat that mechanism. Count it as the first non-activating attempt, refresh exact state, and use the next more
+direct scoped method in the ladder when the action is still necessary. Never escalate to global input. (Codex task:
+01a0361a-9cf7-7dc3-b1b6-381b783854d5)
+
+An explicit request to run a Computer Use test authorizes input only inside the verified dedicated test window and
+through the ladder above. The ordinary Computer Use confirmation policy still applies to consequential actions such
+as credentials, payments, permanent deletion, or sensitive-data transmission. (Codex tasks:
+01a024f9-f80c-71c0-9005-51c76fc2e18d, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
+01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
 Keep the tracked window unminimized on `Built-in Retina Display`; a minimized Safari window drops out of Computer
 Use targeting. Before every input action, require the current Computer Use state to show the tracked window UUID,
 exact stack URL, and worktree banner. Use element-index actions and app-targeted key presses so the action stays scoped
 to that window. If any identity is missing or mismatched, do not click coordinates, press keys, reload, close, or
-perform another Computer Use action in that browser session. Keep testing in the background on a best-effort basis;
-when foreground interaction is required, send the heads-up once and follow the bounded focus-and-restore workflow
-above without requesting duplicate approval. Never send global keyboard or pointer input.
+perform another Computer Use action in that browser session. Keep testing behind Ethan's current work. When
+foreground interaction is required, use only the final bounded fallback in the ladder above. Never send global
+keyboard or pointer input.
 
 Opera can expose the same page twice in one fresh Accessibility tree; the first subtree's element ids reject actions
 as invalid while the later subtree contains the focused HTML content. When exact controls are duplicated, act only on
@@ -199,11 +246,10 @@ Finish stack health, fixtures, uploads, and test sequencing before the first int
 screenshot capture, and report generation in the background. Use the same stack URL, `.secret.local` credentials,
 and App Check debug token as the normal visible browser; do not switch to an isolated browser mode.
 
-If an action foregrounds the verified task window, re-check ownership, window identity, URL, logs, and pixels before
-continuing; the current manual-test request already authorizes that bounded foreground interaction. If it targets a
-different window or is changed by the user's simultaneous input, stop input, preserve the user's newer state, and
-resume only after fresh read-only verification proves the exact task window again. Never restore the page or focus
-with ambiguous keys or coordinates.
+If an action unexpectedly foregrounds the verified task window, stop that input and re-check ownership, window
+identity, URL, logs, pixels, and postcondition. Continue only when the exact task target remains proven and no newer
+user focus would be overridden; otherwise preserve Ethan's newer state and stop the sequence. Never restore the page
+or focus with ambiguous keys or coordinates.
 
 Treat the test browser window appearing above Ethan's active window as foregrounding even when System Events still
 reports another app as frontmost. The installed Sky API says Window2 input methods activate their target, while an
@@ -211,9 +257,11 @@ observed app-targeted `sky.drag` reordered the target window without changing th
 agent must check both active-app and ordered-window state and reverify the exact task target before continuing.
 (Codex task: 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
-Keep foreground control bounded to the requested manual-test flow. The current request is sufficient authorization;
-send the macOS heads-up before taking focus and do not ask again. Restore the previously frontmost app only when
-`TEST_WINDOW_ID` remains the frontmost window; otherwise preserve Ethan's newer focus choice.
+Keep foreground control bounded to the exact fallback action announced by the macOS heads-up. Restore the previously
+frontmost app only when `TEST_WINDOW_ID` remains the frontmost window; otherwise preserve Ethan's newer focus choice.
+End the interval after restoration, an unexpected failure, or newer user activity; a later action starts again with
+its own non-activating attempt. (Codex tasks: 01a0357e-e591-7381-bc21-f9b5f93ccee7,
+01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
 Computer Use currently has no pointer-only move action. Do not fake a hover by dragging across page text because that
 selects the text and contaminates screenshot evidence. For an editable name whose cancel path is already proven
@@ -228,8 +276,9 @@ unavailable, report the panel interaction as blocked instead of clicking the com
 
 If the browser keeps defocusing, typed text lands in the wrong place, or Computer Use reports that the user changed
 the app mid-action, assume the user is using the computer. Stop that input, preserve the newer focus choice, and
-continue non-UI work until fresh read-only state proves the dedicated task window can be targeted safely. Do not ask
-for duplicate approval; report a blocker only if exact targeting remains ambiguous.
+continue non-UI work until fresh read-only state proves the dedicated task window can be targeted safely. Do not
+reuse an earlier attempt or assume the next action requires focus; restart the ladder from a non-activating method and
+report a blocker when exact targeting remains ambiguous.
 
 ## Close the dedicated test browser window
 
@@ -241,11 +290,13 @@ Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browse
 that ID to be gone. If Ethan or another task added an unrelated tab to the tracked Safari window, preserve the shared
 window and close only the single tab whose URL has the exact `STACK_URL` origin; then require that origin to be absent
 from every Safari window. Never close a whole window merely because it started as task-owned after its tab ownership
-changed, and never target a pre-existing window by title, position, or sight. If the test launched an otherwise
-stopped browser app, quit it only after the tracked window closes and only when it has no other windows. Keep closure
-in the background when practical. The current manual-test request authorizes foregrounding solely to close the exact
-tracked task page; do not ask again. If exact cleanup cannot be proven safe, report it as blocked instead of closing
-another window or app. (Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
+changed, and never target a pre-existing window by title, position, or sight. Try exact-window background closure
+first. If it clearly fails while ownership remains exact, use the bounded ladder, including a final foreground
+fallback after the heads-up when necessary. If the test launched an otherwise stopped browser app, quit it only after
+the tracked window closes and only when it has no other windows. If exact cleanup cannot be proven safe, leave the
+tracked window alone and report cleanup as blocked instead of closing another window or app. (Codex tasks:
+01a0357e-e591-7381-bc21-f9b5f93ccee7, 01a0361a-9cf7-7dc3-b1b6-381b783854d5,
+01a0399b-e199-79d2-b4ec-a32664b00adf)
 
 For an Opera window created by the guarded helper, close and verify both tracked identities with:
 
@@ -279,19 +330,21 @@ unless Ethan explicitly asked to keep that exact nonzero stack running.
 
 If the browser crashes, freezes, loses its window, or restores a previous session mid-test, do not abandon the
 task. First inventory browser windows and confirm whether `TEST_WINDOW_ID` still exists. If it exists, recover only
-that window and restore `STACK_URL`. If it no longer exists, the one-window rule permits exactly one replacement:
-repeat the assigned browser's creation-and-placement flow, record the new ID, and verify its process, display, and
-`STACK_URL` before interacting. Never repurpose a pre-existing window as the replacement. Verify authenticated
-state again and continue from the last reliable checkpoint. Capture useful crash/report text or visible error
-details if available, then check frontend/API/emulator logs to decide whether the crash was browser instability
-or an app-triggered failure.
+that window and restore `STACK_URL`. If it no longer exists, the one-window rule permits one replacement after a
+non-activating setup attempt and the normal heads-up before any activating fallback. Record the new ID and verify its
+process, display, and `STACK_URL` before interacting. If creation clearly fails with no window or side effect, the
+agent may make one final more-direct creation retry; ambiguity or another failure ends recovery. Never repurpose a
+pre-existing window as the replacement. Verify authenticated state again and continue from the last reliable
+checkpoint. Capture useful crash/report text or visible error details if available, then check frontend/API/emulator
+logs to decide whether the crash was browser instability or an app-triggered failure.
 
 When Safari reports a page as non-responsive, finish the renderer-exit procedure above before creating any
 replacement or switching browsers. A force reload that creates another renderer does not clean up the hung one.
 If the replacement is also blank, frozen, or non-responsive, close and verify it once, then stop using Safari for
 that run and continue only with the next safely assigned browser. Non-responsive state does not broaden the test
-scope, but the current manual-test request already authorizes bounded foreground diagnosis of the exact tracked Safari
-window after the normal macOS heads-up.
+scope. Diagnose the exact tracked Safari window through the same background-first ladder; send the normal heads-up
+before its final activating fallback. (Codex tasks: 01a0357e-e591-7381-bc21-f9b5f93ccee7,
+01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
 After a crash or forced browser restart, always re-check emulator state and operation status docs before retrying
 the action. This avoids double-running a mutation while the previous backend operation actually succeeded.

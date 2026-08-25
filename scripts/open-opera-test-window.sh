@@ -5,11 +5,11 @@ set -euo pipefail
 TARGET_DISPLAY_NAME='Built-in Retina Display'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_URL="${1:-}"
-FOREGROUND_APPROVAL="${2:-}"
+FOREGROUND_FALLBACK="${2:-}"
 
-if [[ -z "$TARGET_URL" || "$FOREGROUND_APPROVAL" != '--allow-foreground' ]]; then
+if [[ -z "$TARGET_URL" || "$FOREGROUND_FALLBACK" != '--allow-foreground' ]]; then
   echo "Usage: $0 <url> --allow-foreground" >&2
-  echo 'Opera window creation foregrounds the browser, so Ethan must explicitly approve that focus change first.' >&2
+  echo 'Opera window creation foregrounds the browser; use this only as the bounded fallback after a non-activating attempt and the macOS heads-up.' >&2
   exit 2
 fi
 

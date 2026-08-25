@@ -40,16 +40,20 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
   private-backend stop/rebuild/start. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
-- Keep every AIMVS browser interaction in one exact agent-owned window on `Built-in Retina Display`. Preserve every
-  pre-existing browser window, external-display workspace, active media window, and unrelated app.
-- While Ethan is actively using the Mac, keep manual testing in the background on a best-effort basis and preserve
-  every unrelated window. An explicit current request for AIMVS manual browser or Computer Use testing also authorizes
-  the exact dedicated task window to become frontmost when required; do not ask for a second approval merely because
-  that bounded test window may cover or take focus from the active app. Send the normal macOS heads-up before a known
-  focus change, verify the exact task window and URL immediately before and after input, and never restore focus over
-  newer user input. Stop only when ownership becomes ambiguous, the controller targets another window or URL, or
-  continuing would interact with unrelated user state. (Codex tasks: 01a024ca-37e3-7883-89fe-f3233fb75a94,
-  01a024f9-f80c-71c0-9005-51c76fc2e18d, 019fe81d-3690-71d3-820f-2a1ca360dcb4)
+- Ethan uses two display setups. When the MacBook is standalone, keep the verified test window on its sole
+  `Built-in Retina Display` without pointless display movement. When external monitors are attached, keep the one
+  agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media
+  window, and unrelated app.
+- While Ethan is actively using the Mac, try every discrete manual browser action once with the least activating
+  exact-window method available. If it clearly fails and ownership remains exact, the agent may retry once or twice
+  with progressively more direct app- or window-scoped control, using judgment and foregrounding only as the final
+  fallback. Send the normal macOS heads-up before a known focus or window-order change; the current explicit manual-test
+  request authorizes that bounded fallback without separate foreground permission. Re-verify the exact task window,
+  URL, display, and postcondition after every attempt, preserve newer user focus, never use global input, and never
+  retry a consequential action unless its postcondition proves the earlier attempt did not occur. (Codex tasks:
+  01a024ca-37e3-7883-89fe-f3233fb75a94, 01a024f9-f80c-71c0-9005-51c76fc2e18d,
+  019fe81d-3690-71d3-820f-2a1ca360dcb4, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
+  01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
   AIMVS manual test, and stop when none of the three permitted browsers is safely available. Use existing persistent
   profiles only; never substitute a fresh or isolated browser context.
