@@ -348,7 +348,9 @@ worktree. After changing trigger-local code or a Function definition, stop the s
 private-backend stop, then start the same indexed backend again so Docker rebuilds the Function bundle. Verify the
 private containers and indexed ports before testing. Never copy worktree trigger hunks into main or restart stack 0
 for a nonzero test; that old shared-emulator workaround was rejected once every nonzero backend became isolated.
-(Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
+The nonzero standalone-API supervisor only replaces the native Node child after successful API builds; it deliberately
+does not reload this frozen Functions bundle, so observing a native API restart is never proof that trigger code loaded.
+(Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
 
 ## Shared Storage emulator export failures
 

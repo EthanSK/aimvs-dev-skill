@@ -291,17 +291,19 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    The frontend proxy and the standalone API resolve the same stack from the flag, so `:4201`'s `/api`
    calls hit the `:3001` API, and generated links/routing use the offset ports too.
 
-   For API changes, `watch:api` only rebuilds `dist/apps/api`; restart `serve:api:standalone:debug` for the same
-   index before testing so the running Node process loads the rebuilt code. Immediately before every API-server
-   restart, explicitly run `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm exec -- nx build api
---configuration=development`: another task can overwrite the shared `dist/apps/api` with a production build,
-   and restarting that artifact makes localhost requests fail CORS even though the source and stack index are
-   correct. After restart, require the latest startup output to say `Current API environment: development` and
-   verify a localhost-origin preflight returns `Access-Control-Allow-Origin` before continuing. If no API is
-   listening on the computed `3000 + N` port, the indexed frontend still loads but `/api` calls fail. Verify the
-   old port actually closes before relaunching: signaling only the npm wrapper can leave `run-standalone.js`
-   orphaned, in which case terminate that exact stack's listener PID and wait for the port to close before rerunning
-   the command in the preserved session.
+   For nonzero stacks, `watch:api` makes every successful development build publish one atomic completion marker and
+   `serve:api:standalone:debug` automatically replaces that stack's exact Node child after a one-second debounce. A
+   compile error leaves the last good API serving; the next fresh successful build causes one clean replacement. The
+   nonzero watcher deliberately skips the Nx cache because a cached build can restore an old marker ID and hide the
+   first good build after a compile error. Do not manually restart the API during ordinary nonzero-stack source edits.
+   Instead, compare the listener PID before and after the build, require the old port owner to exit, require exactly
+   one new listener with no orphan Node or Nx process, and require the latest startup output to say
+   `Current API environment: development` before Computer Use. Also verify a localhost-origin preflight returns
+   `Access-Control-Allow-Origin`; the indexed frontend can still load while `/api` calls fail when its computed API
+   port is missing. Stack 0 intentionally keeps its direct, manually controlled standalone API and does not use this
+   supervisor. Native API reload never updates the frozen Firebase Functions bundle: after trigger-local code or a
+   Function definition changes, stop native writers and follow `emulator-safety.md`'s guarded private-backend
+   stop/rebuild/start before testing. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
 
 5. **Open `STACK_URL`** in that stack's assigned browser. For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red

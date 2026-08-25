@@ -36,6 +36,10 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. Read-only port and log inspection is allowed.
+- Treat native standalone-API hot reload as a nonzero-stack feature. After a successful API watcher build, require the
+  supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
+  Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
+  private-backend stop/rebuild/start. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
 - Keep every AIMVS browser interaction in one exact agent-owned window on `Built-in Retina Display`. Preserve every
   pre-existing browser window, external-display workspace, active media window, and unrelated app.
 - While Ethan is actively using the Mac, keep manual testing in the background on a best-effort basis and preserve
