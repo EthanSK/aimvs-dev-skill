@@ -341,8 +341,9 @@ loaded rules paths separately before attributing the failure to another worktree
 
 Firebase Tools still has this narrow live-delete export race, but AIMVS deliberately does not patch the export loop:
 making a multi-gigabyte snapshot synchronous blocks ordinary Storage requests for the whole copy. The normal
-`postinstall` patch keeps the larger Storage upload-body limit, applies the upstream line-buffered Storage Rules
-response handling described below, and actively restores any legacy server/export patches left in `node_modules`.
+`postinstall` patch keeps the larger Storage upload-body limit and actively restores any legacy server/export patches
+left in `node_modules`; Firebase Tools 15.25.1 supplies the line-buffered Storage Rules response handling itself and
+fixes 15.25.0's Functions-emulator secret-param argument transposition.
 Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
 -r ts-node/register tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
 Tools. Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live
@@ -354,11 +355,15 @@ green. Its Storage Rules bridge parses each child-process stdout chunk as one JS
 arrive as multiple newline-delimited objects in one chunk; the decisive log signature is one Storage log message that
 contains two JSON objects separated by a newline. Compare an authenticated Firebase-client upload with an Admin
 Storage upload because Admin bypasses Storage Rules: if Admin finishes but the authenticated request stays at 100%,
-inspect this framing path before restarting or blaming cross-stack isolation. AIMVS patches 15.24.0 with Firebase
-Tools 15.25.0's line-buffered handler until the dependency and emulator-export compatibility gate can be upgraded
-together. Verify with concurrent authenticated uploads, then repeat one real browser GIF, animated WebP, and video
-upload and confirm their thumbnails and retained copies in the stack's private MinIO volume. (Codex task:
-01a000ff-9a55-7e93-a300-1b6e91ab3dc6)
+inspect this framing path before restarting or blaming cross-stack isolation. AIMVS now pins Firebase Tools 15.25.1,
+which contains the upstream line-buffered handler and regression tests; do not restore the former local framing
+backport. Do not downgrade to 15.25.0: it transposes `force` and `isEmulator` when resolving Function params, so local
+Functions discovery can call Cloud Secret Manager and fail without OAuth; 15.25.1 contains upstream fix `2480f20062ed`.
+The isolated launcher permits the verified 15.24.0-export to 15.25.1-CLI transition without relabelling the canonical
+snapshot and still rejects unknown version mismatches. Verify future changes with a healthy Functions discovery and
+concurrent authenticated uploads, then repeat one real browser GIF, animated WebP, and video upload and confirm their
+thumbnails and retained copies in the stack's private MinIO volume. (Codex tasks:
+01a000ff-9a55-7e93-a300-1b6e91ab3dc6, 01a035d6-3481-7d93-87af-76be7acb550e)
 
 Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. The script checks
 that port before generating rules and exits if it is occupied. Normal dev-stack startup, `npm test`, local Git hooks,
