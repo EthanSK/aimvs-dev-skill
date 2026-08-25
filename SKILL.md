@@ -64,18 +64,28 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser window and nonzero stack after every passed, failed, partial, blocked, or
   interrupted manual-test session unless Ethan explicitly asks to keep that exact stack running.
-- For Safari, also track WebContent processes created by the test and verify they exit when the tracked window closes.
-  A missing window ID is not cleanup proof: a frozen AIMVS page once left its task-created renderer executing for a
-  day after the window disappeared. Resolve any surviving renderer immediately through the ownership-safe procedure
-  in `references/browser-control.md`; never defer it to the 24-hour stack check.
-  (Codex task: 01a01b02-4104-72a1-8611-5535ace7202a)
-- Treat a verified 24-hour idle-cleanup check as part of starting every agent-owned nonzero stack. If the host cannot
-  schedule that check, the stack must be closed before the task ends; never leave it running without a cleanup owner.
-  The check never applies to Ethan-owned stack 0. (Codex task: 01a016b1-fc04-7150-a318-493d65f7111c)
+- For Safari, record task-created WebContent processes at test-window creation and after an abnormal reload, crash, or
+  non-responsive-page recovery. Ordinary healthy route changes do not need another renderer inventory. At cleanup,
+  use the deep renderer procedure only when a recorded task-created process survives or the page showed abnormal
+  renderer behavior; never reconstruct ownership retrospectively from old task, process, or desktop logs. A healthy
+  page with no recorded surviving renderer needs the exact task tab/window closed and its stack origin absent from
+  Safari. (Codex tasks: 01a01b02-4104-72a1-8611-5535ace7202a,
+  01a0399b-e199-79d2-b4ec-a32664b00adf)
+- Create a verified 24-hour idle-cleanup check only when Ethan explicitly asks to keep the exact nonzero stack running
+  after the current task turn. A stack that will be closed during the same task must not incur create/readback/cancel
+  automation work. Never leave a deliberately retained stack without a cleanup owner; the check never applies to
+  Ethan-owned stack 0. (Codex tasks: 01a016b1-fc04-7150-a318-493d65f7111c,
+  01a0399b-e199-79d2-b4ec-a32664b00adf)
 - Never remove a worktree until its tracked browser window and native stack processes are closed and any isolated
-  backend has completed its guarded stop from that still-existing worktree. A failed export, live port, running
-  container, or ambiguous owner blocks worktree removal; preserve the private Docker volumes. (Codex task:
-  019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+  backend has completed its guarded stop from that still-existing worktree. Ordinary stop and the 24-hour idle cleanup
+  preserve the whole stack. Only explicit terminal task-completion authorization permits the separate guarded reclaim;
+  retire its cleanup automation and complete reclaim before removing the worktree so the index becomes reusable. An
+  explicit current-turn instruction from Ethan to manually bypass reclaim for one exact stack may waive only an
+  unavailable current launcher or missing guarded-stop receipt through the narrow procedure in
+  `references/stack-lifecycle.md`; ordinary completion permission never implies that bypass. A failed export, live
+  port, running container, foreign or ambiguous owner, mixed topology, or failed readback always blocks removal and
+  preserves the private Docker state. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+  01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a0391b-3fc2-7d41-8005-b7c77723995f)
 - Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
   `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. Stop every nonzero stack's
   native writers before its guarded `stop` command exports and verifies that stack's private snapshot.
@@ -122,9 +132,11 @@ linked directly here so an agent never needs to discover operating instructions 
    or changed by the current task and regressions those changes caused. Do not ask it to redesign or polish unrelated
    pre-existing UI. Also inspect emulator state, frontend/API/emulator logs, and relevant UI state;
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
-5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, close the
-   exact test window, stop and verify the native stack processes, then export and stop any isolated backend while
-   the worktree still exists. Verify cleanup before removing the worktree.
+5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, then perform
+   one bounded cleanup pass: close the exact test tab/window, stop the native processes, export and stop the isolated
+   backend, retire a cleanup automation only when one was actually created, and run guarded reclaim when terminal
+   completion is authorized. Use one fresh ownership preflight and one final readback; repeat a boundary only after a
+   helper failure or verified state change. Preserve paused stacks and keep the worktree until cleanup succeeds.
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 

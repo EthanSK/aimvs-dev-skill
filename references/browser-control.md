@@ -52,12 +52,13 @@ as unavailable and use the next safely assigned browser rather than weakening or
 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
 Immediately before creating the window, record the PID and launch time of every standard Safari
-`com.apple.WebKit.WebContent` process. Recheck after the first load and after every later full navigation, reload,
-forced reload, or replacement-window load; retain each process that appeared during that exact test action as a
-task-created renderer. Exclude `WebContent.EnhancedSecurity` and WebKit processes owned by other apps. If another
-Safari interaction occurred during the same boundary, treat attribution as ambiguous instead of claiming the new
-PID. This tracking is mandatory because Safari page processes are launchd children and can survive after their
-owning window disappears.
+`com.apple.WebKit.WebContent` process, then recheck after the first load and retain each process created during that
+exact boundary. Refresh the boundary only after an abnormal reload, forced reload, replacement-window load, crash, or
+non-responsive-page recovery; ordinary healthy route changes and full navigations do not justify repeated process
+forensics. Exclude `WebContent.EnhancedSecurity` and WebKit processes owned by other apps. If another Safari
+interaction occurred during the same boundary, treat attribution as ambiguous instead of claiming the new PID. Never
+search old task/session logs during cleanup to reconstruct renderer ownership that was not recorded at creation.
+(Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
 When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile—never a fresh
 or isolated profile. After recording the existing window IDs, create exactly one dedicated window at `STACK_URL`,
@@ -233,15 +234,18 @@ for duplicate approval; report a blocker only if exact targeting remains ambiguo
 ## Close the dedicated test browser window
 
 At the end of every Computer Use manual-test session—passed, failed, partial, or blocked—finish capturing and
-verifying the report evidence, then close the exact dedicated window identified by `TEST_WINDOW_ID`. Do not leave
-it open merely because development work will continue.
+verifying the report evidence, then close the exact dedicated task tab/window identified by `TEST_WINDOW_ID` and
+`STACK_URL`. Do not leave it open merely because development work will continue.
 
-Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory and require
-that ID to be gone. Never target a pre-existing window by title, position, or sight. If the test launched an
-otherwise stopped browser app, quit it only after the tracked window closes and only when it has no other windows.
-Keep closure in the background when practical. The current manual-test request authorizes foregrounding solely to
-close the exact tracked task window; do not ask again. If exact cleanup cannot be proven safe, report it as blocked
-instead of closing another window or app.
+Close only `TEST_WINDOW_ID` with the assigned controller, then re-run the browser-display inventory. Normally require
+that ID to be gone. If Ethan or another task added an unrelated tab to the tracked Safari window, preserve the shared
+window and close only the single tab whose URL has the exact `STACK_URL` origin; then require that origin to be absent
+from every Safari window. Never close a whole window merely because it started as task-owned after its tab ownership
+changed, and never target a pre-existing window by title, position, or sight. If the test launched an otherwise
+stopped browser app, quit it only after the tracked window closes and only when it has no other windows. Keep closure
+in the background when practical. The current manual-test request authorizes foregrounding solely to close the exact
+tracked task page; do not ask again. If exact cleanup cannot be proven safe, report it as blocked instead of closing
+another window or app. (Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
 For an Opera window created by the guarded helper, close and verify both tracked identities with:
 
@@ -256,15 +260,16 @@ Safari AppleScript, require exactly one matching window, close that exact window
 inventory and require the ID to be gone. This Safari-only fallback preserves unrelated sheets and windows when
 Computer Use loses its original window target during the close.
 
-For Safari, window cleanup is still incomplete at this point. Wait up to ten seconds and require every
-task-created WebContent PID recorded during the test to exit. If one survives, inspect its unchanged PID, launch
-time, command, CPU, physical footprint, and Safari-container files; also require `TEST_WINDOW_ID` to be gone and
-the exact stack origin to be absent from every remaining Safari window. A renderer that appeared during the exact
-test action and still runs after those checks is a proven active orphan, not a `Z` zombie. Stop only that PID using
-`INT`, then `TERM`, then `KILL` if required, rechecking after each signal. Verify Safari's pre-existing windows and
-processes remain present afterward. If attribution, current tab ownership, or concurrent Safari activity is
-ambiguous, do not signal anything: report the cleanup blocker immediately and ask Ethan to quit Safari. Never let
-the task finish, open another Safari replacement, or rely on the 24-hour stack check while the renderer remains.
+For a healthy Safari session with no recorded surviving task-created renderer, cleanup is complete when the exact
+task tab/window is closed and its stack origin is absent from every Safari window. Use the deeper renderer check only
+when a recorded task-created WebContent PID survives or the page crashed, froze, or became non-responsive. In that
+case, wait up to ten seconds, inspect the unchanged PID, launch time, command, CPU, physical footprint, and
+Safari-container files, and require the exact stack origin to be absent. A renderer recorded during the exact abnormal
+test boundary and still running after those checks is a proven active orphan, not a `Z` zombie. Stop only that PID
+using `INT`, then `TERM`, then `KILL` if required, rechecking after each signal. Verify Safari's pre-existing windows
+and processes remain present afterward. If attribution, current tab ownership, or concurrent Safari activity is
+ambiguous, do not signal anything: report the cleanup blocker and ask Ethan to quit Safari. Never search historical
+logs for a PID or rely on a 24-hour stack check to resolve a known surviving renderer.
 
 After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
 The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,

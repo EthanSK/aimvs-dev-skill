@@ -79,9 +79,11 @@ the restore.
 
 If the hub is gone but an orphan Firestore Java process still owns `:8080`, the Firebase CLI cannot export it. After
 stopping the verified main periodic exporter, call Firestore's `/emulator/v1/projects/<project-id>:export` endpoint with a unique
-`export_directory` and `export_name`, verify the resulting overall-export metadata, then stop only that verified
-orphan PID. Preserve the canonical export separately before restoring main; an open Firestore port alone is not a
-healthy shared emulator.
+`export_directory` and `export_name`, plus `database` set to
+`projects/<project-id>/databases/(default)`; omitting the database makes emulator 1.21 reject the request before writing
+anything. Verify the resulting overall-export metadata, then stop only that verified orphan PID. Preserve the canonical
+export separately before restoring main; an open Firestore port alone is not a healthy shared emulator. (Codex task:
+01a038c3-e59b-7112-8252-861c13623017)
 
 Never edit `serve-emulators.sh` while an invocation of that script is still running. In a verified failure, the file
 grew by 40 bytes while Bash was waiting for Firebase; after Firebase exited, Bash resumed at the old end-of-file offset
@@ -153,12 +155,19 @@ The normal `serve:emulators` and `serve:emulators:standalone-server` commands en
 OpenTelemetry launcher for the next start without rewriting the Firebase emulator JAR. Set
 `AIMVS_FIRESTORE_DIAGNOSTICS=0` before either npm command only when a clean no-agent comparison is required. The Java
 agent adds some measurement overhead, so use the disabled comparison if the diagnostic run itself becomes suspect.
+`npm install` updates Firebase Tools but does not download a newly selected Firestore emulator JAR. The launcher must
+run Firebase's supported `setup:emulators:firestore` command when that expected JAR is missing, verify its SHA-256, and
+only then inspect its selected classes with `javap`; otherwise the first start after an upgrade fails with a misleading
+class-not-found error before Firebase reaches its normal download step. (Codex task: 01a038c3-e59b-7112-8252-861c13623017)
+When an upgrade moves a selected method to another class, update both the instrumentation map and the extension's
+narrow ignored-type allow-list together; Firestore emulator 1.22 moved `transactionalQuery` from `CloudFirestoreV1` to
+`FirestoreEmulatorHelper` while preserving its transaction timing role. (Codex task: 01a038c3-e59b-7112-8252-861c13623017)
 
 Each emulator session writes sanitized NDJSON spans under `firestore-diagnostics/`. The receiver retains method names,
 durations, trace/span correlation, status, process ID, and a small allow-list of protocol/thread attributes; it omits
 request bodies, document values, document IDs, and document paths. Old session files are pruned after 24 hours while
 the launcher is running, and each session stops writing after 1 GiB. The pinned agent/API downloads live under
-`.firebase/firestore-diagnostics/`, while a small supported agent extension re-allows only the four selected classes that
+`.firebase/firestore-diagnostics/`, while a small supported agent extension re-allows only the selected classes that
 OpenTelemetry otherwise excludes through its broad `com.google.cloud.*` performance ignore. A small bootstrap agent
 keeps the full OpenTelemetry runtime out of the Storage rules JVM even though Firebase passes `JAVA_TOOL_OPTIONS` to
 both Java children, and startup fails visibly if an emulator upgrade removes any selected class or method.
@@ -268,6 +277,17 @@ cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes
 worktree containers and mounts prove ownership; the launcher then records the worktree plus all three volume creation
 identities atomically in the backend-state volume. Reject any later identity mismatch, and never answer a Compose
 `Recreate (data will be lost)?` prompt. (Codex task: 01a0200e-ba77-7e42-8233-0fb4caa5bc70)
+Normal nonzero-stack stop/export remains preservation-only. Terminal reclaim is a separate task-completion operation:
+require explicit authorization, the still-registered exact owner, no active writer or browser/task/cleanup activity,
+closed native and private ports, the exact stopped containers/network/three-volume topology with no backups or mixed
+labels, and the current launcher's guarded-stop receipt. Retire and verify the exact idle-cleanup automation before
+reclaim when one was actually created, then use only the launcher's exact project confirmation; never create an
+automation merely so cleanup can retire it, infer deletion authority from inactivity or a missing worktree, or delete
+Docker artifacts manually. The sole exception is Ethan's explicit current-turn instruction to use the narrowly scoped
+manual receipt bypass in `stack-lifecycle.md`; that procedure still requires exact ownership, topology, successful
+export/stop, inactivity, enumeration, notification, and final readback, and may waive only the unavailable launcher or
+missing receipt. (Codex tasks: 01a0312f-5629-7b23-b7b1-4653b92e9dcc,
+01a0399b-e199-79d2-b4ec-a32664b00adf, 01a0391b-3fc2-7d41-8005-b7c77723995f)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
 on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal
