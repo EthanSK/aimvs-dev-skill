@@ -4,6 +4,9 @@ Review the effective working tree by default. Do not report staged-versus-unstag
 as code-review findings unless Ethan explicitly asks for an index or staging audit; he normally reviews first and
 stages manually afterward.
 
+When applying or landing a linked worktree back to main, preserve the exact staged, unstaged, and untracked boundaries
+of both worktrees. Re-read those boundaries immediately before the landing operation; an earlier snapshot is stale.
+
 When Ethan asks to move dirty changes from main into an owning worktree, a verified copy is only the preservation
 checkpoint, not completion. After proving that every staged, unstaged, and untracked item exists in the destination,
 remove only those exact duplicates from main in the same task when the request authorizes the move; preserve unrelated

@@ -31,7 +31,9 @@ direct commits here can be replaced by its guarded publisher and are never impor
 ```text
 SKILL.md                             Concise operating contract and reference router
 agents/openai.yaml                   Skill-list metadata
+references/worktree-lifecycle.md     Task-environment and linked-worktree lifecycle
 references/stack-lifecycle.md        Dev-stack setup, health, and cleanup
+references/git-state-and-code-review.md  Git-state preservation and code review
 references/emulator-safety.md        Emulator ownership, data drift, and recovery
 references/browser-control.md        Browser assignment and exact-window safety
 references/authentication.md         Test-account and App Check workflow

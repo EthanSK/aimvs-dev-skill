@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving Computer Use, a local browser test, dev-stack startup or control, debugging, code review, Git worktree or dirty rebase/stash maintenance, or questions about prior manual-test screenshot evidence. This is the repo source of truth for Ethan-owned stack 0 safety, fully isolated nonzero stacks, Git-state preservation, MacBook-display routing, port offsets, browser assignment, authentication, verification, recovery, and durable manual-test reports.
+description: Use for every AI Music Video Studio development interaction involving task-environment selection, Git worktree lifecycle or dirty-state maintenance, Computer Use, local browser testing, dev-stack control, debugging, code review, or prior manual-test evidence. This is the repo source of truth for named AIMVS worktrees, stack 0 safety, isolated nonzero stacks, Git-state preservation, browser assignment, authentication, verification, and recovery.
 ---
 
 # AIMVS Development
@@ -18,10 +18,11 @@ credentials, branch-specific results, or transient runtime state.
 
 ## Purpose
 
-Use this skill as the AIMVS source of truth for every Computer Use interaction, local browser test, dev-stack action,
-emulator investigation, authentication flow, code review, dirty Git-state operation, and prior manual-test evidence
-question. It overrides global browser-testing defaults for AIMVS. Stack 0 belongs to Ethan's main VS Code environment
-and is never an agent test target. Every agent-run test uses a free nonzero stack index, including tests of
+Use this skill as the AIMVS source of truth for task-environment and worktree decisions, Computer Use interactions,
+local browser tests, dev-stack actions, emulator investigations, authentication flows, code reviews, dirty Git-state
+operations, and prior manual-test evidence questions. It overrides global browser-testing defaults for AIMVS. Stack 0
+belongs to Ethan's main VS Code environment and is never an agent test target. Every agent-run test uses a free
+nonzero stack index, including tests of
 uncommitted changes in the primary worktree. Stack 0 keeps Ethan's main native services; every nonzero stack uses its
 own private backend containers plus its own indexed native frontend/API processes.
 
@@ -88,7 +89,10 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 Read every matching reference completely before acting. Several references can apply to one task. Every reference is
 linked directly here so an agent never needs to discover operating instructions through a nested reference chain.
 
-- **Starting, inspecting, controlling, or stopping a dev stack; preparing a worktree; checking stack health:** read
+- **Any AIMVS task/thread creation, fork, handoff, environment selection, or worktree creation, reuse, rename, or
+  removal:** read [references/worktree-lifecycle.md](references/worktree-lifecycle.md) before the task environment is
+  chosen or task work begins.
+- **Starting, inspecting, controlling, or stopping a dev stack; checking stack health:** read
   [references/stack-lifecycle.md](references/stack-lifecycle.md).
 - **Any emulator operation or diagnosis, persisted-data mismatch, WebChannel wedge, trigger-changing worktree, Storage
   export failure, or security-rules test:** read
@@ -106,8 +110,9 @@ linked directly here so an agent never needs to discover operating instructions 
 
 ## Core workflow
 
-1. Confirm the requested action is authorized, identify the exact worktree, preserve its staged, unstaged,
-   untracked, ignored, browser, emulator, and dev-stack state, then read all matching references above.
+1. Before choosing a task environment or worktree, follow `references/worktree-lifecycle.md`. Then confirm the
+   requested action is authorized, identify the exact worktree, preserve its staged, unstaged, untracked, ignored,
+   browser, emulator, and dev-stack state, and read every other matching reference above.
 2. For a manual test, select a free nonzero stack and assigned browser, prepare ignored local dependencies, start or
    reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
 3. Create and verify one dedicated browser window for the exact worktree and stack URL before interacting. Stop if

@@ -4,8 +4,6 @@
 
 - [Ports per stack](#ports-per-stack)
 - [Ethan's main environment](#ethans-main-environment)
-- [Create a linked worktree](#create-a-linked-worktree)
-- [VS Code workspace membership](#vs-code-workspace-membership)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
 - [Schedule the 24-hour idle-cleanup check](#schedule-the-24-hour-idle-cleanup-check)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
@@ -63,46 +61,6 @@ terminal or editor into full screen, enter Zen Mode, hide the editor/sidebar to 
 resize/rearrange panels for convenience. Use the terminal at its existing size; if a terminal must be revealed,
 restore the immediately preceding layout as soon as the interaction is complete. Do not change the active editor,
 terminal tab, panel, or workspace focus unless the task actually requires it.
-
-## Create a linked worktree
-
-Name every new linked AIMVS worktree directory `aimvs-<task-slug>`, not
-`ai-music-video-studio-<task-slug>`. This applies to the directory only; keep the established branch naming convention,
-such as `codex/<task-slug>`. Do not rename existing worktrees merely to apply the new convention.
-
-If Ethan explicitly requests an active worktree rename, first resolve its owning task and live processes, fingerprint
-its staged/unstaged/untracked state, and verify the destination is free. Use `git worktree move`, then immediately put
-an old-path compatibility symlink in place so saved task working directories and already-running processes remain
-usable. Verify the new registered path, unchanged Git boundaries, symlink target, and live stack before notifying the
-owning task to use the new path. Never treat the compatibility symlink as a second worktree. (Codex task:
-01a01193-8a28-7801-b514-509a50b727bb)
-
-## VS Code workspace membership
-
-Whenever Codex creates or starts using an AIMVS worktree, add that worktree folder to the currently active AIMVS
-VS Code workspace immediately:
-
-```bash
-code --add "$WORKTREE_DIR"
-```
-
-Use `code --status` before and after the command to verify the last active window is the AIMVS workspace and that
-both the main checkout and the exact worktree path appear under `Workspace Stats`. Do not open the worktree in a
-separate VS Code window when the main workspace is already open. When explicitly removing a worktree, remove its
-folder from that workspace as part of the same cleanup and verify it is gone:
-
-```bash
-code --remove "$WORKTREE_DIR"
-```
-
-When replacing an old workspace path after a worktree rename, run `code --add "$NEW_WORKTREE_DIR"` and
-`code --remove "$OLD_WORKTREE_DIR"` as separate invocations, then read back `Workspace Stats`. A combined
-`code --remove "$OLD_WORKTREE_DIR" --add "$NEW_WORKTREE_DIR"` invocation left both entries visible during the verified
-rename flow. (Codex task: 01a01193-8a28-7801-b514-509a50b727bb)
-
-If the `code` CLI is unavailable or the last active window is not the AIMVS workspace, use VS Code's **Add Folder
-to Workspace...** / **Remove Folder from Workspace** UI against the exact path and verify the resulting workspace
-folders before continuing.
 
 ## Run an agent-owned stack
 

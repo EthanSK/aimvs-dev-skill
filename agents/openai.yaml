@@ -1,4 +1,4 @@
 interface:
   display_name: 'AIMVS Development'
   short_description: 'Run, test, review, and preserve AIMVS development state.'
-  default_prompt: 'Use $aimvs-dev to run, debug, test, review, or preserve Git/worktree state for the correct AIMVS worktree and dev stack.'
+  default_prompt: 'Use $aimvs-dev to choose the correct AIMVS task environment and worktree, then run, debug, test, review, or preserve its Git and dev-stack state.'
