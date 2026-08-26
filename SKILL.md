@@ -15,6 +15,8 @@ modification, review whether `SKILL.md` remains a concise operating contract and
 reroute conditional detail when that reduces irrelevant context without hiding universal safeguards or fragmenting
 the skill unnecessarily. Preserve reusable knowledge; do not record guesses, duplicate guidance, secrets,
 credentials, branch-specific results, or transient runtime state.
+A successful one-time repair does not qualify by itself. Keep incident-specific symptoms, data shapes, migration
+recipes, and task recaps in task history unless they establish a stable rule that changes future decisions.
 
 ## Purpose
 
