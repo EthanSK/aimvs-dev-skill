@@ -130,6 +130,11 @@ the worktree's assigned report directory with `prepare-manual-test-report.mjs`, 
 new timestamped `.png` filename in that exact report directory. The in-app Browser can return JPEG bytes even though
 the capture is destined for a PNG report; after inspecting the raw pixels, run
 `normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>` and require actual PNG bytes before annotation.
+When the task's root CWD differs from the verified target worktree, pass only absolute paths inside that target
+worktree to `apply_patch` and every other file-writing tool for temporary captures and final evidence; a relative path
+can resolve in main or a sibling worktree and leave an orphan outside the task's ownership. Verify every temporary
+capture path is absent from main and sibling worktrees after the final evidence is saved. (Codex task:
+01a0312f-5629-7b23-b7b1-4653b92e9dcc)
 Do not merely rename the extension or load the worktree's native `sharp` module inside the Browser runtime; macOS can
 reject that native module because the browser process and module signatures have different Team IDs. Capture only the
 app viewport, record the filename for the report generator, and verify the tab ID plus `STACK_URL` immediately before
