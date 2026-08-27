@@ -41,10 +41,12 @@ field, type the password with real keyboard input, refresh app state, then click
 Do not rely on `Tab`/`Enter` order in Firefox: it can land on the Forgot Password control and switch the form to
 Reset Password instead of submitting.
 
-When the in-app Browser is assigned, follow its current confirmation policy before transmitting credentials, then
-use semantic Browser locators to fill the visible Angular fields and click the visible Sign In button. Never inspect
-browser storage, password stores, cookies, or profiles, and never emit credential values through tool output. Verify
-the authenticated redirect and account-only UI exactly as for a desktop browser.
+An explicit AIMVS manual-browser-test request authorizes entering the saved test-account credentials into the exact
+verified assigned test browser and stack origin. Do not ask for separate per-run credential-transmission
+confirmation. When the in-app Browser is assigned, use semantic Browser locators to fill the visible Angular fields
+and click the visible Sign In button. Never inspect browser storage, password stores, cookies, or profiles, and never
+emit credential values through tool output. Verify the authenticated redirect and account-only UI exactly as for a
+desktop browser.
 
 Safari may cover the app with Auto-Complete or `Update Password` popovers during and after sign-in. Press Escape
 to dismiss each popover, then refresh Computer Use accessibility state before deciding whether sign-in failed or
