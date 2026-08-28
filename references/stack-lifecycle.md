@@ -8,8 +8,6 @@
 - [Schedule the 24-hour idle-cleanup check](#schedule-the-24-hour-idle-cleanup-check)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
 - [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack)
-- [Terminally reclaim a completed task stack](#terminally-reclaim-a-completed-task-stack)
-- [Ethan-authorized manual reclaim bypass](#ethan-authorized-manual-reclaim-bypass)
 
 ## Ports per stack
 
@@ -24,7 +22,12 @@
 | Firebase Storage            | 9199                   | 16000 + N             |
 | Firebase Auth               | real staging Auth      | real staging Auth     |
 | MinIO                       | 9000                   | 17000 + N             |
+| MinIO console               | 9001                   | 17100 + N             |
 | download-assets-worker      | 8787                   | 18800 + N             |
+| Firestore WebSocket         | —                      | 19150 + N             |
+| Emulator UI                 | —                      | 14000 + N             |
+| Emulator hub                | —                      | 14400 + N             |
+| Emulator logging            | —                      | 14500 + N             |
 
 The main Restore Terminals setup owns stack 0's native download-assets-worker on `:8787`. Every nonzero stack owns
 an indexed Worker inside its private Docker backend; never point it at the main Worker or start a second native copy.
@@ -66,30 +69,32 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 ## Run an agent-owned stack
 
-1. **Pick the first completely unused nonzero stack index** before starting anything, including tests from main.
+1. **Pick the lowest reusable nonzero stack index** before starting anything, including tests from main.
 
-   For each candidate `N`, require all four native ports to be free, no running or stopped container or network with
-   that exact Compose project label, and no named volume whose name starts with that exact project prefix:
+   For each candidate `N`, require every indexed native and private-backend port to be free and no matching container
+   to be running. Stopped containers, an empty exact Compose network, and named volumes do not reserve the number: the
+   guarded `start` replaces only that stopped runtime and continues from the same preserved dataset.
 
    ```bash
    STACK_INDEX=N
-   for STACK_PORT in $((4200 + STACK_INDEX)) $((3000 + STACK_INDEX)) $((9230 + STACK_INDEX)) $((9476 + STACK_INDEX)); do
+   for STACK_PORT in \
+     $((4200 + STACK_INDEX)) $((3000 + STACK_INDEX)) $((9230 + STACK_INDEX)) $((9476 + STACK_INDEX)) \
+     $((15000 + STACK_INDEX)) $((18080 + STACK_INDEX)) $((16000 + STACK_INDEX)) \
+     $((17000 + STACK_INDEX)) $((17100 + STACK_INDEX)) $((18800 + STACK_INDEX)) \
+     $((19150 + STACK_INDEX)) $((14000 + STACK_INDEX)) $((14400 + STACK_INDEX)) $((14500 + STACK_INDEX)); do
      lsof -nP -iTCP:"$STACK_PORT" -sTCP:LISTEN
    done
-   docker container ls --all --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
-   docker network ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Name}}'
-   docker network ls --filter "name=^aimvs-isolated-backend-stack-${STACK_INDEX}_default$" --format '{{.Name}}'
-   docker volume ls --format '{{.Name}}' | awk -v prefix="aimvs-isolated-backend-stack-${STACK_INDEX}_" 'index($0, prefix) == 1'
+   docker container ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
    ```
 
-   All five checks must return no ownership evidence before assigning a new index. A stopped Compose project is still
-   owned: its containers retain the originating worktree path, its network reserves the project, and its backend-state
-   volume can contain durable owner and guarded-stop records while the data volumes retain private state. Preserve it
-   and choose another index. Reuse an existing index only for its verified owning worktree after comparing every
-   container's `com.docker.compose.project.working_dir` label and bind mount with the exact current worktree. An orphan
-   network, missing worktree, or free port is never reclaim authority. Never use `0`; it belongs to Ethan even when
-   testing source from main. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666,
-   01a0312f-5629-7b23-b7b1-4653b92e9dcc)
+   Before reusing a stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
+   recovery-backup volume identity is preserved. The launcher performs this proof, records the new runtime worktree,
+   removes only stopped containers, reuses the exact empty network, then starts against the existing volumes. Mutating
+   `start`, `stop`, and `export` commands also hold one per-index lock in the shared Git directory through their final
+   readback, so concurrent tasks fail closed instead of both claiming the same lowest reusable number. A running
+   lifecycle owner, container, live port, attached/foreign network, incomplete dataset, or ambiguous identity blocks
+   reuse. Never delete a volume to free a number, and never use `0`; it belongs to Ethan even when testing source from main.
+   (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -149,6 +154,12 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    initialization retries with its already-persisted seed choice. Never delete its volumes, reseed it, or merge its data
    into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105)
 
+   If Docker exhausts its predefined address pools, follow `emulator-safety.md`'s canonical fixed-subnet recovery. A
+   stopped container can still reference a deleted network ID and fail with `network <id> not found`; let the guarded
+   launcher verify the stopped runtime, replace its stale containers, reuse its exact empty network, and retain every
+   current and recovery volume. Never remove a volume or dataset to recover a stack. (Codex task:
+   01a024c0-a524-7960-a57e-f9fa68536e4c)
+
    The launcher creates the three exact private data volumes before Compose starts and declares them external so
    Compose never offers to recreate preserved data merely because its volume configuration changed. For an ownerless
    volume created by the earlier launcher, the first updated start still requires the complete correctly owned
@@ -159,6 +170,12 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    record through stdin must use `docker run --interactive` and read the JSON back before Compose starts; without the
    flag, Docker closes stdin and `cat` silently creates a zero-byte record. (Codex task:
    01a0200e-ba77-7e42-8233-0fb4caa5bc70)
+
+   The backend-state volume separately records whether the latest runtime is `active` or `stopped`. Guarded start
+   writes `active` immediately before Compose starts so an incomplete startup fails closed; guarded stop writes
+   `stopped` only after final export and shutdown verification. Missing containers while the record is still `active` blocks reuse because the
+   latest Firebase writes may not have been exported. Older datasets without this record are adopted once, then every
+   later start/stop is covered. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
    The API watcher does not replace the Functions bundle baked into the isolated Firebase image. After changing a
    Function definition or trigger-local code, run the guarded isolated-backend `stop`, then `start` again before
@@ -382,10 +399,11 @@ and schedule the next check 24 hours after the current one; report the exact amb
 
 When inactivity is proven, invoke `$macos-heads-up-notification`, close and verify only the tracked browser window,
 then use the normal guarded stop sequence below. Stop the nonzero backend only through its verified export-and-stop
-command. The 24-hour check is an idle pause, never terminal task-completion authorization: it must preserve containers,
-network, owner records, and private volumes and must never run `reclaim`. Never stop stack 0 or its Firebase emulators,
-MinIO, or Worker. Require the indexed native ports and exact isolated Compose project to have no running container
-before marking the idle cleanup complete. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
+command. The stop releases the runtime number by removing only stopped containers and its empty network; it preserves
+every current and recovery volume. Never stop stack 0 or its Firebase emulators, MinIO, or Worker. Require all indexed
+ports and matching running containers to be absent before marking the idle cleanup complete. A later check must verify
+that the same worktree still owns the runtime before acting, because another task may now reuse the number. (Codex
+tasks: 01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
 Whenever normal task cleanup closes the stack before the follow-up fires, cancel or retire its exact scheduled check
 and read scheduler state back to prove it is no longer active. Never leave a stale timer that can later wake and act on
@@ -466,22 +484,16 @@ Run the stack's guarded backend stop only after the native ports are closed:
 npm run isolated-backend -- stop --dev-stack-index="$STACK_INDEX"
 ```
 
-Require `Verified the private Firebase export completed.` when Firebase reached readiness, followed by `Verified all
-isolated backend containers stopped; private volumes preserved.` A container that failed before readiness instead
-prints `Firebase never became ready; no private export was required.` so its Worker and MinIO can still be cleaned up.
-The command keeps the stack-indexed Firebase and MinIO volumes for its next start. An already-stopped Firebase
-container that previously reached readiness is safe only when its latest lifecycle has a clean exit and a verified
-export-on-exit; a container that never existed needs no export. If export verification fails, any container remains
-live, or ownership is ambiguous, stop cleanup and keep the worktree; never bypass the command with raw `docker stop`,
-`docker compose down`, or volume deletion. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
-
-When the stack has an exact durable owner record and the current container/volume/network topology, guarded `stop`
-also writes `/state/verified-stop.json`. That receipt binds the latest Firebase export requirement and fingerprint to
-the exact stopped container IDs, exit states, volume creation identities, Compose project, and worktree. Any later
-`start` attempt removes it before build or Compose can run. It also binds the single exact stopped Compose network ID;
-a replaced network cannot inherit an older receipt. A legacy, partial, backup-bearing, or otherwise non-current topology
-still stops and preserves data, but it does not receive terminal reclaim proof. Never create or edit the receipt
-manually. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
+Require `Verified the private Firebase export completed.` when Firebase reached readiness, followed by `Dev stack N
+freed for reuse; persistent volumes preserved.` and the final guarded-stop confirmation. A container that
+failed before readiness instead prints `Firebase never became ready; no private export was required.` so its last good
+snapshot remains intact. The command removes only exact stopped runtime containers and its empty network, then proves
+that every current and recovery volume has the same identity. An already-stopped Firebase container that reached
+readiness is safe only when its latest lifecycle has a clean exit and verified export-on-exit; a container that never
+existed needs no export. If export verification fails, any indexed port remains live, a container is running, or
+ownership/topology is ambiguous, stop cleanup and keep every artifact. Never bypass the command with raw `docker
+stop`, `docker compose down`, pruning, reseeding, or volume deletion. (Codex tasks:
+019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
 Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
 0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own
@@ -494,68 +506,3 @@ window. Never stop stack 0's Worker, quit a terminal app, or close an unrelated 
 browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
 Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any
 failure blocks removal instead of becoming a warning.
-
-## Terminally reclaim a completed task stack
-
-Ordinary stop is a pause and always preserves the stack. Use terminal reclaim only when Ethan explicitly authorizes
-completion of the exact task and its private stack is no longer needed. Perform it while the owning worktree is still
-registered and before removing that worktree:
-
-1. Prove the exact task/worktree/stack owner again. Require no task-owned browser window, native listener, active
-   cleanup, upload, generation, render, export, migration, fixture mutation, or other state-changing operation. Missing
-   worktree state alone is not authorization, and any mixed or foreign label fails closed. Reuse the fresh bounded-pass
-   preflight above when no state changed; do not perform the same ownership audit twice.
-2. If a 24-hour idle-cleanup automation was actually created, cancel or retire it and read scheduler state back to
-   prove it is inactive. Do not create an automation merely so terminal cleanup can cancel it, and do not expose an
-   index for reuse while an existing timer can still act on it.
-3. Close the tracked browser and native stack window through the normal ownership-safe sequence above, then run guarded
-   `stop` and require both its export/stop success and `Recorded the exact guarded-stop proof...` output. Reuse success
-   from the same uninterrupted cleanup pass instead of repeating an already-proven close or stop.
-4. Run the exact terminal command only after the explicit authorization is current:
-
-   ```bash
-   COMPOSE_PROJECT="aimvs-isolated-backend-stack-${STACK_INDEX}"
-   npm run isolated-backend -- reclaim \
-     --dev-stack-index="$STACK_INDEX" \
-     --confirm-task-complete="$COMPOSE_PROJECT"
-   ```
-
-   The launcher rechecks every indexed native and private port, exact current worktree registration, the single owner
-   record, exactly three current volumes with no recovery backups, one stopped container per current service, allowed
-   bind mounts, one empty exact Compose network, and the latest guarded-stop receipt. It repeats topology and receipt
-   verification immediately before deleting only those exact container IDs, network ID, and volume names. Stack 0,
-   neighboring stacks, shared services, mixed labels, foreign owners, missing records, and changed identities always
-   fail closed. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
-5. Require the success output, then independently read back that the exact project has no containers, network, prefixed
-   volumes, owner/backend state, listeners, or active cleanup automation. Only then is the index reusable and only then
-   may the task remove its worktree. If reclaim fails, preserve the stopped stack and worktree for manual recovery; do
-   not substitute raw Docker removal.
-
-## Ethan-authorized manual reclaim bypass
-
-This is an explicit-owner exception, never an agent fallback. Use it only when Ethan says in the current turn to
-manually bypass reclaim for one exact task stack. The instruction may waive only an unavailable current launcher or a
-missing `/state/verified-stop.json`; it never waives a failed Firebase export, active or ambiguous ownership, a live
-listener, running container, browser/task/cleanup activity, foreign bind mount, extra or backup volume, attached or
-foreign network, or failed final readback. Ordinary requests to finish, clean up, delete a worktree, or reclaim a stack
-do not imply this bypass. (Codex task: 01a0391b-3fc2-7d41-8005-b7c77723995f)
-
-1. Require the exact owning worktree to remain registered. Re-prove its branch and real path, the durable volume owner
-   record, every Compose project and working-directory label, every bind mount, and the absence of task-owned browser
-   windows, indexed listeners, running containers, state-changing work, and active cleanup automation.
-2. Require the same current topology the guarded launcher expects: exactly one stopped container for each current
-   service, exactly one empty labeled default network, and exactly the three named backend-state, Firebase-data, and
-   MinIO-data volumes with no other stack-prefixed volume. Require the latest guarded stop in the current task history
-   to have verified both the private Firebase export and all stopped containers; never reconstruct or hand-write a
-   receipt.
-3. Resolve and record every exact container ID, the exact network ID, and all three exact volume names immediately
-   before deletion. Invoke `$macos-heads-up-notification`, name the irreversible stack deletion, and proceed only after
-   successful delivery. Never use a glob, unresolved variable, project-wide prune, `docker compose down`, or another
-   command whose target can expand beyond those enumerated artifacts.
-4. Remove only the enumerated stopped container IDs, then the exact empty network ID, then the Firebase-data and
-   MinIO-data volumes, and remove the backend-state volume last so partial failure retains the owner record. Stop on
-   the first failure and preserve everything that remains for diagnosis.
-5. Independently require that the exact project has no container, network, prefixed volume, listener, browser owner,
-   or active cleanup automation. Move task-owned untracked evidence to Trash before removing the VS Code folder and Git
-   worktree so accidental evidence deletion remains recoverable. Preserve the branch unless Ethan separately asks to
-   delete it.

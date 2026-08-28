@@ -208,6 +208,12 @@ compare the exact Firestore pointer with the bucket keys and retained test evide
 or update only the stale emulator pointer to the newest surviving valid object instead of repeatedly restarting Java
 or changing download authorization.
 
+If every current Asset's Firebase original exists but its R2 thumbnail or waveform is absent and MinIO contains a
+different dev-fixture Asset ID set, repair only Assets tagged `#devasset`: regenerate their derivatives through the
+normal workers and restore an R2-only dev sample master only from a bundled matching fixture. Verify every repaired
+pointer and object, then export the private stack. Never reseed the stack, delete its older MinIO keys, or apply this
+repair to a non-dev Asset merely to make the IDs match. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+
 An apparently misleading frontend TypeError can also come from a persisted discriminator written by another
 worktree, not from the named helper being missing. In one verified case, an experimental worktree wrote
 `assetType: animatedImage` while main recognized image, video, and audio and represented animation as
@@ -269,25 +275,27 @@ first prove that Docker has no network and macOS has no host route overlapping `
 `aimvs-isolated-backend-stack-N_default` as a bridge with subnet `10.250.N.0/24`, gateway `10.250.N.1`, and the Compose
 labels `com.docker.compose.project=aimvs-isolated-backend-stack-N` and `com.docker.compose.network=default`. Rerun the
 normal guarded start and require every indexed container, mount, and loopback port to pass its usual ownership checks;
-never use this recovery when the subnet overlaps, the index is outside that range, or ownership is ambiguous. Preserve
-the task-owned network with the stopped stack just like its private volumes. (Codex task:
-01a03564-7a64-7be2-a3f6-390ab477b9a6)
+never use this recovery when the subnet overlaps, the index is outside that range, or ownership is ambiguous. Guarded
+start reuses that fully verified empty recovery network until Compose uses it; guarded stop removes it when
+the runtime becomes reusable, while every persistent and recovery volume remains unchanged. (Codex tasks:
+01a03564-7a64-7be2-a3f6-390ab477b9a6,
+01a024c0-a524-7960-a57e-f9fa68536e4c)
 The launcher creates those exact data volumes itself and marks them external to Compose so a configuration update
 cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes are adopted only after their exact
 worktree containers and mounts prove ownership; the launcher then records the worktree plus all three volume creation
 identities atomically in the backend-state volume. Reject any later identity mismatch, and never answer a Compose
 `Recreate (data will be lost)?` prompt. (Codex task: 01a0200e-ba77-7e42-8233-0fb4caa5bc70)
-Normal nonzero-stack stop/export remains preservation-only. Terminal reclaim is a separate task-completion operation:
-require explicit authorization, the still-registered exact owner, no active writer or browser/task/cleanup activity,
-closed native and private ports, the exact stopped containers/network/three-volume topology with no backups or mixed
-labels, and the current launcher's guarded-stop receipt. Retire and verify the exact idle-cleanup automation before
-reclaim when one was actually created, then use only the launcher's exact project confirmation; never create an
-automation merely so cleanup can retire it, infer deletion authority from inactivity or a missing worktree, or delete
-Docker artifacts manually. The sole exception is Ethan's explicit current-turn instruction to use the narrowly scoped
-manual receipt bypass in `stack-lifecycle.md`; that procedure still requires exact ownership, topology, successful
-export/stop, inactivity, enumeration, notification, and final readback, and may waive only the unavailable launcher or
-missing receipt. (Codex tasks: 01a0312f-5629-7b23-b7b1-4653b92e9dcc,
-01a0399b-e199-79d2-b4ec-a32664b00adf, 01a0391b-3fc2-7d41-8005-b7c77723995f)
+That backend-state volume also records `active` immediately before Compose starts and `stopped` only after a guarded
+verified shutdown. If an active runtime's containers disappear, preserve the volumes for manual recovery instead of
+assuming the remaining private export contains its latest writes. Older datasets without this record are adopted once
+and then covered by every later lifecycle. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+Normal nonzero-stack stop/export is always preservation-only. After the verified Firebase export, guarded `stop`
+removes only exact stopped runtime containers and its empty network so the number becomes reusable; it proves every
+current and recovery volume kept the same identity. The next worktree assigned that number continues from the saved
+dataset and records itself as the new runtime owner. Never delete, prune, reclaim, reset, recreate, or reseed a stack's
+Firebase, Storage, MinIO, backend-state, recovery-backup, or other persistent volume. Completion, inactivity, missing
+worktrees, disk pressure, and stale owner labels never authorize data deletion. (Codex task:
+01a024c0-a524-7960-a57e-f9fa68536e4c)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
 on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal

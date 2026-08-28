@@ -362,6 +362,12 @@ and processes remain present afterward. If attribution, current tab ownership, o
 ambiguous, do not signal anything: report the cleanup blocker and ask Ethan to quit Safari. Never search historical
 logs for a PID or rely on a 24-hour stack check to resolve a known surviving renderer.
 
+Safari on macOS 26 can retain a closed window as an invisible, tabless AppleScript record even after an exact-window
+close. Treat that record as closed only when the browser-display inventory no longer exposes the ID, `visible` is
+false, the current tab is unavailable, the exact stack origin is absent from every Safari window, and the recorded
+task-created renderer is absent. Do not quit Safari, close another hidden record, or disturb unrelated Safari state
+merely to make the stale numeric record disappear. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+
 After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
 The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,
 unless Ethan explicitly asked to keep that exact nonzero stack running.

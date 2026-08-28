@@ -69,3 +69,15 @@ For a rename, run `code --add "$NEW_WORKTREE_DIR"` and `code --remove "$OLD_WORK
 the last active window is not AIMVS, use VS Code's **Add Folder to Workspace...** or **Remove Folder from Workspace**
 for the exact path and verify the result before continuing. (Codex task:
 01a01193-8a28-7801-b514-509a50b727bb)
+
+## Land and remove a completed worktree
+
+Treat a current instruction to land or merge a completed task and remove its worktree as authorization to stop that
+exact worktree's runtime unless Ethan explicitly says to keep it running. Before changing local `main`, run a fresh
+ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
+stop, and retire its cleanup automation when one exists. Verify the browser and indexed ports are absent, no matching
+container is running, the runtime containers and network are released, every persistent and recovery volume remains
+unchanged, and the VS Code folder is absent before removing the Git worktree. Worktree completion never authorizes
+volume deletion, pruning, reset, reseed, or reclaim. If ownership, export, stop, or readback is ambiguous or fails,
+preserve the worktree and all Docker state. Never merge first and assume later cleanup can reconstruct ownership after
+the worktree is gone. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)

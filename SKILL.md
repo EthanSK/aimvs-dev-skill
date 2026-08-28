@@ -92,16 +92,18 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   automation work. Never leave a deliberately retained stack without a cleanup owner; the check never applies to
   Ethan-owned stack 0. (Codex tasks: 01a016b1-fc04-7150-a318-493d65f7111c,
   01a0399b-e199-79d2-b4ec-a32664b00adf)
-- Never remove a worktree until its tracked browser window and native stack processes are closed and any isolated
-  backend has completed its guarded stop from that still-existing worktree. Ordinary stop and the 24-hour idle cleanup
-  preserve the whole stack. Only explicit terminal task-completion authorization permits the separate guarded reclaim;
-  retire its cleanup automation and complete reclaim before removing the worktree so the index becomes reusable. An
-  explicit current-turn instruction from Ethan to manually bypass reclaim for one exact stack may waive only an
-  unavailable current launcher or missing guarded-stop receipt through the narrow procedure in
-  `references/stack-lifecycle.md`; ordinary completion permission never implies that bypass. A failed export, live
-  port, running container, foreign or ambiguous owner, mixed topology, or failed readback always blocks removal and
-  preserves the private Docker state. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
-  01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a0391b-3fc2-7d41-8005-b7c77723995f)
+- Never delete, prune, reclaim, reset, recreate, or reseed a nonzero stack's Firebase, Storage, MinIO, backend-state,
+  recovery-backup, or other persistent volume. `stop` must export Firebase, stop the runtime, remove only replaceable
+  containers and its empty network, preserve every volume with the same identity, and make the stack number reusable.
+  The next worktree assigned that number continues from its existing dataset. Worktree landing or removal never
+  authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure weakens this
+  rule. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+- Never land or remove a completed worktree until its tracked browser window and native stack processes are closed,
+  its isolated backend has completed guarded `stop` from that still-existing worktree, and the indexed runtime is
+  absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export, live
+  port, running container, foreign or ambiguous owner, mixed topology, or failed readback blocks removal and preserves
+  all Docker state. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+  01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c)
 - Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
   `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. Stop every nonzero stack's
   native writers before its guarded `stop` command exports and verifies that stack's private snapshot.
@@ -151,9 +153,9 @@ linked directly here so an agent never needs to discover operating instructions 
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, then perform
    one bounded cleanup pass: close the exact test tab/window, stop the native processes, export and stop the isolated
-   backend, retire a cleanup automation only when one was actually created, and run guarded reclaim when terminal
-   completion is authorized. Use one fresh ownership preflight and one final readback; repeat a boundary only after a
-   helper failure or verified state change. Preserve paused stacks and keep the worktree until cleanup succeeds.
+   backend, and retire a cleanup automation only when one was actually created. Require the stack number to be
+   reusable while every persistent volume remains unchanged. Use one fresh ownership preflight and one final readback;
+   repeat a boundary only after a helper failure or verified state change. Keep the worktree until cleanup succeeds.
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 

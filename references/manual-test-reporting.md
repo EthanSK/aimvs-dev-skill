@@ -56,6 +56,13 @@ screenshots appear in `git lfs ls-files`. When introducing this rule to a reposi
 PNGs as ordinary blobs, include `git add --renormalize _manual-test-results` in that explicitly requested staging
 operation; never stage or renormalize pre-emptively.
 
+After restoring a dirty worktree through a stash or rebase, inspect every untracked manual-test PNG's actual file
+type before accepting the recovery. Git can restore an untracked LFS screenshot as its small text pointer, which
+makes image viewers fail even though the filename still ends in `.png`. For each pointer, require its recorded object
+to exist in the shared local LFS store, match both the recorded SHA-256 and size, and contain PNG bytes before
+atomically materializing that exact object at the screenshot path; never stage the recovery merely to trigger LFS.
+(Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+
 Keep this exact visible guardrail directly below the Markdown title:
 
 > Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records, but remove screenshots that no longer represent current behavior.
