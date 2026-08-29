@@ -14,6 +14,10 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
   the work to a normal named linked worktree. A correct branch or commit does not make that path acceptable.
 - Before repository work begins, create or reuse the exact task-owned linked worktree at
   `/Users/ethansarif-kattan/Projects/aimvs-<task-slug>` on `codex/<task-slug>`.
+- If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a
+  second worktree for that task unless Ethan explicitly asks for another one. A new topic, implementation request,
+  cleaner branch, or mixed scope does not authorize another worktree; if the existing worktree cannot safely contain
+  the work, stop and ask before creating anything. (Codex task: 01a04e25-fccc-72c2-816b-7d29c151a7d5)
 
 ## Create or reuse the named worktree
 
