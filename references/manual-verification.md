@@ -31,6 +31,11 @@ panel and document client/scroll heights to be equal, and require only the inten
 exceed its client height. A window screenshot can crop overflow and therefore records the visible state but does not
 by itself prove the overlay's bottom boundary. (Codex task: 019fec1a-20b1-7e91-9b3b-20f3925bea2e)
 
+For a brief scroll or layout jump, record scroll position, scroll height, relevant element rectangles, and focus before
+the triggering action and on each animation frame through loading and settlement. Test both the exact bottom and just
+above it in the affected browser engine; a settled screenshot cannot prove that no jump occurred. Keep probes read-only
+and dev-only, and remove them before handoff. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
+
 When verifying a ZIP download in Safari, its **Open safe files after downloading** setting may automatically extract
 the archive and leave only the extensionless output folder in Downloads. Confirm completion in Safari's download
 list, then validate the extracted file count, names, types, and sizes; do not treat the missing `.zip` as a product
@@ -58,8 +63,9 @@ again. A clip or project trigger that started before deletion can recreate a ske
 subcollection after the first cleanup check; recursively delete only the known temporary ID again and reverify it is
 absent instead of assuming the first successful delete is final.
 
-After closing the tracked test browser, stop and verify the native frontend/API processes before running `npm run
-isolated-backend -- stop --dev-stack-index=N`; require its verified private export, reusable-number confirmation, and
-proof that all persistent volumes were preserved.
+After closing the tracked test browser, leave the task-owned nonzero backend and frontend/API watchers running while
+the worktree exists. Stop them only when Ethan explicitly asks or immediately before removing that worktree; then stop
+and verify its native writers before `npm run isolated-backend -- stop --dev-stack-index=N`, and require its verified
+private export, reusable-number confirmation, and proof that all persistent volumes were preserved.
 Before an authorized stop or restart of stack 0's Firebase backend, run and verify `npm run export-emulator-data`
 once. Every nonzero test stack exports and stops only its own private backend; it never uses or stops stack 0.

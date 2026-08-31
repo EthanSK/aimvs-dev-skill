@@ -5,7 +5,7 @@
 - [Ports per stack](#ports-per-stack)
 - [Ethan's main environment](#ethans-main-environment)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
-- [Schedule the 24-hour idle-cleanup check](#schedule-the-24-hour-idle-cleanup-check)
+- [Retain an agent-owned stack after testing](#retain-an-agent-owned-stack-after-testing)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
 - [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack)
 
@@ -328,86 +328,23 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
    browser page distinguishable from main and other worktrees.
 
-6. **Usually do not create a cleanup automation.** Close the stack in the same task. Only when Ethan explicitly asks
-   to keep that exact nonzero stack running after the current task turn, schedule and verify the 24-hour idle-cleanup
-   check below before handing control back.
+6. **Retain the stack after testing.** Close only the exact agent-owned browser page. Keep the worktree's private
+   backend and native frontend/API hot-reload processes running while that worktree exists, and keep the tracked
+   `DEV_WINDOW_ID` in the task handoff. Do not create an idle-cleanup automation. Stop the stack only when Ethan asks
+   or immediately before removing its worktree. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
 
-## Schedule the 24-hour idle-cleanup check
+## Retain an agent-owned stack after testing
 
-Do not schedule this during ordinary stack startup. Create it only when Ethan explicitly asks to leave the exact
-agent-owned nonzero stack running after the current task turn. Schedule the one-time follow-up for 24 hours after the
-verified stack start time and attach it to the exact owning task. In Codex Desktop, use the supported heartbeat
-automation through `automation_update`; in another host, use its native task-follow-up scheduler. Never implement this
-with `sleep`, `nohup`, a loose cron entry, a LaunchAgent, or a detached watchdog process. If no supported scheduler is
-available, close the stack before the task turn ends instead of leaving it without a cleanup owner. (Codex task:
-01a0399b-e199-79d2-b4ec-a32664b00adf)
+The end of a manual test or task turn does not authorize stopping a healthy nonzero stack. Close and verify only the
+exact task-owned browser page, then confirm the terminal window, worktree path, indexed ports, and private containers
+still match the owning worktree before handing the running stack back to Ethan. Preserve the tracked `DEV_WINDOW_ID`
+and include the stack index and frontend URL in the completion handoff.
 
-Give the follow-up a unique name containing the worktree basename and stack index. Put these non-secret ownership
-facts in its prompt so a compacted or resumed task can still act safely:
-
-- exact task/thread identifier and visible title;
-- absolute worktree path and stack index;
-- tracked `DEV_WINDOW_ID` and assigned browser/window identity when one exists;
-- verified stack start time and exact isolated Compose project;
-- expected native and private-backend ports;
-- an instruction to follow this section and [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack).
-
-Do not copy a mutable "latest task activity" timestamp into the prompt. It becomes stale as soon as the owning task
-runs again; the follow-up must resolve that value from actual task history when it executes.
-
-Read the scheduler state back before relying on it. Require the exact owning task, prompt identifiers, one run only,
-and a next-run time 24 hours after stack start. A completed-looking create/update call is not proof that the timer was
-persisted. Keep the automation identifier in the task context, and recover it later by the unique worktree/stack name
-if compaction removed that context.
-
-Encode a one-time target with its calendar date as well as its clock time, such as a one-count yearly rule with
-`BYMONTH` and `BYMONTHDAY`; a daily one-count rule can fire later the same day instead of tomorrow. Do not assume that
-recurrence clock fields use the user's local timezone. Codex Desktop's verified heartbeat path on this host interprets
-`BYHOUR` as UTC: for a target of `2026-08-22T04:48:56+01:00`, `BYHOUR=4` incorrectly produced
-`2026-08-22T05:48:56+01:00`, while `BYHOUR=3` produced the exact target. Convert the desired absolute instant to the
-timezone required by the scheduler contract, then read back its absolute `next_run_at` and require exactly 86,400
-seconds after verified readiness. If the readback differs, correct the recurrence and read it back again; stored rule
-text alone is never proof. (Codex task: 01a0177f-6b75-7961-b422-b6eab7d19ded)
-
-When the follow-up runs, ignore the heartbeat's own turn when judging activity and prove all of the following before
-calling the stack unused:
-
-- the owning task has had no non-heartbeat work for at least 24 hours;
-- the exact stack has had no meaningful frontend/API request, build, log, browser-interaction, or source-work activity
-  for at least 24 hours;
-- no user or other active task currently owns or uses the exact worktree, browser window, terminal window, or stack;
-- no upload, generation, rendering, export, migration, or other state-changing operation is still running; and
-- the current processes, ports, terminal window, browser window, and isolated containers still match the recorded
-  ownership facts.
-
-Resolve owning-task activity from the task's actual turn history, not from timestamps copied into the automation
-prompt. Read the newest turns, skip the current heartbeat and every earlier turn whose user message is a heartbeat,
-then use the latest real timestamp from the newest remaining turn (`completedAt` when present, otherwise `startedAt`).
-Treat prompt fields such as `Latest verified owning task activity`, automation `updated_at`, scheduler delivery time,
-and heartbeat rescheduling as hints or automation activity, never as proof of user or task activity. Parse ISO offsets
-or epoch values into absolute instants and compare those instants in UTC; never compare clock text or discard an
-offset. For example, `17:38:39Z` and `17:38:33+01:00` are one hour and six seconds apart, not six seconds. Require a
-full 24 elapsed hours before cleanup, and read back the rescheduled run as an absolute instant 24 hours after the
-verified activity rather than validating only its displayed clock time. If task history or the scheduler's absolute
-next-run instant cannot be read, treat activity as ambiguous and preserve the stack. (Codex task:
-01a016e3-6c55-7d42-b152-7c96b6916fdd)
-
-A merely loaded stale browser page is not proof of current use, but a focused page, recent interaction, active task,
-or any ownership ambiguity blocks automatic cleanup. If recent use is proven, replace the consumed follow-up with a
-new one-time check 24 hours after the latest confirmed use. If ownership or activity is ambiguous, preserve everything
-and schedule the next check 24 hours after the current one; report the exact ambiguity instead of guessing.
-
-When inactivity is proven, invoke `$macos-heads-up-notification`, close and verify only the tracked browser window,
-then use the normal guarded stop sequence below. Stop the nonzero backend only through its verified export-and-stop
-command. The stop releases the runtime number by removing only stopped containers and its empty network; it preserves
-every current and recovery volume. Never stop stack 0 or its Firebase emulators, MinIO, or Worker. Require all indexed
-ports and matching running containers to be absent before marking the idle cleanup complete. A later check must verify
-that the same worktree still owns the runtime before acting, because another task may now reuse the number. (Codex
-tasks: 01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c)
-
-Whenever normal task cleanup closes the stack before the follow-up fires, cancel or retire its exact scheduled check
-and read scheduler state back to prove it is no longer active. Never leave a stale timer that can later wake and act on
-reused ports or a different stack owner.
+Do not create a 24-hour or other idle-cleanup automation for normal retention. Task inactivity, completion wording,
+compaction, or a loaded-but-idle page does not weaken the worktree's ownership. If a legacy cleanup automation exists,
+retire it only after verifying the exact owning task, worktree, and stack so it cannot later stop a retained or reused
+runtime. Stop and export the stack only when Ethan explicitly asks or immediately before removing its worktree, using
+the guarded sequence below. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
 
 ## Mandatory pre-Computer-Use health gate
 
@@ -447,11 +384,11 @@ current run.
 
 ## Stop and close an agent-owned stack
 
-Stop and close the agent-owned nonzero stack in each case: at the end of every Computer Use manual-test session,
-whenever finished using a worktree's dev stack, and before removing its worktree. This applies to passed, failed,
-partial, blocked, and interrupted tests unless Ethan explicitly asks to keep that exact stack running. Worktree removal
-is blocked until this whole sequence succeeds; the isolated launcher and Compose file live in the worktree, so never
-delete or move it first.
+Stop and close the agent-owned nonzero stack only when Ethan explicitly asks or immediately before removing its
+worktree. Never stop it merely because a Computer Use session passed, failed, became blocked or interrupted, the task
+turn ended, or the stack became idle. Worktree removal is blocked until this whole sequence succeeds; the isolated
+launcher and Compose file live in the worktree, so never delete or move it first. (Codex task:
+01a05301-5376-77b1-9c70-99e37245cc98)
 
 Perform cleanup as one bounded pass. Take one fresh ownership snapshot, run the recorded browser/native/backend
 helpers in order, then take one final readback. The helpers and guarded backend commands already repeat their internal
