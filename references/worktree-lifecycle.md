@@ -13,7 +13,8 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
   `~/.codex/worktrees/**`. If a task starts there, use it only for read-only bootstrap inspection, then stop and move
   the work to a normal named linked worktree. A correct branch or commit does not make that path acceptable.
 - Before repository work begins, create or reuse the exact task-owned linked worktree at
-  `/Users/ethansarif-kattan/Projects/aimvs-<task-slug>` on `codex/<task-slug>`.
+  `/Users/ethansarif-kattan/Projects/aimvs<N>-<task-slug>` on `codex/<task-slug>`. `N` is that worktree's
+  reserved nonzero dev stack from creation through removal, even before any runtime starts.
 - If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a
   second worktree for that task unless Ethan explicitly asks for another one. A new topic, implementation request,
   cleaner branch, or mixed scope does not authorize another worktree; if the existing worktree cannot safely contain
@@ -21,33 +22,39 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
 
 ## Create or reuse the named worktree
 
-Base every new task worktree on the exact current local `main` HEAD. Ignore uncommitted main-worktree content when
-choosing the base; preserve it in place without stashing, resetting, copying, or including it in the new worktree.
-Resolve and pass the commit explicitly so a concurrent branch movement cannot silently change the base:
+Create every new task worktree from the primary checkout with the guarded helper:
 
 ```bash
-MAIN_WORKTREE_DIR="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
-MAIN_HEAD="$(git -C "$MAIN_WORKTREE_DIR" rev-parse main)"
-WORKTREE_DIR="/Users/ethansarif-kattan/Projects/aimvs-$TASK_SLUG"
-git -C "$MAIN_WORKTREE_DIR" worktree add -b "codex/$TASK_SLUG" "$WORKTREE_DIR" "$MAIN_HEAD"
+TASK_SLUG="<task-slug>"
+npm run aimvs-worktree -- create --task-slug="$TASK_SLUG"
 ```
 
-Before creating, require the destination path and branch to be free. Before reusing, verify the exact real path,
-branch, HEAD, staged/unstaged/untracked state, owning task, and any live process or stack ownership through
-`git worktree list --porcelain` and focused process checks. Do not infer ownership from a plausible folder name, a
-free port, or a matching branch alone.
+The helper resolves and passes the exact current local `main` HEAD while leaving every staged, unstaged, and untracked
+main-worktree change in place. It checks the branch and path, atomically claims the lowest safe nonzero index in the
+shared Git directory, verifies that the indexed runtime and preserved volumes are safe to reserve, creates
+`aimvs<N>-<task-slug>`, and finalizes the reservation against that linked worktree's stable Git metadata directory.
+A pending, malformed, foreign, running, or unsafe legacy stack fails closed; the helper removes only its own rejected
+pending claim and tries the next index. Never replace this sequence with raw `git worktree add`, a port-only guess, or
+a manually selected stack number. (Codex task: 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
-Name new worktree directories `aimvs-<task-slug>`, not `ai-music-video-studio-<task-slug>`. Do not rename existing
-worktrees merely to apply this convention.
+Before reusing, verify the exact real path, branch, HEAD, staged/unstaged/untracked state, owning task, reserved index,
+and any live process ownership through `git worktree list --porcelain`, `npm run aimvs-worktree -- list`, and focused
+process checks. The `aimvs<N>` prefix, shared reservation, and every `--dev-stack-index=N` must agree. Do not infer
+ownership from a plausible folder name, a free port, or a matching branch alone.
+
+Do not rename existing unnumbered worktrees merely to apply this convention. They remain legacy-compatible until
+removed, but every new linked worktree must use the helper and the `aimvs<N>-<task-slug>` form.
 
 ## Rename an active worktree
 
 Rename only when Ethan explicitly requests it. First resolve the owning task and live processes, fingerprint the
-staged/unstaged/untracked state, and verify the destination is free. Use `git worktree move`, then immediately put an
-old-path compatibility symlink in place so saved task working directories and running processes remain usable.
-Verify the registered path, unchanged Git boundaries, symlink target, and live stack before notifying the owning task
-to use the new path. Never treat the compatibility symlink as a second worktree. (Codex task:
-01a01193-8a28-7801-b514-509a50b727bb)
+staged/unstaged/untracked state, and verify the destination is free. A numbered worktree must keep the same exact
+`aimvs<N>-` prefix so its stable Git metadata continues to match the same shared reservation. Use `git worktree
+move`, then immediately put an old-path compatibility symlink in place so saved task working directories and running
+processes remain usable. Verify the registered path, unchanged Git boundaries, symlink target, `npm run
+aimvs-worktree -- list`, and live stack before notifying the owning task to use the new path. Never treat the
+compatibility symlink as a second worktree. (Codex tasks: 01a01193-8a28-7801-b514-509a50b727bb,
+01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
 ## Keep VS Code workspace membership accurate
 
@@ -81,7 +88,17 @@ exact worktree's runtime unless Ethan explicitly says to keep it running. Before
 ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
 stop, and retire its cleanup automation when one exists. Verify the browser and indexed ports are absent, no matching
 container is running, the runtime containers and network are released, every persistent and recovery volume remains
-unchanged, and the VS Code folder is absent before removing the Git worktree. Worktree completion never authorizes
-volume deletion, pruning, reset, reseed, or reclaim. If ownership, export, stop, or readback is ambiguous or fails,
-preserve the worktree and all Docker state. Never merge first and assume later cleanup can reconstruct ownership after
-the worktree is gone. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+unchanged, and the VS Code folder is absent before removing the Git worktree. The guarded stop releases runtime
+artifacts but deliberately keeps a numbered worktree's number reserved. After `git worktree remove` succeeds, run the
+following from the primary checkout; it releases the shared reservation only after the linked Git metadata no longer
+has an active `gitdir` link and the indexed runtime is still safe, while preserving every volume:
+
+```bash
+npm run aimvs-worktree -- release --dev-stack-index=N
+```
+
+Run the same release after removing a numbered worktree that never started its stack. Worktree completion never authorizes
+volume deletion, pruning, reset, reseed, or reclaim. If ownership, export, stop, removal, release, or readback is
+ambiguous or fails, preserve the worktree or reservation and all Docker state. Never merge first and assume later
+cleanup can reconstruct ownership after the worktree is gone. (Codex tasks:
+01a024c0-a524-7960-a57e-f9fa68536e4c, 01a05ebf-a8f9-7f83-a325-1565cf6005a7)

@@ -11,7 +11,8 @@ direct commits here can be replaced by its guarded publisher and are never impor
 
 ## What it does
 
-- Assigns predictable frontend, API, inspector, and debug-log ports to concurrent Git worktrees.
+- Reserves the lowest safe nonzero dev stack when creating each `aimvs<N>-<task-slug>` worktree, then keeps its
+  frontend, API, inspector, and debug-log ports correlated until that worktree is removed.
 - Keeps stack 0 in Ethan's main environment and gives every nonzero stack its own private Firebase, Storage, MinIO,
   and Download Assets Worker backend.
 - Routes each stack through Safari, Firefox, or Opera first, then through task-scoped in-app Browser sessions without

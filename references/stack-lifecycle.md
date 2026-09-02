@@ -69,11 +69,16 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 ## Run an agent-owned stack
 
-1. **Pick the lowest reusable nonzero stack index** before starting anything, including tests from main.
+1. **Use the worktree's reserved nonzero stack index.** A new `aimvs<N>-<task-slug>` worktree owns `N` from
+   creation through removal, even while its runtime is stopped or has never started. Read `N` from the directory name
+   and confirm the exact finalized owner with `npm run aimvs-worktree -- list`; never pick another number for that
+   worktree. Every backend and native launcher validates the numbered prefix and shared reservation before it can start.
 
-   For each candidate `N`, require every indexed native and private-backend port to be free and no matching container
-   to be running. Stopped containers, an empty exact Compose network, and named volumes do not reserve the number: the
-   guarded `start` replaces only that stopped runtime and continues from the same preserved dataset.
+   Existing unnumbered worktrees and an agent test from primary main remain legacy-compatible. For those only, inspect
+   `npm run aimvs-worktree -- list`, skip every reserved number, then pick the lowest reusable nonzero index whose
+   native/private ports are free and whose runtime passes the guarded ownership checks below. Stopped containers, an
+   empty exact Compose network, and named volumes do not themselves reserve a number; only the new shared worktree
+   reservation does. The guarded `start` replaces a verified stopped runtime and continues from the preserved dataset.
 
    ```bash
    STACK_INDEX=N
@@ -87,14 +92,15 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    docker container ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
    ```
 
-   Before reusing a stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
+   Before starting the reserved index or reusing a legacy stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
    recovery-backup volume identity is preserved. The launcher performs this proof, records the new runtime worktree,
-   removes only stopped containers, reuses the exact empty network, then starts against the existing volumes. Mutating
-   `start`, `stop`, and `export` commands also hold one per-index lock in the shared Git directory through their final
-   readback, so concurrent tasks fail closed instead of both claiming the same lowest reusable number. A running
+   removes only stopped containers, reuses the exact empty network, then starts against the existing volumes. `start`,
+   `stop`, `export`, and the read-only `reservable` proof hold one per-index lock in the shared Git directory through
+   their final readback, while the lifetime reservation prevents another worktree from claiming an idle index. A running
    lifecycle owner, container, live port, attached/foreign network, incomplete dataset, or ambiguous identity blocks
    reuse. Never delete a volume to free a number, and never use `0`; it belongs to Ethan even when testing source from main.
-   (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+   (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
+   01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
 2. **Make ignored local files available in the worktree** before starting the API.
 
@@ -324,8 +330,8 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 5. **Open `STACK_URL`** in that stack's assigned browser. For example, stack 1 uses
    `http://localhost:4201/`. The toolbar shows a red
-   `WORKTREE <NAME> · STACK #1 :4201` banner. New `aimvs-<task-slug>` directory names remain fully visible in
-   `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
+   `WORKTREE <NAME> · STACK #1 :4201` banner. New `aimvs1-<task-slug>` directory names make the reserved stack
+   visible in `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
    browser page distinguishable from main and other worktrees.
 
 6. **Retain the stack after testing.** Close only the exact agent-owned browser page. Keep the worktree's private
@@ -343,8 +349,11 @@ and include the stack index and frontend URL in the completion handoff.
 Do not create a 24-hour or other idle-cleanup automation for normal retention. Task inactivity, completion wording,
 compaction, or a loaded-but-idle page does not weaken the worktree's ownership. If a legacy cleanup automation exists,
 retire it only after verifying the exact owning task, worktree, and stack so it cannot later stop a retained or reused
-runtime. Stop and export the stack only when Ethan explicitly asks or immediately before removing its worktree, using
-the guarded sequence below. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
+runtime. A guarded stop releases only runtime artifacts; a numbered worktree keeps its shared stack reservation while it
+exists, including across later task turns. Stop and export the stack only when Ethan explicitly asks or immediately
+before removing its worktree, using the guarded sequence below. Release the reservation only after Git removes that
+exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
+01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
 ## Mandatory pre-Computer-Use health gate
 
@@ -422,7 +431,9 @@ npm run isolated-backend -- stop --dev-stack-index="$STACK_INDEX"
 ```
 
 Require `Verified the private Firebase export completed.` when Firebase reached readiness, followed by `Dev stack N
-freed for reuse; persistent volumes preserved.` and the final guarded-stop confirmation. A container that
+stopped runtime released; persistent volumes preserved.` and the final guarded-stop confirmation. For a numbered worktree,
+the final confirmation must also say that `N` remains reserved until worktree removal; only the post-removal
+`npm run aimvs-worktree -- release --dev-stack-index=N` makes it assignable to another worktree. A container that
 failed before readiness instead prints `Firebase never became ready; no private export was required.` so its last good
 snapshot remains intact. The command removes only exact stopped runtime containers and its empty network, then proves
 that every current and recovery volume has the same identity. An already-stopped Firebase container that reached
@@ -430,7 +441,8 @@ readiness is safe only when its latest lifecycle has a clean exit and verified e
 existed needs no export. If export verification fails, any indexed port remains live, a container is running, or
 ownership/topology is ambiguous, stop cleanup and keep every artifact. Never bypass the command with raw `docker
 stop`, `docker compose down`, pruning, reseeding, or volume deletion. (Codex tasks:
-019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a024c0-a524-7960-a57e-f9fa68536e4c)
+019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a024c0-a524-7960-a57e-f9fa68536e4c,
+01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
 Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
 0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own

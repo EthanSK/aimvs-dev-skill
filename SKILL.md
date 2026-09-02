@@ -24,9 +24,10 @@ Use this skill as the AIMVS source of truth for task-environment and worktree de
 local browser tests, dev-stack actions, emulator investigations, authentication flows, code reviews, dirty Git-state
 operations, and prior manual-test evidence questions. It overrides global browser-testing defaults for AIMVS. Stack 0
 belongs to Ethan's main VS Code environment and is never an agent test target. Every agent-run test uses a free
-nonzero stack index, including tests of
-uncommitted changes in the primary worktree. Stack 0 keeps Ethan's main native services; every nonzero stack uses its
-own private backend containers plus its own indexed native frontend/API processes.
+nonzero stack index, including tests of uncommitted changes in the primary worktree. Every new linked worktree has its
+nonzero index reserved in its `aimvs<N>-<task-slug>` name and the shared Git directory from creation through
+removal, even before startup. Stack 0 keeps Ethan's main native services; every nonzero stack uses its own private
+backend containers plus its own indexed native frontend/API processes.
 
 Author every change to this skill in the AIMVS repository. The public `EthanSK/aimvs-dev-skill` repository is an
 output-only mirror: publish to it through AIMVS's guarded publisher, never pull, merge, or otherwise import its
@@ -38,6 +39,11 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. Read-only port and log inspection is allowed.
+- Create new linked worktrees only through `npm run aimvs-worktree -- create --task-slug=<task-slug>`. Keep the exact
+  `aimvs<N>` number for every backend and native process, retain its shared reservation while the worktree exists, and
+  release it only after guarded runtime cleanup and successful Git worktree removal. Existing unnumbered worktrees are
+  legacy-compatible and must not be renamed merely to apply this rule. (Codex task:
+  01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 - Treat native standalone-API hot reload as a nonzero-stack feature. After a successful API watcher build, require the
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
@@ -95,16 +101,20 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   retained or reused stack later. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
 - Never delete, prune, reclaim, reset, recreate, or reseed a nonzero stack's Firebase, Storage, MinIO, backend-state,
   recovery-backup, or other persistent volume. `stop` must export Firebase, stop the runtime, remove only replaceable
-  containers and its empty network, preserve every volume with the same identity, and make the stack number reusable.
-  The next worktree assigned that number continues from its existing dataset. Worktree landing or removal never
+  containers and its empty network, and preserve every volume with the same identity. For a numbered worktree, this makes
+  the runtime safe but leaves its number reserved until successful worktree removal and guarded reservation release.
+  The next worktree assigned that released number continues from its existing dataset. Worktree landing or removal never
   authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure weakens this
-  rule. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+  rule. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
+  01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 - Never land or remove a completed worktree until its tracked browser window and native stack processes are closed,
   its isolated backend has completed guarded `stop` from that still-existing worktree, and the indexed runtime is
   absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export, live
   port, running container, foreign or ambiguous owner, mixed topology, or failed readback blocks removal and preserves
-  all Docker state. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
-  01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c)
+  all Docker state. After removing a numbered worktree, release its exact shared reservation and verify the number is
+  assignable again without changing any volume. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+  01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c,
+  01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 - Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
   `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. Stop every nonzero stack's
   native writers before its guarded `stop` command exports and verifies that stack's private snapshot.
@@ -142,8 +152,9 @@ linked directly here so an agent never needs to discover operating instructions 
 1. Before choosing a task environment or worktree, follow `references/worktree-lifecycle.md`. Then confirm the
    requested action is authorized, identify the exact worktree, preserve its staged, unstaged, untracked, ignored,
    browser, emulator, and dev-stack state, and read every other matching reference above.
-2. For a manual test, select a free nonzero stack and assigned browser surface, prepare ignored local dependencies,
-   start or reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
+2. For a manual test, use the exact stack reserved in a numbered worktree's name; only a legacy unnumbered worktree or
+   primary-main test selects a free unreserved nonzero stack. Assign the browser surface, prepare ignored local
+   dependencies, start or reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
 3. Create and verify one dedicated browser page for the exact worktree and stack URL before interacting: one desktop
    window on `Built-in Retina Display`, or one task-owned in-app Browser tab after the desktop browsers are exhausted.
    Stop if the applicable process/window or tab identity, URL, or worktree banner is ambiguous.
@@ -155,10 +166,11 @@ linked directly here so an agent never needs to discover operating instructions 
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, and close the
    exact test tab/window. Leave the exact healthy nonzero native processes and isolated backend running with normal hot
    reload while the worktree exists. When Ethan asks to stop them or immediately before worktree removal, perform one
-   bounded cleanup pass and require the stack number to be reusable while every persistent volume remains unchanged.
-   Use one fresh ownership preflight and one final readback; repeat a boundary only after a helper failure or verified
-   state change. Keep the worktree until that required cleanup succeeds. (Codex task:
-   01a05301-5376-77b1-9c70-99e37245cc98)
+   bounded cleanup pass and require the runtime to be fully stopped while every persistent volume remains unchanged.
+   Keep the embedded number reserved through Git removal, then release and verify it separately. Use one fresh ownership
+   preflight and one final readback; repeat a boundary only after a helper failure or verified state change. Keep the
+   worktree until that required cleanup succeeds. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
+   01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 
