@@ -70,6 +70,11 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   three-session limit. Never use Ethan's personal Chrome for an AIMVS manual test or create an ad hoc isolated
   desktop-browser profile; desktop browsers use their existing persistent profiles. (Codex task:
   01a03a49-3424-7e93-bcd8-f261515ba730)
+- Before the first manual-test interaction, mute the exact tracked agent-owned browser page and verify that it is
+  muted; keep it muted for the whole session. Apply this to every desktop-browser window or in-app Browser tab used
+  with a nonzero stack. Never mute or otherwise change Ethan's personal Chrome or any stack-0 page. If exact
+  page-level muting cannot be verified without affecting another page or browser, stop and report the manual test as
+  blocked. (Codex task: 01a05db7-d115-7ce2-8094-c0494a7dcdd7)
 - Derive backend ownership only from the stack index: stack 0 uses Ethan's main Firebase, Storage, MinIO, and native
   Download Assets Worker; every nonzero stack uses its own indexed Firebase, Storage, MinIO, and Worker containers.
   The old per-command isolation opt-in was rejected because one omitted flag silently mixed private and stack-0 data;
