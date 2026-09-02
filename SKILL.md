@@ -83,6 +83,10 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
+- Treat the saved AIMVS test-account sign-in as part of an explicitly requested manual test, not a new task requiring
+  permission. Read `references/authentication.md` before declaring authentication blocked or asking Ethan to sign in;
+  it defines the exact approved account/origin scope and the narrow exception for an active browser tool's mandatory
+  action-time confirmation. Reuse an approval already given for that exact sign-in after an interruption.
 - Keep manual-test evidence in Markdown and PNGs. HTML report generation is disabled; preserve but do not run the
   dormant renderer, and leave existing `index.html` files unchanged unless Ethan explicitly re-enables it.
 - Keep **Preview Rendering** enabled by default on nonzero stacks. Disable it only for a deliberate lean-mode or
@@ -90,9 +94,11 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser page—its desktop window/tab or in-app Browser tab—after every passed,
   failed, partial, blocked, or interrupted manual-test session. Keep that worktree's exact healthy nonzero backend and
-  native frontend/API hot-reload processes running while its worktree exists. Stop them only when Ethan explicitly
-  asks or immediately before removing the worktree; the end of a test or task turn is not stop authority. (Codex task:
-  01a05301-5376-77b1-9c70-99e37245cc98)
+  native API-watch, API-server, and frontend hot-reload processes running while its worktree exists. Stop them only
+  when Ethan explicitly asks or immediately before removing the worktree; the end of a test or task turn is not stop
+  authority. Subsequent ordinary source edits use those normal watchers and hot reload; do not replace them with a
+  second stack or manually restart them when their documented reload path is sufficient. (Codex tasks:
+  01a04f3a-a977-7683-81aa-f1452cf39475, 01a05301-5376-77b1-9c70-99e37245cc98)
 - For Safari, record task-created WebContent processes at test-window creation and after an abnormal reload, crash, or
   non-responsive-page recovery. Ordinary healthy route changes do not need another renderer inventory. At cleanup,
   use the deep renderer procedure only when a recorded task-created process survives or the page showed abnormal
@@ -103,7 +109,10 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 - Do not create an idle-cleanup automation for a normally retained nonzero stack. Stack retention follows the owning
   worktree, not task inactivity: stop it only when Ethan explicitly asks or immediately before removing that worktree.
   Retire any legacy idle-cleanup automation after verifying its exact stack and task ownership so it cannot stop a
-  retained or reused stack later. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
+  retained or reused stack later. Create a timed cleanup only when Ethan explicitly asks for that timer or deadline;
+  retain the existing ownership/readback safeguards for such an exceptional timer. The rule never applies to
+  Ethan-owned stack 0. (Codex tasks: 01a016b1-fc04-7150-a318-493d65f7111c,
+  01a0399b-e199-79d2-b4ec-a32664b00adf, 01a04f3a-a977-7683-81aa-f1452cf39475)
 - Never delete, prune, reclaim, reset, recreate, or reseed a nonzero stack's Firebase, Storage, MinIO, backend-state,
   recovery-backup, or other persistent volume. `stop` must export Firebase, stop the runtime, remove only replaceable
   containers and its empty network, and preserve every volume with the same identity. For a numbered worktree, this makes
@@ -170,12 +179,13 @@ linked directly here so an agent never needs to discover operating instructions 
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, and close the
    exact test tab/window. Leave the exact healthy nonzero native processes and isolated backend running with normal hot
-   reload while the worktree exists. When Ethan asks to stop them or immediately before worktree removal, perform one
-   bounded cleanup pass and require the runtime to be fully stopped while every persistent volume remains unchanged.
-   Keep the embedded number reserved through Git removal, then release and verify it separately. Use one fresh ownership
-   preflight and one final readback; repeat a boundary only after a helper failure or verified state change. Keep the
-   worktree until that required cleanup succeeds. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
-   01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+   reload while the worktree exists, and hand off their exact stack index, frontend URL, and tracked terminal window.
+   When Ethan asks to stop them or immediately before worktree removal, perform one bounded cleanup pass and require
+   the runtime to be fully stopped while every persistent volume remains unchanged. Keep the embedded number reserved
+   through Git removal, then release and verify it separately. Use one fresh ownership preflight and one final
+   readback; repeat a boundary only after a helper failure or verified state change. Keep the worktree until that
+   required cleanup succeeds. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475,
+   01a05301-5376-77b1-9c70-99e37245cc98, 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 6. Preserve any durable verified workflow finding in this skill during the same task, reconsider the routing split,
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 

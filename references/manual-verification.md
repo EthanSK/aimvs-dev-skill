@@ -63,9 +63,11 @@ again. A clip or project trigger that started before deletion can recreate a ske
 subcollection after the first cleanup check; recursively delete only the known temporary ID again and reverify it is
 absent instead of assuming the first successful delete is final.
 
-After closing the tracked test browser, leave the task-owned nonzero backend and frontend/API watchers running while
-the worktree exists. Stop them only when Ethan explicitly asks or immediately before removing that worktree; then stop
-and verify its native writers before `npm run isolated-backend -- stop --dev-stack-index=N`, and require its verified
-private export, reusable-number confirmation, and proof that all persistent volumes were preserved.
+After closing the tracked test browser, leave the worktree's verified native frontend/API watchers and isolated
+backend running for subsequent edits and hot reload. Stop them only when Ethan explicitly asks, a documented rebuild
+boundary requires it, or immediately before the worktree is removed. At that boundary, stop and verify the native processes before
+running `npm run isolated-backend -- stop --dev-stack-index=N`; require its verified private export, reusable-number
+confirmation, and proof that all persistent volumes were preserved. (Codex task:
+01a04f3a-a977-7683-81aa-f1452cf39475)
 Before an authorized stop or restart of stack 0's Firebase backend, run and verify `npm run export-emulator-data`
 once. Every nonzero test stack exports and stops only its own private backend; it never uses or stops stack 0.

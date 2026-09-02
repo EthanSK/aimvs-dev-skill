@@ -6,6 +6,7 @@
 - [Ethan's main environment](#ethans-main-environment)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
 - [Retain an agent-owned stack after testing](#retain-an-agent-owned-stack-after-testing)
+- [Schedule an explicitly requested timed cleanup](#schedule-an-explicitly-requested-timed-cleanup)
 - [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
 - [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack)
 
@@ -334,10 +335,13 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    visible in `<NAME>`; legacy `ai-music-video-studio-<task-slug>` names omit their long prefix. This keeps every worktree
    browser page distinguishable from main and other worktrees.
 
-6. **Retain the stack after testing.** Close only the exact agent-owned browser page. Keep the worktree's private
-   backend and native frontend/API hot-reload processes running while that worktree exists, and keep the tracked
-   `DEV_WINDOW_ID` in the task handoff. Do not create an idle-cleanup automation. Stop the stack only when Ethan asks
-   or immediately before removing its worktree. (Codex task: 01a05301-5376-77b1-9c70-99e37245cc98)
+6. **Retain the stack after testing.** Close only the exact task browser page but keep this verified private backend
+   plus its native API watcher, supervised API server, and frontend watcher alive until the worktree is removed or
+   Ethan explicitly asks to stop them. Ordinary source edits should flow through frontend hot reload and the nonzero
+   API supervisor; wait for and verify their successful rebuild instead of manually replacing healthy processes. Keep
+   the tracked `DEV_WINDOW_ID` in the task handoff and do not create an idle-cleanup automation merely because the
+   stack remains active. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475,
+   01a05301-5376-77b1-9c70-99e37245cc98)
 
 ## Retain an agent-owned stack after testing
 
@@ -345,6 +349,17 @@ The end of a manual test or task turn does not authorize stopping a healthy nonz
 exact task-owned browser page, then confirm the terminal window, worktree path, indexed ports, and private containers
 still match the owning worktree before handing the running stack back to Ethan. Preserve the tracked `DEV_WINDOW_ID`
 and include the stack index and frontend URL in the completion handoff.
+
+## Schedule an explicitly requested timed cleanup
+
+Do not schedule this during ordinary stack startup or retention. Worktree removal is the default cleanup boundary.
+Create a timed check only when Ethan explicitly asks for a time-based cleanup or deadline, then schedule the one-time
+follow-up for that requested interval after the verified stack start time and attach it to the exact owning task. In
+Codex Desktop, use the supported heartbeat automation through `automation_update`; in another host, use its native
+task-follow-up scheduler. Never implement this with `sleep`, `nohup`, a loose cron entry, a LaunchAgent, or a detached
+watchdog process. If no supported scheduler is available, report that the requested timer cannot be made safe and
+leave the worktree-owned stack running. (Codex tasks: 01a0399b-e199-79d2-b4ec-a32664b00adf,
+01a04f3a-a977-7683-81aa-f1452cf39475)
 
 Do not create a 24-hour or other idle-cleanup automation for normal retention. Task inactivity, completion wording,
 compaction, or a loaded-but-idle page does not weaken the worktree's ownership. If a legacy cleanup automation exists,
@@ -395,9 +410,11 @@ current run.
 
 Stop and close the agent-owned nonzero stack only when Ethan explicitly asks or immediately before removing its
 worktree. Never stop it merely because a Computer Use session passed, failed, became blocked or interrupted, the task
-turn ended, or the stack became idle. Worktree removal is blocked until this whole sequence succeeds; the isolated
-launcher and Compose file live in the worktree, so never delete or move it first. (Codex task:
-01a05301-5376-77b1-9c70-99e37245cc98)
+turn ended, the stack became idle, or a manual-test session passed, failed, became partial, blocked, or interrupted.
+A documented restart boundary may restart only the affected worktree process; otherwise close its exact test browser
+page, keep the normal hot-reload processes running, and report their stack and URL. Worktree removal is blocked until
+this whole sequence succeeds; the isolated launcher and Compose file live in the worktree, so never delete or move it
+first. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475, 01a05301-5376-77b1-9c70-99e37245cc98)
 
 Perform cleanup as one bounded pass. Take one fresh ownership snapshot, run the recorded browser/native/backend
 helpers in order, then take one final readback. The helpers and guarded backend commands already repeat their internal

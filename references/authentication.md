@@ -11,6 +11,27 @@ Read both credentials from ignored repo-root `.secret.local`: `AIMVS_TEST_LOGIN_
 fallback account. Never print or commit these values. Use the assigned desktop browser's persistent profile or the
 task-scoped in-app Browser binding for the stack so App Check/Auth state can survive the current run.
 
+### Authorization and confirmation
+
+An explicit AIMVS manual-browser-test request authorizes the saved `.secret.local` test account to sign in through
+the exact verified nonzero-stack origin in its assigned browser. Do not ask Ethan to provide or paste credentials,
+reapprove the test account, or perform the sign-in himself when the saved credentials and supported controls exist.
+This covers the ordinary local sign-in form and its existing staging Firebase Auth destination; it does not authorize
+another account, origin, sign-up, password change, account recovery, or saving a password in the browser.
+
+Before any retry or resumption, check the authenticated URL and account-only UI. A completed sign-in must not be
+submitted again. An interruption, context recovery, or replacement task-owned browser page does not discard Ethan's
+approval for the same account, origin, and sign-in action.
+
+Do not invent a separate per-run credential-transmission approval requirement. If the active browser tool explicitly
+requires action-time confirmation even for a preapproved password entry, follow that requirement: ask once when the
+verified form is ready, identify the saved test credentials and exact local origin/staging Auth destination, and say
+that the browser tool requires the confirmation—not that AIMVS lacks authorization. Reuse Ethan's reply for that
+exact sign-in, including a safe retry whose postcondition proves it did not complete. Do not promise that this repo
+skill overrides a mandatory tool policy, change browsers to evade it, or ask again without a material new risk.
+
+### Enter and verify credentials
+
 Before spending time debugging browser focus, verify the saved email exists in staging Auth when ADC is available:
 
 ```bash
@@ -41,12 +62,10 @@ field, type the password with real keyboard input, refresh app state, then click
 Do not rely on `Tab`/`Enter` order in Firefox: it can land on the Forgot Password control and switch the form to
 Reset Password instead of submitting.
 
-An explicit AIMVS manual-browser-test request authorizes entering the saved test-account credentials into the exact
-verified assigned test browser and stack origin. Do not ask for separate per-run credential-transmission
-confirmation. When the in-app Browser is assigned, use semantic Browser locators to fill the visible Angular fields
-and click the visible Sign In button. Never inspect browser storage, password stores, cookies, or profiles, and never
-emit credential values through tool output. Verify the authenticated redirect and account-only UI exactly as for a
-desktop browser.
+When the in-app Browser is assigned, use semantic Browser locators to fill the visible Angular fields and click the
+visible Sign In button under the authorization above. Never inspect browser storage, password stores, cookies, or
+profiles, and never emit credential values through tool output. Keep form snapshots and screenshots out of the
+credential-entry interval. Verify the authenticated redirect and account-only UI exactly as for a desktop browser.
 
 Safari may cover the app with Auto-Complete or `Update Password` popovers during and after sign-in. Press Escape
 to dismiss each popover, then refresh Computer Use accessibility state before deciding whether sign-in failed or

@@ -250,7 +250,9 @@ direct scoped method in the ladder when the action is still necessary. Never esc
 
 An explicit request to run a Computer Use test authorizes input only inside the verified dedicated test window and
 through the ladder above. The ordinary Computer Use confirmation policy still applies to consequential actions such
-as credentials, payments, permanent deletion, or sensitive-data transmission. (Codex tasks:
+as payments, permanent deletion, or sensitive-data transmission. For the saved AIMVS test-account login, follow the
+specific authorization and tool-policy boundary in `references/authentication.md`; this general warning is not an
+additional per-run sign-in approval gate. (Codex tasks:
 01a024f9-f80c-71c0-9005-51c76fc2e18d, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
 01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
@@ -368,9 +370,10 @@ false, the current tab is unavailable, the exact stack origin is absent from eve
 task-created renderer is absent. Do not quit Safari, close another hidden record, or disturb unrelated Safari state
 merely to make the stale numeric record disappear. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
-After the browser window is proven closed, complete the agent-owned stack cleanup routed from the main `SKILL.md`.
-The session is not cleaned up until both its browser window and its stack processes and terminal window are gone,
-unless Ethan explicitly asked to keep that exact nonzero stack running.
+After the browser window is proven closed, keep the worktree-owned nonzero stack, native hot-reload processes, and
+tracked terminal window running by default. The browser session is clean when its exact page is gone; the retained
+runtime remains owned by that worktree until explicit stop or worktree removal, when the main `SKILL.md` routes the
+full stack cleanup. (Codex task: 01a04f3a-a977-7683-81aa-f1452cf39475)
 
 ## Browser crash and recovery
 
