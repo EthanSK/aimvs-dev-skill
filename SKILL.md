@@ -120,24 +120,28 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   Ethan-owned stack 0. (Codex tasks: 01a016b1-fc04-7150-a318-493d65f7111c,
   01a0399b-e199-79d2-b4ec-a32664b00adf, 01a04f3a-a977-7683-81aa-f1452cf39475)
 - Never delete, prune, reclaim, reset, recreate, or reseed a nonzero stack's Firebase, Storage, MinIO, backend-state,
-  recovery-backup, or other persistent volume. `stop` must export Firebase, stop the runtime, remove only replaceable
-  containers and its empty network, and preserve every volume with the same identity. For a numbered worktree, this makes
-  the runtime safe but leaves its number reserved until successful worktree removal and guarded reservation release.
-  The next worktree assigned that released number continues from its existing dataset. Worktree landing or removal never
-  authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure weakens this
-  rule. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
-  01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+  recovery-backup, or other persistent volume. `stop` must attempt and verify the Firebase export, warn rather than
+  quarantine the number when best-effort dev writes were not exported, stop the runtime, remove only replaceable
+  containers and its empty network, and preserve every volume with the same identity. For a numbered worktree, this
+  makes the runtime safe but leaves its number reserved until successful worktree removal and guarded reservation
+  release. The next worktree assigned that released number continues from its existing dataset. Worktree landing or
+  removal never authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure
+  weakens this rule. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
+  01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
 - Never land or remove a completed worktree until its tracked browser window and native stack processes are closed,
   its isolated backend has completed guarded `stop` from that still-existing worktree, and the indexed runtime is
-  absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export, live
-  port, running container, foreign or ambiguous owner, mixed topology, or failed readback blocks removal and preserves
-  all Docker state. After removing a numbered worktree, release its exact shared reservation and verify the number is
-  assignable again without changing any volume. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+  absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export warns
+  that the newest dev writes may be missing but does not block removal once the stopped runtime and unchanged volumes
+  are verified; a live port, running container, foreign or ambiguous owner, mixed topology, or failed readback still
+  blocks removal and preserves all Docker state. After removing a numbered worktree, release its exact shared
+  reservation and verify the number is assignable again without changing any volume. (Codex tasks:
+  019ff0c1-80ad-79f3-9d60-cbb4004bf608,
   01a0312f-5629-7b23-b7b1-4653b92e9dcc, 01a024c0-a524-7960-a57e-f9fa68536e4c,
-  01a05ebf-a8f9-7f83-a325-1565cf6005a7)
-- Before stopping or restarting a Firebase emulator backend, run and verify its one-shot export. Use the shared
-  `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. Stop every nonzero stack's
-  native writers before its guarded `stop` command exports and verifies that stack's private snapshot.
+  01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
+- Before stopping or restarting stack 0's Firebase emulator backend, run and verify its one-shot export. Use the shared
+  `export-emulator-data` command only when Ethan authorizes stopping stack 0's backend. For a nonzero stack, stop its
+  native writers before guarded `stop` attempts and verifies that private snapshot; a missed export warns and reuses
+  the previous snapshot instead of blocking the stack number. (Codex task: 01a067e4-975c-7c71-b393-b27d66080bd9)
 - Main's Restore Terminals owns exactly one 30-minute shared-emulator exporter for crash recovery. Never start that
   periodic exporter from a linked worktree or nonzero backend; those stacks keep private data through their guarded
   stop/export flow. The periodic snapshot does not replace the verified one-shot export immediately before stopping

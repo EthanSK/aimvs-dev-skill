@@ -281,20 +281,25 @@ the runtime becomes reusable, while every persistent and recovery volume remains
 01a03564-7a64-7be2-a3f6-390ab477b9a6,
 01a024c0-a524-7960-a57e-f9fa68536e4c)
 The launcher creates those exact data volumes itself and marks them external to Compose so a configuration update
-cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes are adopted only after their exact
-worktree containers and mounts prove ownership; the launcher then records the worktree plus all three volume creation
-identities atomically in the backend-state volume. Reject any later identity mismatch, and never answer a Compose
-`Recreate (data will be lost)?` prompt. (Codex task: 01a0200e-ba77-7e42-8233-0fb4caa5bc70)
-That backend-state volume also records `active` immediately before Compose starts and `stopped` only after a guarded
-verified shutdown. If an active runtime's containers disappear, preserve the volumes for manual recovery instead of
-assuming the remaining private export contains its latest writes. Older datasets without this record are adopted once
-and then covered by every later lifecycle. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
-Normal nonzero-stack stop/export is always preservation-only. After the verified Firebase export, guarded `stop`
-removes only exact stopped runtime containers and its empty network so the number becomes reusable; it proves every
-current and recovery volume kept the same identity. The next worktree assigned that number continues from the saved
-dataset and records itself as the new runtime owner. Never delete, prune, reclaim, reset, recreate, or reseed a stack's
-Firebase, Storage, MinIO, backend-state, recovery-backup, or other persistent volume. Completion, inactivity, missing
-worktrees, disk pressure, and stale owner labels never authorize data deletion. (Codex task:
+cannot produce a destructive volume-recreation prompt. Earlier ownerless volumes are adopted after either their exact
+worktree containers and mounts prove ownership or only the complete deterministic three-volume dataset remains; the
+launcher then records the worktree plus all three volume creation identities atomically in the backend-state volume.
+Reject any incomplete dataset or later identity mismatch, and never answer a Compose `Recreate (data will be lost)?`
+prompt. (Codex tasks: 01a0200e-ba77-7e42-8233-0fb4caa5bc70,
+01a067e4-975c-7c71-b393-b27d66080bd9)
+That backend-state volume records `active` immediately before Compose starts and `stopped` after either a guarded stop
+attempt or validated crash recovery. A reboot or crash can prevent export-on-exit and leave that record active after
+the containers disappear; warn that the latest unexported dev writes may be missing, keep every volume, and reuse the
+last preserved snapshot instead of permanently blocking the stack number. Older datasets without this record are
+adopted once and then covered by every later lifecycle. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
+01a067e4-975c-7c71-b393-b27d66080bd9)
+Normal nonzero-stack stop/export is always preservation-only. Guarded `stop` attempts and verifies Firebase export, but
+an export failure only warns that the latest unexported dev writes may be missing; it still removes only exact stopped
+runtime containers and its empty network so the number becomes reusable, and proves every current and recovery volume
+kept the same identity. The next worktree assigned that number continues from the saved dataset and records itself as
+the new runtime owner. Never delete, prune, reclaim, reset, recreate, or reseed a stack's Firebase, Storage, MinIO,
+backend-state, recovery-backup, or other persistent volume. Completion, inactivity, missing worktrees, disk pressure,
+and stale owner labels never authorize data deletion. (Codex task:
 01a024c0-a524-7960-a57e-f9fa68536e4c)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
@@ -344,10 +349,12 @@ remains, name and preserve it: continue from `/data/export` only when that prior
 otherwise refuse startup instead of silently reseeding. Persist readiness from the successful healthcheck in the
 private volume rather than inferring it later from rotatable Docker logs. Set the container stop signal to `SIGINT` and
 allow enough grace time for the export because Firebase CLI's clean shutdown path is tied to Ctrl-C. After every ready-
-state stop, require Firebase's own `Export complete` log line and reject `Export failed`; Docker can report that the
-container stopped successfully even when Firebase lost the snapshot. A container that never reached readiness was
-never handed off as a supported writable stack; keep its last good snapshot and clean it up through guarded stop.
-(Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+state stop, inspect Firebase's own result: `Export complete` proves the latest snapshot, while `Export failed` warns
+that the next task will continue from the previous preserved snapshot. Either result must still release only exact dead
+runtime artifacts and preserve every volume; never quarantine the number for missing best-effort dev writes. A
+container that never reached readiness was never handed off as a supported writable stack; keep its last good snapshot
+and clean it up through guarded stop. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608,
+01a067e4-975c-7c71-b393-b27d66080bd9)
 
 ## Worktrees that change emulator triggers
 

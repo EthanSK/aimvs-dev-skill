@@ -455,19 +455,22 @@ Run the stack's guarded backend stop only after the native ports are closed:
 npm run isolated-backend -- stop --dev-stack-index="$STACK_INDEX"
 ```
 
-Require `Verified the private Firebase export completed.` when Firebase reached readiness, followed by `Dev stack N
-stopped runtime released; persistent volumes preserved.` and the final guarded-stop confirmation. For a numbered worktree,
-the final confirmation must also say that `N` remains reserved until worktree removal; only the post-removal
+For a running Firebase container that reached readiness, require either `Verified the private Firebase export
+completed.` or the explicit warning that export-on-exit was not verified and the latest unexported dev writes may be
+missing. Then require `Dev stack N stopped runtime released; persistent volumes preserved.` and the final guarded-stop
+confirmation. For a numbered worktree, the final confirmation must also say that `N` remains reserved until worktree
+removal; only the post-removal
 `npm run aimvs-worktree -- release --dev-stack-index=N` makes it assignable to another worktree. A container that
 failed before readiness instead prints `Firebase never became ready; no private export was required.` so its last good
 snapshot remains intact. The command removes only exact stopped runtime containers and its empty network, then proves
-that every current and recovery volume has the same identity. An already-stopped Firebase container that reached
-readiness is safe only when its latest lifecycle has a clean exit and verified export-on-exit; a container that never
-existed needs no export. If export verification fails, any indexed port remains live, a container is running, or
-ownership/topology is ambiguous, stop cleanup and keep every artifact. Never bypass the command with raw `docker
+that every current and recovery volume has the same identity. Guarded stop always attempts and verifies export-on-exit,
+but a failed or crash-missed export is best-effort dev-data loss rather than permanent quarantine: warn that the latest
+unexported writes may be missing, reuse the last preserved snapshot, and remove only exact dead runtime artifacts while
+keeping every persistent volume. If any indexed port remains live, a container is running, the dataset is incomplete,
+or ownership/topology is ambiguous, stop cleanup and keep every artifact. Never bypass the command with raw `docker
 stop`, `docker compose down`, pruning, reseeding, or volume deletion. (Codex tasks:
 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a024c0-a524-7960-a57e-f9fa68536e4c,
-01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
 
 Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
 0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own
