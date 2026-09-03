@@ -7,7 +7,7 @@
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
 - [Retain an agent-owned stack after testing](#retain-an-agent-owned-stack-after-testing)
 - [Schedule an explicitly requested timed cleanup](#schedule-an-explicitly-requested-timed-cleanup)
-- [Mandatory pre-Computer-Use health gate](#mandatory-pre-computer-use-health-gate)
+- [Mandatory live-stack health gates](#mandatory-live-stack-health-gates)
 - [Stop and close an agent-owned stack](#stop-and-close-an-agent-owned-stack)
 
 ## Ports per stack
@@ -370,7 +370,7 @@ before removing its worktree, using the guarded sequence below. Release the rese
 exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 
-## Mandatory pre-Computer-Use health gate
+## Mandatory live-stack health gates
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
 process restart, inspect the current output of every tab in that exact worktree's tracked iTerm stack window without
@@ -405,6 +405,14 @@ gate until it is clean. Do not open or operate the test browser, hand the URL to
 while an error remains; report a blocker if it cannot be fixed safely. Historical output from before a later verified
 restart/build does not itself fail the gate, but never use that distinction to dismiss an error still affecting the
 current run.
+
+Apply the same complete gate after the final relevant source or configuration edit and before every completion or
+handoff that retains a running stack, even when no browser test was requested. The latest successful frontend and API
+builds must have processed that final edit; an earlier success followed by a failure is an unhealthy stale stack.
+Repair every in-scope current-run build or runtime error before finishing. Do not use a process restart to conceal
+source that still fails to compile. If an unrelated or ambiguous concurrent edit prevents safe repair, preserve its
+Git boundaries, report the exact blocking error and owner when known, and leave the task explicitly blocked rather
+than calling the stack healthy. (Codex task: 01a062c9-ac08-7d71-b8ae-2e831291d7e3)
 
 ## Stop and close an agent-owned stack
 

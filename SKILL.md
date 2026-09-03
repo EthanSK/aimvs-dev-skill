@@ -48,6 +48,12 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
   private-backend stop/rebuild/start. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
+- Never call a running dev stack healthy or complete until its latest builds have processed the final relevant source
+  or configuration edit successfully. A listener or `200` response is not proof because a failed watcher can keep
+  serving the last good frontend or API bundle. Diagnose and repair in-scope current-run failures, then repeat the
+  full live-stack health gate before handoff; preserve and report an unrelated or ambiguous concurrent-change blocker
+  instead of hiding it with a restart or describing stale output as current. (Codex task:
+  01a062c9-ac08-7d71-b8ae-2e831291d7e3)
 - For desktop browsers, Ethan uses two display setups. When the MacBook is standalone, keep the verified test window on its sole
   `Built-in Retina Display` without pointless display movement. When external monitors are attached, keep the one
   agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media
@@ -178,8 +184,10 @@ linked directly here so an agent never needs to discover operating instructions 
    pre-existing UI. Also inspect emulator state, frontend/API/emulator logs, and relevant UI state;
    DOM/Accessibility state and the second opinion do not replace your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, and close the
-   exact test tab/window. Leave the exact healthy nonzero native processes and isolated backend running with normal hot
-   reload while the worktree exists, and hand off their exact stack index, frontend URL, and tracked terminal window.
+   exact test tab/window. After the final relevant source or configuration edit, pass the complete live-stack health
+   gate before declaring a running stack healthy or completing the handoff. Leave the exact healthy nonzero native
+   processes and isolated backend running with normal hot reload while the worktree exists, and hand off their exact
+   stack index, frontend URL, and tracked terminal window.
    When Ethan asks to stop them or immediately before worktree removal, perform one bounded cleanup pass and require
    the runtime to be fully stopped while every persistent volume remains unchanged. Keep the embedded number reserved
    through Git removal, then release and verify it separately. Use one fresh ownership preflight and one final
@@ -190,6 +198,9 @@ linked directly here so an agent never needs to discover operating instructions 
    retest affected behavior, validate the skill, and publish it through the repository's guarded subtree workflow.
 
 ## Completion handoff
+
+Before this handoff, apply `references/stack-lifecycle.md`'s completion health gate to every running stack owned by the
+task. A failed latest build makes the task blocked rather than complete even when its ports and frontend URL respond.
 
 End every completed AIMVS task or review with this compact field list. Keep every field on its own bullet so the
 handoff stays easy to scan; never combine the worktree, branch, stack, or frontend URL into one sentence. Make the
