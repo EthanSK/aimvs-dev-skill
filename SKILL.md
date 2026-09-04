@@ -206,25 +206,25 @@ linked directly here so an agent never needs to discover operating instructions 
 Before this handoff, apply `references/stack-lifecycle.md`'s completion health gate to every running stack owned by the
 task. A failed latest build makes the task blocked rather than complete even when its ports and frontend URL respond.
 
-End every completed AIMVS task or review with this compact field list. Keep every field on its own bullet so the
-handoff stays easy to scan; never combine the worktree, branch, stack, or frontend URL into one sentence. Make the
-worktree path and frontend URL clickable. Use this form for the first field whether the task uses the primary or a
-linked worktree:
-
-- `- Worktree: [<worktree name>](<absolute worktree path>)`
-
-```markdown
-- Branch: <branch name>
-- Dev stack: <stack index>
-- Frontend: [<localhost URL>](<localhost URL>)
-```
-
-When no dev stack for that exact worktree is running, write `Not running` for both **Dev stack** and
-**Frontend** instead of omitting either line.
-
 Also end every completed implementation or review with a **Manual checks** section containing one to three concise,
 high-value tests Ethan can perform against the current change set (`PR` shorthand). Choose the smallest set that best
 proves the changed behavior, and give the exact starting state, action, and expected result so Ethan does not have to
 design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
 one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
 keep the section and say why instead of inventing one.
+
+End every user-facing final AIMVS response with the exact **Current Environment Footer** required by the host
+repository's `AGENTS.md`; the **Manual checks** section above must come before it. Use `Worktree`, `Dev stack`, and
+`Localhost` in that order, never include the branch, and make the worktree path and running localhost URL clickable:
+
+```markdown
+### Current environment
+
+- **Worktree:** [<worktree name>](<absolute worktree path>)
+- **Dev stack:** `<stack index>`
+- **Localhost:** [<localhost URL>](<localhost URL>)
+```
+
+When no dev stack for that exact worktree is running, write `Not running` for both **Dev stack** and **Localhost**.
+When more than one worktree is in scope, follow the repository's `#### Primary` and `#### Alternate` form and include
+every worktree the task owns, actively uses, or is responsible for.

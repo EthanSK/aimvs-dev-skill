@@ -15,6 +15,10 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
 - Before repository work begins, create or reuse the exact task-owned linked worktree at
   `/Users/ethansarif-kattan/Projects/aimvs<N>-<task-slug>` on `codex/<task-slug>`. `N` is that worktree's
   reserved nonzero dev stack from creation through removal, even before any runtime starts.
+- Project `AGENTS.md` instruction changes are the one repository-work exception: follow its **Project Instruction
+  Synchronization** section, which requires the approved change to be made or consolidated in primary `main` as a
+  standalone `AGENTS.md` commit while preserving unrelated state. The general linked-worktree rule does not override
+  that narrower workflow.
 - If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a
   second worktree for that task unless Ethan explicitly asks for another one. A new topic, implementation request,
   cleaner branch, or mixed scope does not authorize another worktree; if the existing worktree cannot safely contain
@@ -41,6 +45,10 @@ Before reusing, verify the exact real path, branch, HEAD, staged/unstaged/untrac
 and any live process ownership through `git worktree list --porcelain`, `npm run aimvs-worktree -- list`, and focused
 process checks. The `aimvs<N>` prefix, shared reservation, and every `--dev-stack-index=N` must agree. Do not infer
 ownership from a plausible folder name, a free port, or a matching branch alone.
+
+When an edit tool such as `apply_patch` has no worktree parameter, its paths resolve from the task harness's working
+directory rather than an earlier shell command's `workdir`. Resolve every patch path explicitly to the owned linked
+worktree, then verify both the linked worktree and primary checkout immediately after the first patch.
 
 Do not rename existing unnumbered worktrees merely to apply this convention. They remain legacy-compatible until
 removed, but every new linked worktree must use the helper and the `aimvs<N>-<task-slug>` form.
@@ -97,6 +105,13 @@ has an active `gitdir` link and the indexed runtime is still safe, while preserv
 npm run aimvs-worktree -- release --dev-stack-index=N
 ```
 
+Reservation lifetime follows the worktree, never Codex pinning, task activity, or whether the stack was started. A
+never-started owner still runs guarded `stop`: its finalized reservation permits checking the previous owner's saved
+volume identities without starting the stack, while any foreign runtime still blocks cleanup.
+
+If another agent finds a leftover reservation after its worktree was removed, it can run the same guarded `release`
+from primary or a sibling worktree. Confirm the directory and Git registration are gone; the command must verify the
+runtime is safe before releasing the number. Keep live, pending, malformed, or ambiguous reservations for inspection.
 Run the same release after removing a numbered worktree that never started its stack. Worktree completion never authorizes
 volume deletion, pruning, reset, reseed, or reclaim. If ownership, export, stop, removal, release, or readback is
 ambiguous or fails, preserve the worktree or reservation and all Docker state. Never merge first and assume later

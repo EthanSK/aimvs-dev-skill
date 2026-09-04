@@ -276,8 +276,9 @@ first prove that Docker has no network and macOS has no host route overlapping `
 labels `com.docker.compose.project=aimvs-isolated-backend-stack-N` and `com.docker.compose.network=default`. Rerun the
 normal guarded start and require every indexed container, mount, and loopback port to pass its usual ownership checks;
 never use this recovery when the subnet overlaps, the index is outside that range, or ownership is ambiguous. Guarded
-start reuses that fully verified empty recovery network until Compose uses it; guarded stop removes it when
-the runtime becomes reusable, while every persistent and recovery volume remains unchanged. (Codex tasks:
+start reuses that fully verified empty recovery network until Compose uses it; guarded stop removes it with the other
+replaceable runtime artifacts, while every persistent and recovery volume remains unchanged and a numbered worktree's
+stack reservation remains held. (Codex tasks:
 01a03564-7a64-7be2-a3f6-390ab477b9a6,
 01a024c0-a524-7960-a57e-f9fa68536e4c)
 The launcher creates those exact data volumes itself and marks them external to Compose so a configuration update
@@ -295,12 +296,13 @@ adopted once and then covered by every later lifecycle. (Codex tasks: 01a024c0-a
 01a067e4-975c-7c71-b393-b27d66080bd9)
 Normal nonzero-stack stop/export is always preservation-only. Guarded `stop` attempts and verifies Firebase export, but
 an export failure only warns that the latest unexported dev writes may be missing; it still removes only exact stopped
-runtime containers and its empty network so the number becomes reusable, and proves every current and recovery volume
-kept the same identity. The next worktree assigned that number continues from the saved dataset and records itself as
-the new runtime owner. Never delete, prune, reclaim, reset, recreate, or reseed a stack's Firebase, Storage, MinIO,
-backend-state, recovery-backup, or other persistent volume. Completion, inactivity, missing worktrees, disk pressure,
-and stale owner labels never authorize data deletion. (Codex task:
-01a024c0-a524-7960-a57e-f9fa68536e4c)
+runtime containers and its empty network, and proves every current and recovery volume kept the same identity. A
+numbered worktree keeps the number reserved until that worktree is successfully removed and its shared reservation is
+guardedly released; only then can a later worktree receive the number and continue from the saved dataset. Never delete,
+prune, reclaim, reset, recreate, or reseed a stack's Firebase, Storage, MinIO, backend-state, recovery-backup, or other
+persistent volume. Completion, inactivity, missing worktrees, disk pressure, and stale owner labels never authorize
+data deletion. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
+01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
 on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal
