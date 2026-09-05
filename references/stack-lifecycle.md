@@ -272,8 +272,9 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    one new listener with no orphan Node or Nx process, and require the latest startup output to say
    `Current API environment: development` before Computer Use. Also verify a localhost-origin preflight returns
    `Access-Control-Allow-Origin`; the indexed frontend can still load while `/api` calls fail when its computed API
-   port is missing. Stack 0 intentionally keeps its direct, manually controlled standalone API and does not use this
-   supervisor. Native API reload never updates the frozen Firebase Functions bundle: after trigger-local code or a
+   port is missing. Stack 0 uses the same supervisor to report running and latest API build numbers, but never restarts
+   automatically: a new build changes only the latest number, and a child exit ends its launcher. Restart its API
+   launcher manually to load the newer build; a browser reload alone cannot do that. Native API reload never updates the frozen Firebase Functions bundle: after trigger-local code or a
    Function definition changes, stop native writers and follow `emulator-safety.md`'s guarded private-backend
    stop/rebuild/start before testing. (Codex task: 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
 
