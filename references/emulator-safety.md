@@ -304,13 +304,14 @@ persistent volume. Completion, inactivity, missing worktrees, disk pressure, and
 data deletion. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
-Firestore no longer contains. The verified symptom is `403 Not collaborator of channel` plus a Rules null-value error
-on the signed-in user's own missing collaborator read. This is dev-only reset state: production collaborator removal
-keeps the document with Removed status, so never add a missing-document Rules allowance or silently treat absence as
-normal removal. Keep Auth and App Check intact; remove only `channelIdLoggedIn` and `userIdForLoggedInChannel` from that
-origin's sessionStorage and localStorage, reload, and require the current private dataset's active Channel, a fresh
-`dateLastLoggedIn`, and no fresh permission errors. Do not clear all localhost site data or create a fake Channel with
-the old ID. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
+Firestore no longer contains. Exact reads of the signed-in User's own `channel-collaborators/{userId}` path intentionally
+return a normal missing snapshot because public Channel cards use that same read to decide whether to show Switch
+Channel; the old Rules denial produced one null-value error for every unrelated public Channel. The identity listener
+maps that missing snapshot to its existing lost-access path, clears only `channelIdLoggedIn` and
+`userIdForLoggedInChannel` from that origin's sessionStorage and localStorage, and reloads. Production collaborator
+removal still keeps the document with Removed status. Never broaden the allowance to another User's path, clear all
+localhost site data, or create a fake Channel with the old ID. Require the current private dataset's active Channel, a
+fresh `dateLastLoggedIn`, and no fresh permission errors after recovery. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 For an empty isolated dataset, create the Channel with its final `Dev Stack N` name before its default profile picture is
 generated, and give every stack its own Channel, active collaborator, and picture object. Do not create a placeholder
 AOEU Channel and rename its Firestore document afterward: the picture generator seeds the color and initial from the
@@ -404,7 +405,7 @@ concurrent authenticated uploads, then repeat one real browser GIF, animated Web
 thumbnails and retained copies in the stack's private MinIO volume. (Codex tasks:
 01a000ff-9a55-7e93-a300-1b6e91ab3dc6, 01a035d6-3481-7d93-87af-76be7acb550e)
 
-Do not run `npm run rules:test` locally while the shared Storage emulator is listening on `:9199`. The script checks
+Do not run `npm run rules:test` on the host while the shared Storage emulator is listening on `:9199`. The script checks
 that port before generating rules and exits if it is occupied. Normal dev-stack startup, `npm test`, local Git hooks,
 and Firebase predeploy do not invoke this suite; the deploy workflow runs it on an isolated GitHub Actions host. The
 test config uses separate ports, but Firebase Tools 15.24.0 stores every local Storage emulator's live blobs in the
@@ -414,3 +415,12 @@ not isolate Storage persistence, and the repository patch above fixes only the s
 guard reports a conflict, stop and report it instead of running the suite or stopping Ethan's emulator. After a
 collision, treat the shared stack as unhealthy and preserve its export; restart it only with Ethan's explicit
 authorization.
+
+For Rules verification while retained emulators are running, use a disposable Docker container with its own filesystem,
+no mounted datasets, no published ports, and no credentials. Never run the destructive test harness against a retained
+stack's emulator. Copy the current templates, shared TypeScript sources, test harness, and matching Linux dependencies
+into the disposable image; supply the cached Firestore and Storage emulator binaries before running with `--network none`.
+Run the unchanged `npm run rules:test` guard and harness inside that container, require both generator and Rules tests
+to pass, and verify the container exited successfully with no mounts. This isolates Storage's temporary blob directory
+without stopping stack 0 or clearing the task's retained dev data. Keep test logs outside the source diff. (Codex task:
+01a03e53-d1b8-7961-8139-3c2c4547b888)
