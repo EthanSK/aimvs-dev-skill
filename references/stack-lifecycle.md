@@ -34,11 +34,18 @@ The main Restore Terminals setup owns stack 0's native download-assets-worker on
 an indexed Worker inside its private Docker backend; never point it at the main Worker or start a second native copy.
 (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 Launch stack 0's Worker only through `npm run serve:download-assets-worker`, which starts the locked local Nx CLI as
-its direct child and forwards terminal shutdown signals. Do not put `npx` between `run-dev-stack.cjs` and any
-long-running Nx task: when Restore Terminals replaced the Worker terminal, Wrangler stopped but that indirect Nx
-process survived under PID 1, lost its listener, ignored ordinary termination, and continuously consumed one CPU
-core. Nx remains the normal Worker task owner because it shuts down Wrangler and Workerd correctly when it receives
-the forwarded signal. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
+its direct child and forwards terminal shutdown signals. Keep the Worker's `serve` target marked `continuous: true`,
+as the frontend already is. Direct child ownership alone does not fix terminal replacement: Nx 22.6.4's native
+terminal can lose its exit notification when macOS revokes the terminal device, leaving an ordinary task waiting
+forever and consuming one CPU core. Continuous-task cleanup avoids that wait while retaining Nx as the task owner.
+This `nx:run-commands` target uses Nx's direct runner with a native terminal; the forked-executor
+`disablePseudoTerminal` rule is a different path. Nx's shared-task lookup checks the recorded PID, command and cwd,
+so restarting after a forced Nx exit does not need a cache reset merely because the old task row remains.
+See [the upstream failure](https://github.com/nrwl/nx/issues/36682). Do not reintroduce the `npx` intermediary or add
+an orphan reaper for this failure. Validate shutdown with a disposable task-owned terminal whose device is revoked
+before delivering `SIGHUP`, then require the launcher and every recorded descendant to exit. Sending a signal while
+the terminal remains valid does not cover this bug; never use stack 0 for this probe. (Codex tasks:
+019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a072dd-5935-7833-8eb4-cd9133acca2f)
 
 Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
 
