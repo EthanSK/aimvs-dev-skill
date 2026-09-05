@@ -5,6 +5,7 @@
 - [Display setup and browser placement](#display-setup-and-browser-placement)
 - [In-app Browser overflow fallback](#in-app-browser-overflow-fallback)
 - [Browser assignment](#browser-assignment)
+- [Best-effort browser-page muting](#best-effort-browser-page-muting)
 - [Background browser control while the user is using the Mac](#background-browser-control-while-the-user-is-using-the-mac)
 - [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
 - [Browser crash and recovery](#browser-crash-and-recovery)
@@ -206,6 +207,34 @@ verified browser-controller flow for Firefox or Opera. Keep every test browser o
 move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting. For the
 in-app Browser, follow the overflow section instead; do not invent a macOS window or display check for its agent tab.
 
+## Best-effort browser-page muting
+
+A missing mute command on the page controller does not mean native Computer Use cannot mute the browser page.
+The browser-tab strip and its context menu belong to the native browser app, outside the page viewport. Use the
+native app controller for those controls after the normal exact-window and display verification; keep the existing
+best-effort rule and do not turn an unavailable mute control into a permission prompt or testing blocker.
+
+For Firefox, the native right-click method and Control+M shortcut have both been verified through Computer Use:
+
+1. Select the Firefox native app with `cua.getApp('org.mozilla.firefox')` and read fresh `getAXState()` output.
+   Match the tracked test window and page URL, then find that page's browser-tab element under `Browser tabs`.
+2. Right-click that element with `await browserApp.click(browserTabElement, { mouseButton: 'right' })`, using the
+   element index from the fresh state. Read the resulting menu before choosing an action.
+3. Click `Mute Tab` only when that exact item is present. An `Unmute Tab` item means the page is already muted;
+   leave it muted instead of toggling it again.
+4. Verify the browser-tab element now reports `Description: Unmute tab`, or reopen its context menu and require
+   `Unmute Tab`. A click returning successfully is not sufficient proof.
+
+`await browserApp.pressKey('ctrl+m')` also toggles the selected Firefox browser page on macOS; it is Control, not
+Command. Use it only when the selected task page and its current mute state are known, then read back the same
+postcondition. Prefer the explicit menu action when avoiding an accidental unmute matters. No playing media is
+needed to establish the native muted state; this check does not claim a separate speaker-output measurement.
+
+Do not generalize Firefox's verified method to an in-app Browser or another browser without checking its actual
+controls. A `Mute site` action can affect other browser pages for that site, so do not use it when it would change
+pages outside the task. Keep personal Chrome and system audio untouched. (Codex task:
+01a06eec-07f7-7aa1-a498-15f6334e4b91)
+
 ## Background browser control while the user is using the Mac
 
 The dedicated test window is agent-owned and should remain behind Ethan's current work whenever the action can be
@@ -371,7 +400,7 @@ task-created renderer is absent. Do not quit Safari, close another hidden record
 merely to make the stale numeric record disappear. (Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
 
 After the browser window is proven closed, keep the worktree-owned nonzero stack, native hot-reload processes, and
-tracked terminal window running by default. The browser session is clean when its exact page is gone; the retained
+tracked native process sessions running by default. The browser session is clean when its exact page is gone; the retained
 runtime remains owned by that worktree until explicit stop or worktree removal, when the main `SKILL.md` routes the
 full stack cleanup. (Codex task: 01a04f3a-a977-7683-81aa-f1452cf39475)
 

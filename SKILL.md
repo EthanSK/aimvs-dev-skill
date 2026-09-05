@@ -18,6 +18,11 @@ credentials, branch-specific results, or transient runtime state.
 A successful one-time repair does not qualify by itself. Keep incident-specific symptoms, data shapes, migration
 recipes, and task recaps in task history unless they establish a stable rule that changes future decisions.
 
+## Skill usage announcement
+
+Tell Ethan when this skill is being used and why. Explain any skill-directed action or pause, and distinguish a
+verified runtime result from a documentation change that has not yet been merged or published.
+
 ## Purpose
 
 Use this skill as the AIMVS source of truth for task-environment and worktree decisions, Computer Use interactions,
@@ -39,6 +44,12 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. Read-only port and log inspection is allowed.
+- Default agent-owned nonzero frontend, API-watch, and API-server processes to separate controllable long-running
+  command sessions. A visible terminal is optional; do not block startup on iTerm or integrated-panel attachment.
+  Retain exact session/process ownership, verify each latest build and startup, and do not promise survival across
+  quitting the host app. Preserve healthy existing sessions unless Ethan requests migration. The earlier iTerm-only
+  prohibition was explicitly reversed; do not reintroduce it. Follow `references/stack-lifecycle.md` for launch,
+  recovery, and shutdown. Stack 0 remains unchanged. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
 - Create new linked worktrees only through `npm run aimvs-worktree -- create --task-slug=<task-slug>`. Keep the exact
   `aimvs<N>` number for every backend and native process, retain its shared reservation while the worktree exists, and
   release it only after guarded runtime cleanup and successful Git worktree removal. Existing unnumbered worktrees are
@@ -76,13 +87,15 @@ history into AIMVS, and expect the publisher to replace any direct public-reposi
   three-session limit. Never use Ethan's personal Chrome for an AIMVS manual test or create an ad hoc isolated
   desktop-browser profile; desktop browsers use their existing persistent profiles. (Codex task:
   01a03a49-3424-7e93-bcd8-f261515ba730)
-- Before the first manual-test interaction, make a best-effort attempt to mute the exact tracked agent-owned browser
-  page when page-level controls are supported, verify the muted state when available, and keep it muted for the session.
-  Apply this to desktop-browser windows and in-app Browser tabs used with a nonzero stack. Never mute or otherwise
-  change Ethan's personal Chrome, any stack-0 page, or another owner's page. If safe page-level muting or verification
-  is unavailable, continue testing and note that limitation in the report. Ethan explicitly rejected blocking manual
-  tests solely because muting cannot be verified; do not reintroduce that requirement. (Codex tasks:
-  01a05db7-d115-7ce2-8094-c0494a7dcdd7, 01a06e92-e0cb-7291-9ebb-cc533be87f4c)
+- Before the first manual-test interaction, treat muting the exact tracked agent-owned browser page as best effort.
+  Use an available page-level browser or native UI control, verify it when practical, and keep it muted for the session;
+  otherwise continue testing without asking Ethan or reporting a blocker, and note the limitation in the report.
+  Follow [the native mute procedure](references/browser-control.md#best-effort-browser-page-muting) when
+  the page controller lacks a mute command. Never change another page, Ethan's personal Chrome, stack 0, or system
+  audio to achieve muting. Mandatory muting and permission prompts for an unsupported mute control were rejected;
+  do not reintroduce them. (Codex tasks:
+  01a05db7-d115-7ce2-8094-c0494a7dcdd7, 01a06e92-e0cb-7291-9ebb-cc533be87f4c,
+  01a06eec-07f7-7aa1-a498-15f6334e4b91)
 - Derive backend ownership only from the stack index: stack 0 uses Ethan's main Firebase, Storage, MinIO, and native
   Download Assets Worker; every nonzero stack uses its own indexed Firebase, Storage, MinIO, and Worker containers.
   The old per-command isolation opt-in was rejected because one omitted flag silently mixed private and stack-0 data;
@@ -159,6 +172,8 @@ linked directly here so an agent never needs to discover operating instructions 
   chosen or task work begins.
 - **Starting, inspecting, controlling, or stopping a dev stack; checking stack health:** read
   [references/stack-lifecycle.md](references/stack-lifecycle.md).
+- **An explicitly requested standalone terminal or an existing iTerm-owned stack:** also read
+  [references/standalone-terminals.md](references/standalone-terminals.md). New background launches do not need it.
 - **Any emulator operation or diagnosis, persisted-data mismatch, WebChannel wedge, trigger-changing worktree, Storage
   export failure, or security-rules test:** read
   [references/emulator-safety.md](references/emulator-safety.md).
@@ -193,7 +208,7 @@ linked directly here so an agent never needs to discover operating instructions 
    exact test tab/window. After the final relevant source or configuration edit, pass the complete live-stack health
    gate before declaring a running stack healthy or completing the handoff. Leave the exact healthy nonzero native
    processes and isolated backend running with normal hot reload while the worktree exists, and hand off their exact
-   stack index, frontend URL, and tracked terminal window.
+   stack index, frontend URL, and exact process/session ownership; include a tracked window only when one exists.
    When Ethan asks to stop them or immediately before worktree removal, perform one bounded cleanup pass and require
    the runtime to be fully stopped while every persistent volume remains unchanged. Keep the embedded number reserved
    through Git removal, then release and verify it separately. Use one fresh ownership preflight and one final

@@ -113,7 +113,9 @@ If another agent finds a leftover reservation after its worktree was removed, it
 from primary or a sibling worktree. Confirm the directory and Git registration are gone; the command must verify the
 runtime is safe before releasing the number. Keep live, pending, malformed, or ambiguous reservations for inspection.
 Run the same release after removing a numbered worktree that never started its stack. Worktree completion never authorizes
-volume deletion, pruning, reset, reseed, or reclaim. If ownership, export, stop, removal, release, or readback is
-ambiguous or fails, preserve the worktree or reservation and all Docker state. Never merge first and assume later
+volume deletion, pruning, reset, reseed, or reclaim. If ownership, stop, removal, release, or readback is
+ambiguous or fails, preserve the worktree or reservation and all Docker state. Apply `stack-lifecycle.md`'s existing
+export-warning policy: a reported best-effort export warning alone does not block removal after verified shutdown
+and unchanged persistent volumes. Never merge first and assume later
 cleanup can reconstruct ownership after the worktree is gone. (Codex tasks:
 01a024c0-a524-7960-a57e-f9fa68536e4c, 01a05ebf-a8f9-7f83-a325-1565cf6005a7)

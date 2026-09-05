@@ -93,7 +93,13 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    docker container ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
    ```
 
-   Before starting the reserved index or reusing a legacy stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
+   First distinguish an already-running owned stack from a stopped runtime. If the reserved index's containers,
+   mounts, recorded worktree, and ports prove that its private backend is already healthy and belongs to this task,
+   retain it and start only missing native roles. Do not call backend `start`, demand an empty network, or stop
+   healthy containers merely to attach new command sessions. A foreign or ambiguous running owner still blocks
+   launch. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
+
+   Before starting a stopped reserved runtime or reusing a legacy stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
    recovery-backup volume identity is preserved. The launcher performs this proof, records the new runtime worktree,
    removes only stopped containers, reuses the exact empty network, then starts against the existing volumes. `start`,
    `stop`, `export`, and the read-only `reservable` proof hold one per-index lock in the shared Git directory through
@@ -144,8 +150,10 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    provider request objects, or unfiltered provider-error log sections; Axios request data can contain
    `Authorization` or `x-api-key` headers.
 
-3. **Start the stack's private backend.** Every nonzero stack owns isolated Functions, Firestore, Storage, MinIO, and
-   Download Assets Worker containers. Start them before the native worktree processes:
+3. **Start or retain the stack's private backend.** Every nonzero stack owns isolated Functions, Firestore, Storage,
+   MinIO, and Download Assets Worker containers. When the exact owned backend is already healthy, skip its start
+   command. Otherwise use the guarded start below before native processes. Step 4 explains the separate native
+   sessions and required ordering; do not run these long-lived commands sequentially in one blocking shell:
 
    ```bash
    npm run isolated-backend -- start --dev-stack-index=N
@@ -199,108 +207,49 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    the agent frontend can stop at `Waiting for frontend:serve:development in another nx process`. Use
    `.nx/workspace-data-stack-N` for every Nx-backed command in that stack; leave stack 0 on the normal default.
 
-   Prefer launching these in iTerm2 so the long-running dev processes live in a normal standalone terminal
-   session, not in a Codex tool session that disappears when the chat/tool process exits. iTerm2 is installed
-   at `/Applications/iTerm.app`, but its AppleScript application name is `iTerm`; target the bundle id below so
-   the script also works when iTerm is not already running. Use ONE iTerm2 window per worktree stack and put the
-   three native stack-owned processes in separate tabs. The indexed Worker stays inside the private backend and must
-   not be added to the worktree window. Use iTerm2's AppleScript `create window` / `create tab` / `write text`
-   commands instead of synthetic keyboard shortcuts or clipboard paste; Ghostty keyboard automation has been
-   unreliable with the user's `Dvorak - QWERTY ⌘` input source. Create each tab first, then write the command into
-   that tab's session; passing commands directly to `create tab with default profile command ...` can open and
-   close too quickly instead of leaving the expected long-running tab. Capture the new window's numeric id
-   immediately, then re-resolve that exact window and retain each new tab's session before writing its command;
-   iTerm can otherwise resolve a later `current session of devWindow` against a pre-existing active window even
-   though the tab was created in the new window. Snapshot existing iTerm window ids first
-   so session restoration or an already-open iTerm window does not steal the worktree tabs. Record the exact new
-   window id as `DEV_WINDOW_ID` when creating it; never try to rediscover the worktree window later by title,
-   position, or whichever iTerm window is active.
+   Use three separate tool-managed long-running sessions: API watcher, standalone API server, and frontend.
+   A visible integrated terminal is optional, not a startup requirement. In Codex, launch each command through
+   `exec_command` with `tty: true`, the exact worktree `workdir`, and a short initial yield. Keep each returned
+   `session_id` and continue it with `write_stdin`; returning a session ID is not proof of build/startup success.
+   Other hosts use their equivalent controllable long-running command facility. Do not background commands with
+   `&`, discard their handles, or replace the existing API supervisor with a new wrapper. (Codex task:
+   01a06eec-07f7-7aa1-a498-15f6334e4b91)
 
-   Creating an iTerm window briefly foregrounds iTerm even when the AppleScript omits `activate`, so it is not a
-   background-safe operation. Send the normal macOS heads-up before launch, remember the previously frontmost app,
-   create the window and tabs in one batch, then immediately restore that app as shown below. Do not ask for exclusive
-   keyboard or mouse control and do not claim that removing `activate` prevents the focus change.
+   Start `watch:api` first and wait for its initial successful development build before starting the API server.
+   The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
+   Start the frontend in its own session, or reuse its already healthy owned process. Use the same
+   `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on all three commands.
 
-   ```bash
-   WORKTREE_DIR="/absolute/path/to/your-project-worktree"
-   STACK_INDEX=1
-   STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
-   DEV_COLOR_ENV="NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
+   Keep each role's session handle, launcher/child PIDs, exact worktree, and stack index in the task's live context
+   and continuation handoff, not in committed skill files or a new registry. Read output with empty
+   `write_stdin` calls; bound each wait so progress updates remain possible. Prove command input and shutdown using
+   a disposable shell when needed; never type shell commands into a foreground dev server.
 
-   (cd "$WORKTREE_DIR" && NX_WORKSPACE_DATA_DIRECTORY=".nx/workspace-data-stack-${STACK_INDEX}" npm exec -- nx build api --configuration=development)
+   These are background command sessions, not hidden integrated-terminal panels. Do not pass a generic exec
+   `session_id` to `open_in_codex` and treat a queued or blank panel as successful attachment. Prefer an actually
+   supported visible view only when it can show the same controlled session without restarting the stack; otherwise
+   continue in the background. Survival across ordinary tool yields is verified, but survival across app quit,
+   agent-runtime restart, or machine sleep is not guaranteed. Say so rather than claiming permanent persistence.
 
-   iterm_command() {
-     local title="$1"
-     local cmd="$2"
-     printf "%s" "printf '\\033]0;${title}\\007'; cd '${WORKTREE_DIR}'; ${cmd}; exec zsh"
-   }
+   On continuation, read the saved sessions and recheck their exact process ownership and listeners before reusing
+   or starting anything. If a session handle is lost, inspect the recorded launcher/child PIDs, commands, worktree
+   paths, and reserved index: a lost handle does not prove the processes stopped. Never launch a duplicate stack.
+   Restart only a proven task-owned process when necessary and authorized; preserve a healthy process in its existing
+   terminal unless Ethan requests migration. Do not migrate other tasks or stack 0 merely to apply this default.
 
-   PREVIOUS_FRONTMOST_PID="$(osascript -e 'tell application "System Events" to unix id of first application process whose frontmost is true')"
-   DEV_WINDOW_ID="$(osascript - \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} API watch" "${DEV_COLOR_ENV} npm run watch:api -- --dev-stack-index=${STACK_INDEX}")" \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} API server" "${DEV_COLOR_ENV} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")" \
-     "$(iterm_command "AIMVS stack ${STACK_INDEX} frontend" "${DEV_COLOR_ENV} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")" <<'APPLESCRIPT'
-   on list_contains(candidateList, candidateValue)
-     repeat with existingValue in candidateList
-       if (existingValue as integer) is (candidateValue as integer) then return true
-     end repeat
-     return false
-   end list_contains
+   For explicitly requested standalone terminals or an existing iTerm-owned stack, follow
+   [standalone terminal control](standalone-terminals.md). A denied native-app control route is not a denial of normal
+   shell execution; use the supported command tools for the already-authorized stack operation, without bypassing
+   the denied app's control boundary.
 
-   on run argv
-     tell application id "com.googlecode.iterm2"
-       activate
-       set existingWindowIds to {}
-       repeat with existingWindow in windows
-         set end of existingWindowIds to id of existingWindow
-       end repeat
+   For an existing stack, reuse its exact owned command session. A source fix that requires a frontend-process
+   restart includes that restart within the already-authorized repair: after ownership checks, restart only that
+   frontend session and verify the new process serves the changed bundle. Do not ask Ethan to repeat restart approval,
+   restart the API/backend unnecessarily, or treat a browser refresh as a plugin reload. Source HMR does not reload
+   the running Node process's build-plugin implementation. If control is genuinely blocked, report that precise
+   blocker without calling the repair complete. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
 
-       create window with default profile
-       delay 0.5
-       set devWindow to missing value
-       repeat with candidateWindow in windows
-         if not my list_contains(existingWindowIds, id of candidateWindow) then
-           set devWindow to candidateWindow
-           exit repeat
-         end if
-       end repeat
-       if devWindow is missing value then set devWindow to current window
-
-       set devWindowId to id of devWindow
-       set apiWatchSession to current session of devWindow
-       tell apiWatchSession to write text (item 1 of argv) newline yes
-
-       tell devWindow to create tab with default profile
-       delay 0.5
-       set devWindow to first window whose id is devWindowId
-       set apiServerSession to current session of last tab of devWindow
-       tell apiServerSession to write text (item 2 of argv) newline yes
-
-       tell devWindow to create tab with default profile
-       delay 0.5
-       set devWindow to first window whose id is devWindowId
-       set frontendSession to current session of last tab of devWindow
-       tell frontendSession to write text (item 3 of argv) newline yes
-       return devWindowId
-     end tell
-   end run
-   APPLESCRIPT
-   )"
-   osascript - "$PREVIOUS_FRONTMOST_PID" <<'APPLESCRIPT'
-   on run argv
-     tell application "System Events"
-       set frontmost of first application process whose unix id is (item 1 of argv as integer) to true
-     end tell
-   end run
-   APPLESCRIPT
-   printf 'DEV_WINDOW_ID=%s\n' "$DEV_WINDOW_ID"
-   ```
-
-   `exec zsh` keeps the tab open if a command exits, so failures remain visible. If iTerm2 AppleScript automation
-   is blocked or only one tab launches, do not silently continue with hidden Codex long-running exec sessions; use
-   the existing VS Code/terminal tabs or report the blocker so the stack does not end up half-launched.
-
-   If iTerm2 is unavailable, fall back to running each command in separate tabs in another terminal app:
+   Commands for the three separate long-running sessions (replace the example index 1 consistently):
 
    ```bash
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run watch:api -- --dev-stack-index=1                 # build + watch the API
@@ -308,9 +257,8 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
    ```
 
-   The prebuild before window creation is intentional: without it, a fresh worktree starts the standalone API
-   before `dist/apps/api` exists and reproduces `Error: spawn node ENOENT`. `watch:api` performs another build
-   before watching, but the prebuild gives the concurrently launched API server a current runnable artifact.
+   Waiting for the API watcher's initial build is intentional: starting the standalone API before `dist/apps/api`
+   exists reproduces `Error: spawn node ENOENT`. The initial successful build supplies its current runnable artifact.
 
    The frontend proxy and the standalone API resolve the same stack from the flag, so `:4201`'s `/api`
    calls hit the `:3001` API, and generated links/routing use the offset ports too.
@@ -339,16 +287,17 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    plus its native API watcher, supervised API server, and frontend watcher alive until the worktree is removed or
    Ethan explicitly asks to stop them. Ordinary source edits should flow through frontend hot reload and the nonzero
    API supervisor; wait for and verify their successful rebuild instead of manually replacing healthy processes. Keep
-   the tracked `DEV_WINDOW_ID` in the task handoff and do not create an idle-cleanup automation merely because the
+   the exact role/session/process mapping in the task handoff and do not create an idle-cleanup automation merely because the
    stack remains active. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475,
    01a05301-5376-77b1-9c70-99e37245cc98)
 
 ## Retain an agent-owned stack after testing
 
 The end of a manual test or task turn does not authorize stopping a healthy nonzero stack. Close and verify only the
-exact task-owned browser page, then confirm the terminal window, worktree path, indexed ports, and private containers
-still match the owning worktree before handing the running stack back to Ethan. Preserve the tracked `DEV_WINDOW_ID`
-and include the stack index and frontend URL in the completion handoff.
+exact task-owned browser page, then confirm the retained sessions, worktree path, indexed ports, and private containers
+still match the owning worktree before handing the running stack back to Ethan. Preserve the exact role/session/PID
+mapping in the continuation context and include the stack index and frontend URL in the completion handoff. A visible
+window ID is relevant only to an existing standalone terminal; do not invent one for background sessions.
 
 ## Schedule an explicitly requested timed cleanup
 
@@ -373,9 +322,11 @@ exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
 ## Mandatory live-stack health gates
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
-process restart, inspect the current output of every tab in that exact worktree's tracked iTerm stack window without
-raising it. Require the API-watch, API-server, frontend, and any download-Worker tab to show the exact worktree path
-and the same nonzero `--dev-stack-index=N`, then verify all of the following from their latest/current runs:
+process restart, inspect current output from that worktree's three exact retained command sessions (or its existing
+standalone terminal sessions without raising their window). Require API-watch, API-server, and frontend ownership to
+match the exact worktree and the same nonzero `--dev-stack-index=N`; the indexed Worker remains a private container.
+If a historical session handle is unavailable, verify current process ancestry and fresh build markers/logs without
+claiming that its terminal is attached or starting a duplicate. Then verify all of the following from their latest/current runs:
 
 - API watch completed its latest build successfully and is still watching.
 - The standalone API completed Nest startup, listens on `3000 + N` with its inspector on `9230 + N`, and has no
@@ -402,7 +353,9 @@ serving its last successful lazy chunks after a later `Application bundle genera
 served lazy chunk when live UI contradicts source. If any current process, build, proxy, emulator, or fresh-log check
 fails, diagnose and fix the cause, rebuild or restart only the affected worktree process, then repeat this entire
 gate until it is clean. Do not open or operate the test browser, hand the URL to Ethan, or begin screenshot evidence
-while an error remains; report a blocker if it cannot be fixed safely. Historical output from before a later verified
+while an error remains; report a blocker if it cannot be fixed safely. Apply repair actions only within an authorized
+start, fix, or migration request; a read-only status question calls for inspection and an accurate report, not an
+automatic restart. Historical output from before a later verified
 restart/build does not itself fail the gate, but never use that distinction to dismiss an error still affecting the
 current run.
 
@@ -433,22 +386,16 @@ Safari window acquired another task's tab. (Codex task: 01a0399b-e199-79d2-b4ec-
 Finish the report and task-fixture cleanup, then close and verify the exact tracked browser window. Stop the native
 frontend/API processes next so they cannot issue another write while Firebase creates its final private export:
 
-```bash
-bash .agents/skills/aimvs-dev/scripts/close-iterm-dev-stack.sh \
-  --window-id "$DEV_WINDOW_ID" \
-  --stack-index "$STACK_INDEX"
-```
+Stop each background role through its exact retained session handle: send Ctrl-C with `write_stdin`, wait for the
+session to exit, and verify the recorded launcher/child processes plus ports `4200 + N`, `3000 + N`,
+`9230 + N`, and `9476 + N` are gone. A finished tool session alone does not prove all descendants stopped.
+If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
+and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
+close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it.
 
-The helper sends Ctrl-C to every tab first, waits for the frontend, API, inspector, and debug-log ports to stop
-listening, and refuses to close the window if any remain. It does not touch stack 0's Worker or the private backend.
-Only then does it close the terminal sessions and their exact tracked window. It closes the stopped sessions
-individually because closing a multi-tab window directly
-shows iTerm's `Close Window #…` confirmation. If iTerm still shows that prompt, the helper uses Accessibility to
-require exactly one matching prompt and one `OK` button before pressing it, then verifies the tracked window is
-no longer visible; iTerm can retain an invisible stale scripting
-object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
-confirm an unverified iTerm prompt.
-
+For an existing iTerm stack, follow [standalone terminal cleanup](standalone-terminals.md#close-an-existing-iterm-stack)
+instead. Native-process migration stops only the roles being moved, proves their old owners exited, starts one
+replacement per role, and repeats the live-stack health gate; it does not stop or export the private backend.
 Run the stack's guarded backend stop only after the native ports are closed:
 
 ```bash

@@ -340,7 +340,7 @@ initial fetch cannot poison every later start. Never mount host Google credentia
 cache into Docker: Firebase rejects the root file's reserved `FIREBASE_APPCHECK_DEBUG_TOKEN`, while copying every other
 entry would expose test-login credentials to Functions. Verify secret availability through presence or behavior without
 printing values. After changing the preparation or its Compose wiring, run
-`TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register -r tsconfig-paths/register tools/scripts/prepare-isolated-functions-secrets.spec.ts`.
+`TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register -r ./tools/scripts/register-workspace-paths.cjs tools/scripts/prepare-isolated-functions-secrets.spec.ts`.
 (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 Mount the persistent volume at a parent such as `/data` and give Firebase a replaceable child such as `/data/export`.

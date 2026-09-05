@@ -15,6 +15,9 @@ direct commits here can be replaced by its guarded publisher and are never impor
   frontend, API, inspector, and debug-log ports correlated until that worktree is removed.
 - Keeps stack 0 in Ethan's main environment and gives every nonzero stack its own private Firebase, Storage, MinIO,
   and Download Assets Worker backend.
+- Runs each agent stack's frontend, API watcher, and API server in separately controlled background command sessions.
+  Visible terminal panels are optional; session ownership and verified builds are required, and host-app restart
+  persistence is not assumed.
 - Routes each stack through Safari, Firefox, or Opera first, then through task-scoped in-app Browser sessions without
   imposing a three-browser concurrency cap. Desktop testing stays on the MacBook display and away from the user's
   active workspace or video.
@@ -36,6 +39,7 @@ SKILL.md                             Concise operating contract and reference ro
 agents/openai.yaml                   Skill-list metadata
 references/worktree-lifecycle.md     Task-environment and linked-worktree lifecycle
 references/stack-lifecycle.md        Dev-stack setup, health, and cleanup
+references/standalone-terminals.md   Optional iTerm launch and existing-window cleanup
 references/git-state-and-code-review.md  Git-state preservation and code review
 references/emulator-safety.md        Emulator ownership, data drift, and recovery
 references/browser-control.md        Browser assignment and exact-window safety
