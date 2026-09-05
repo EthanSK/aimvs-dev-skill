@@ -105,6 +105,14 @@ of creating another. If no window or side effect exists and ownership remains ex
 once; ambiguity or a second failure ends setup. (Codex tasks: 01a0345e-6001-7353-b097-5527ecae7eca,
 01a0357e-e591-7381-bc21-f9b5f93ccee7, 01a0361a-9cf7-7dc3-b1b6-381b783854d5)
 
+When CUA exposes Firefox app control but no window-position API, its native Window menu can place the dedicated
+window. After the heads-up and baseline inventory, one app-scoped `super+n` can create it; require exactly one new
+CoreGraphics ID before selecting **Window > Move to Built-in Retina Display**. Re-inventory to prove that only that
+ID moved, then navigate it to the exact stack URL. **Window > Fill** and **Window > Move & Resize > Return to Previous
+Size** can test desktop and the original narrow size. Refresh Accessibility indices after each action and preserve
+every pre-existing window. A missing programmatic position setter alone does not make Firefox unavailable.
+(Codex task: 01a072fc-6e67-7062-8bf0-59cd5d13bccb)
+
 Do not use an untracked `Cmd+N` workflow or identify/move windows by eye. Window creation and placement are a
 one-time setup while the tracked window exists. The Safari helper technically defaults to stack 0 when no URL
 argument is provided, but agents must always pass their nonzero `STACK_URL` so they never touch Ethan's stack.
