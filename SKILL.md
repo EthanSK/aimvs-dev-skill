@@ -18,6 +18,8 @@ credentials, branch-specific results, or transient runtime state.
 A successful one-time repair does not qualify by itself. Keep incident-specific symptoms, data shapes, migration
 recipes, and task recaps in task history unless they establish a stable rule that changes future decisions.
 
+Self-improvement only needs to happen when the agent decides a durable verified finding warrants it. Mark agent-initiated additions or material changes with a visible `Self-improved — YYYY-MM-DD` note beside the affected guidance, including a quick reason and an evidence reference. For scripts or larger changes, use a concise `Self-improved` section identifying the affected file or section, reason, evidence, and validation performed. Keep lengthy audit evidence in a directly linked reference. Do not label explicitly user-requested changes as self-improved, invent historical provenance, or overwrite intervening manual changes.
+
 ## Skill usage announcement
 
 Tell Ethan when this skill is being used and why. Explain any skill-directed action or pause, and distinguish a
@@ -181,7 +183,7 @@ linked directly here so an agent never needs to discover operating instructions 
   read [references/browser-control.md](references/browser-control.md).
 - **Any sign-in, test-account, App Check, browser autofill, or authenticated file-picker flow:** read
   [references/authentication.md](references/authentication.md).
-- **Any code review, stash, rebase, worktree landing, or staged/unstaged preservation operation:** read
+- **Any code review, task-owned test ready for review, staging/unstaging, commit, stash, rebase, worktree landing, or staged/unstaged preservation operation:** read
   [references/git-state-and-code-review.md](references/git-state-and-code-review.md).
 - **Every requested manual feature test, fixture mutation, failure-path test, or four-layer verification pass:** read
   [references/manual-verification.md](references/manual-verification.md).

@@ -1,5 +1,14 @@
 # Git state and code review
 
+## Staging and landing
+
+- Refreshing or replacing an already-staged file with `git add` still counts as staging and requires my explicit permission. Me staging a file myself does not authorize an agent to change that file's index entry; preserve the exact staged snapshot unless the task-owned `*.spec.ts` exception below or the project `AGENTS.md` instruction-edit exception applies.
+- Always stage task-owned `*.spec.ts` changes once they are ready for review, without waiting for me to ask. This applies only to tests created or changed for the current task: never stage unrelated or pre-existing test changes, and stage only the task-owned hunks when a test file contains shared work.
+- Landing approval is state-specific. Never commit, merge, cherry-pick, fast-forward, or otherwise land a source worktree while that source worktree has any unstaged or untracked changes; treat a request to land that dirty source worktree as a mistake, refuse it, show its staged, unstaged, and untracked paths, and wait for me to review and stage every remaining change manually. Never rely on Git state captured before the current landing request, including state reported during an earlier review: I may have changed staging since then, so run a fresh read-only check of staged, unstaged, and untracked paths after the request and treat that post-request snapshot as authoritative. When that check confirms zero unstaged and zero untracked paths, an explicit current request to commit, merge, or otherwise land that already-staged state is sufficient approval: report the exact staged paths, but proceed without asking me to repeat the approval. The request becomes stale only if the staged snapshot changes after that post-request check; a difference from an earlier review snapshot does not make it stale. The task-owned `*.spec.ts` and project `AGENTS.md` staging rules are the only exceptions to manual staging. Unrelated dirty changes in the target checkout do not block landing when they can be preserved and restored with their exact staged, unstaged, and untracked boundaries.
+- `mmcdw` means: commit the exact staged snapshot, merge it into local `main`, stop and export the worktree-owned nonzero stack, remove the VS Code folder and Git worktree, and release its stack reservation. It grants the same state-specific landing approval as the full request, but never authorizes a push, branch deletion, or persistent-volume deletion; every normal fresh-state and ownership check still applies.
+
+## Preserve state during reviews and Git operations
+
 Review the effective working tree by default. Do not report staged-versus-unstaged differences or index composition
 as code-review findings unless Ethan explicitly asks for an index or staging audit; he normally reviews first and
 stages manually afterward.

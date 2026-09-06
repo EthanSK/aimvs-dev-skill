@@ -15,8 +15,8 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
 - Before repository work begins, create or reuse the exact task-owned linked worktree at
   `/Users/ethansarif-kattan/Projects/aimvs<N>-<task-slug>` on `codex/<task-slug>`. `N` is that worktree's
   reserved nonzero dev stack from creation through removal, even before any runtime starts.
-- Project `AGENTS.md` instruction changes are the one repository-work exception: follow its **Project Instruction
-  Synchronization** section, which requires the approved change to be made or consolidated in primary `main` as a
+- Project `AGENTS.md` instruction changes are the one repository-work exception: follow the project instruction-synchronization
+  skill linked from the host repository's `AGENTS.md`, which requires the approved change to be made or consolidated in primary `main` as a
   standalone `AGENTS.md` commit while preserving unrelated state. The general linked-worktree rule does not override
   that narrower workflow.
 - If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a

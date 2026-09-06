@@ -120,23 +120,35 @@ argument is provided, but agents must always pass their nonzero `STACK_URL` so t
 ## In-app Browser overflow fallback
 
 Use the in-app Browser after Safari, Firefox, and Opera are already assigned, actively used, incompatible, or unsafe.
-Do not report the old three-browser limit as a blocker while the in-app Browser skill is available. Each task uses its
+Do not report the old three-browser limit as a blocker while a supported in-app Browser controller is available. Each task uses its
 own in-app Browser binding and exactly one new agent-owned tab at its distinct nonzero `STACK_URL`, so concurrent
 manual tests are limited only by the available task/stack capacity rather than the three desktop apps.
 
-Invoke and follow `$browser:control-in-app-browser`, select the in-app Browser through that skill's current permitted
-selection path, and read its browser documentation before interaction. Use its explicit `iab` selector when Ethan's
-current request names the in-app Browser; otherwise let the skill select for `STACK_URL` and require that the result
-is the in-app Browser before continuing. Name the browser session with the worktree and stack, create one new agent
-tab, record its ID as `TEST_BROWSER_TAB_ID`, navigate it to `STACK_URL`, and verify the exact URL plus the visible
-`WORKTREE <NAME> · STACK #N :<PORT>` banner through fresh DOM and screenshot state. Never claim a user tab, reuse
-another task's tab, enumerate another task's browser state, or use an in-app Browser tab against stack 0.
+Use the currently available in-app Browser controller and read its documentation before interaction. If
+`$browser:control-in-app-browser` is installed, follow that skill's permitted selection path and require the selected
+browser to be the in-app Browser. If that legacy skill is absent and `mcp__cua_repl.js` is available, follow CUA's first
+matching entrypoint rule for the user's request. When the request names or mentions the in-app Browser, the documented
+entrypoint is `cua.createBrowserTab("iab", STACK_URL, { visible: false })`. When no browser is named or mentioned, start
+with `cua.getBrowser({ url: STACK_URL })`, read its returned documentation, and verify that the selected browser is the
+in-app Browser before creating a tab. Make only the permitted single API call in the first CUA invocation. If CUA
+selects an incompatible browser, report that selection as the blocker; do not proceed in Chrome or silently switch
+contexts. A missing legacy skill alone is not a blocker when the current controller can select the permitted context.
+
+Create exactly one new agent-owned tab at the task's nonzero `STACK_URL` and retain its returned controller and ID
+as `TEST_BROWSER_TAB_ID`. Name the browser session with the worktree and stack when the controller supports session
+names. Verify the exact URL and visible `WORKTREE <NAME> · STACK #N :<PORT>` banner using fresh browser state and a
+screenshot. Never claim a user tab, reuse another task's tab, enumerate another task's browser state, or use an
+in-app Browser tab against stack 0.
+
+Self-improved — 2026-09-06: remove the obsolete mandatory legacy-skill dependency. Evidence: the installed skill
+catalog no longer includes it, while the current CUA tool documentation explicitly supports `createBrowserTab` with
+`iab`. Validation covers documented routing and preserved ownership boundaries; no live browser test was run.
 
 The in-app Browser is the explicitly permitted overflow context, not an ad hoc desktop profile. Its tab does not have
 `TEST_WINDOW_ID`, a macOS display, or a CoreGraphics identity. Keep it background-only unless live viewing helps the
 test, use semantic Browser locators before coordinate input, and reset any temporary viewport override before
-cleanup. If the in-app Browser skill or binding is unavailable, report that exact blocker; personal Chrome and a
-standalone automation profile are still not fallbacks. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
+cleanup. If no supported in-app Browser controller or binding is available, report that exact blocker; personal
+Chrome and a standalone automation profile are still not fallbacks. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
 
 After desktop-browser setup, follow the per-action escalation ladder below while Ethan uses the Mac. Prefer
 non-activating screenshots, Accessibility state, scripting, and logs. Before a known activating fallback, send the
@@ -250,10 +262,10 @@ completed and verified there. The user may keep working in other apps and browse
 fresh `get_app_state` state, exact-window ScreenCaptureKit captures, Accessibility queries, scripting, and logs before
 input.
 
-For an in-app Browser overflow session, operate only `TEST_BROWSER_TAB_ID` through the Browser skill. Its background
+For an in-app Browser overflow session, operate only `TEST_BROWSER_TAB_ID` through its retained browser controller. Its background
 tab does not require macOS focus, window-order, or display checks. Require a fresh URL and DOM or screenshot check
 before each material interaction, and stop if the tab is missing, stale, or no longer shows the exact stack origin;
-recover it only through the Browser skill's documented task-tab flow.
+recover it only through that controller's documented task-tab flow.
 
 For each discrete click, keypress, text entry, drag, navigation, or browser-control action:
 
@@ -424,8 +436,8 @@ pre-existing window as the replacement. Verify authenticated state again and con
 checkpoint. Capture useful crash/report text or visible error details if available, then check frontend/API/emulator
 logs to decide whether the crash was browser instability or an app-triggered failure.
 
-For an in-app Browser tab that becomes stale or disappears, keep the existing browser binding and follow the Browser
-skill's tab-recovery guidance: discard only the stale tab handle, create one replacement agent tab, record its new ID,
+For an in-app Browser tab that becomes stale or disappears, keep the existing browser binding and follow its documented
+tab-recovery guidance: discard only the stale tab handle, create one replacement agent tab, record its new ID,
 and reverify `STACK_URL`, the worktree banner, authentication, and logs before continuing. Never reselect the browser
 merely to recover a tab.
 
