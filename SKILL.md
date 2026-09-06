@@ -34,10 +34,8 @@ nonzero index reserved in its `aimvs<N>-<task-slug>` name and the shared Git dir
 removal, even before startup. Stack 0 keeps Ethan's main native services; every nonzero stack uses its own private
 backend containers plus its own indexed native frontend/API processes.
 
-Author every change to this skill in the AIMVS repository. The public `EthanSK/aimvs-dev-skill` repository is an
-output-only mirror: publish to it through AIMVS's guarded publisher, never pull, merge, or otherwise import its
-history into AIMVS, and expect the publisher to replace any direct public-repository commits. (Codex task:
-01a0200e-ba77-7e42-8233-0fb4caa5bc70)
+Before changing or publishing this skill, read [references/skill-publication.md](references/skill-publication.md).
+It defines the canonical source, guarded public mirror, and private-data safeguards.
 
 ## Universal safeguards
 
