@@ -1,6 +1,6 @@
 ---
 name: aimvs-dev
-description: Use for every AI Music Video Studio development interaction involving task-environment selection, Git worktree lifecycle or dirty-state maintenance, Computer Use, local browser testing, dev-stack control, debugging, code review, or prior manual-test evidence. This is the repo source of truth for named AIMVS worktrees, stack 0 safety, isolated nonzero stacks, Git-state preservation, browser assignment, authentication, verification, and recovery.
+description: Use for every AI Music Video Studio development interaction involving task-environment selection, Git worktree lifecycle or dirty-state maintenance, Computer Use, local browser testing, dev-stack control, dev-only tooling or fixtures and production code supporting them, debugging, code review, or prior manual-test evidence. This is the repo source of truth for named AIMVS worktrees, stack 0 safety, isolated nonzero stacks, Git-state preservation, browser assignment, authentication, verification, and recovery.
 ---
 
 # AIMVS Development
@@ -170,7 +170,7 @@ linked directly here so an agent never needs to discover operating instructions 
 - **Any AIMVS task/thread creation, fork, handoff, environment selection, or worktree creation, reuse, rename, or
   removal:** read [references/worktree-lifecycle.md](references/worktree-lifecycle.md) before the task environment is
   chosen or task work begins.
-- **Any local dev-environment, stack, emulator, or fixture operation:** read
+- **Any local dev-environment, stack, emulator, or fixture operation, or adding, changing, or reviewing dev-only tooling, fixtures, or production code supporting them:** read
   [references/dev-environment-contract.md](references/dev-environment-contract.md).
 - **Starting, inspecting, controlling, or stopping a dev stack; checking stack health:** read
   [references/stack-lifecycle.md](references/stack-lifecycle.md).
