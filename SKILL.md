@@ -230,18 +230,6 @@ design the test himself. Prefer realistic user-visible checks that cover the mai
 one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
 keep the section and say why instead of inventing one.
 
-End every user-facing final AIMVS response with the exact **Current Environment Footer** required by the host
-repository's `AGENTS.md`; the **Manual checks** section above must come before it. Use `Worktree`, `Dev stack`, and
-`Localhost` in that order, never include the branch, and make the worktree path and running localhost URL clickable:
-
-```markdown
-### Current environment
-
-- **Worktree:** [<worktree name>](<absolute worktree path>)
-- **Dev stack:** `<stack index>`
-- **Localhost:** [<localhost URL>](<localhost URL>)
-```
-
-When no dev stack for that exact worktree is running, write `Not running` for both **Dev stack** and **Localhost**.
-When more than one worktree is in scope, follow the repository's `#### Primary` and `#### Alternate` form and include
-every worktree the task owns, actively uses, or is responsible for.
+End every user-facing final AIMVS response with the environment footer defined by the host repository's
+`AGENTS.md` and its referenced project skill. Keep **Manual checks** before that footer; do not maintain a second
+footer format here.
