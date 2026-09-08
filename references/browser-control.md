@@ -124,7 +124,13 @@ Do not report the old three-browser limit as a blocker while a supported in-app 
 own in-app Browser binding and exactly one new agent-owned tab at its distinct nonzero `STACK_URL`, so concurrent
 manual tests are limited only by the available task/stack capacity rather than the three desktop apps.
 
-Use the currently available in-app Browser controller and read its documentation before interaction. If
+Use the currently available in-app Browser controller and read its documentation before interaction. Before declaring
+a needed control unavailable, check both browser-level and page-level capability lists and read the matching capability
+documentation; a missing page method alone does not prove that viewport resizing or another control is unsupported.
+Self-improved — 2026-09-07: a browser-level viewport capability was missed after checking only the page controller;
+the corrected lookup enabled the requested mobile and short-height checks. (Codex task: 01a0696d-6ec6-7960-80f9-414b64bb4299)
+
+If
 `$browser:control-in-app-browser` is installed, follow that skill's permitted selection path and require the selected
 browser to be the in-app Browser. If that legacy skill is absent and `mcp__cua_repl.js` is available, follow CUA's first
 matching entrypoint rule for the user's request. When the request names or mentions the in-app Browser, the documented

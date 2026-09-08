@@ -230,7 +230,8 @@ high-value tests Ethan can perform against the current change set (`PR` shorthan
 proves the changed behavior, and give the exact starting state, action, and expected result so Ethan does not have to
 design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
 one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
-keep the section and say why instead of inventing one.
+keep the section and say why instead of inventing one. Before sending, require a starting state, action, and expected
+result in each proposed check; a list of past test results does not satisfy this section.
 
 End every user-facing final AIMVS response with the environment footer defined by the host repository's
 `AGENTS.md` and its referenced project skill. Keep **Manual checks** before that footer; do not maintain a second

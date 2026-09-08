@@ -65,7 +65,7 @@ atomically materializing that exact object at the screenshot path; never stage t
 
 Keep this exact visible guardrail directly below the Markdown title:
 
-> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records, but remove screenshots that no longer represent current behavior.
+> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records. Remove only outdated unstaged screenshots; leave staged screenshots untouched.
 
 ## Capture only important settled states
 
@@ -80,10 +80,14 @@ Never revert, reimplement, or temporarily resurrect earlier product behavior sol
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
 
-After further UI changes, the next manual test must audit this worktree's earlier task-owned screenshots before
-handoff. Delete each image that no longer represents current behavior, remove its `screenshots:` or legacy `proofs:`
-metadata from `manual-test-results.md`. Keep older run text and every screenshot that still accurately documents the
-current change set; do not delete evidence merely because it is old.
+At the end of every manual test, audit this worktree's task-owned screenshots against the current UI and fresh Git
+status. Remove an outdated screenshot only when it has an unstaged change or is untracked and has no staged change.
+Leave staged screenshots untouched, including paths with both staged and unstaged changes; never stage, unstage,
+overwrite, or delete them for this cleanup. Leave clean tracked screenshots alone too. For each removed image, remove
+only its `screenshots:` or legacy `proofs:` metadata from the working-copy report without changing the report's index
+entry. Keep older run text and every screenshot that still accurately documents current behavior; age alone is not
+evidence that an image is outdated. This cleanup keeps Ethan's unstaged review view current, not the full historical
+screenshot archive. (Codex task: 01a0696d-6ec6-7960-80f9-414b64bb4299)
 
 Give every screenshot its own short title, literal caption, and narrow **What this proves** claim. The claim must not
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
