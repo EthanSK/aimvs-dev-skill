@@ -20,7 +20,9 @@ ordinary AIMVS work because a task-creation API can otherwise create the wrong w
   standalone `AGENTS.md` commit while preserving unrelated state. The general linked-worktree rule does not override
   that narrower workflow.
 - If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a
-  second worktree for that task unless Ethan explicitly asks for another one. A new topic, implementation request,
+  second worktree for that task unless Ethan explicitly asks for another worktree. A temporary or fresh dev-stack
+  request is not permission to create a second worktree or duplicate the change set; preserve one review/staging source.
+  Before creating another path, verify that Ethan requested the extra worktree itself. A new topic, implementation request,
   cleaner branch, or mixed scope does not authorize another worktree; if the existing worktree cannot safely contain
   the work, stop and ask before creating anything. (Codex task: 01a04e25-fccc-72c2-816b-7d29c151a7d5)
 
@@ -40,6 +42,12 @@ shared Git directory, verifies that the indexed runtime and preserved volumes ar
 A pending, malformed, foreign, running, or unsafe legacy stack fails closed; the helper removes only its own rejected
 pending claim and tries the next index. Never replace this sequence with raw `git worktree add`, a port-only guess, or
 a manually selected stack number. (Codex task: 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+
+Do not call `createReservedWorktree` directly, replace `assertStackReservable`, or add allocation checks that reject
+saved volumes. A fresh-data request uses the normal reservation command; handle the dataset separately under the
+existing preservation rules. Before handoff, verify the recorded creation command used the standard helper.
+Self-improved — 2026-09-09: a one-off freshness callback skipped reusable stacks and selected 36 despite the existing
+stack-reuse fix. (Codex task: 01a08673-c426-7cc2-bb95-c035d20f0363)
 
 Before reusing, verify the exact real path, branch, HEAD, staged/unstaged/untracked state, owning task, reserved index,
 and any live process ownership through `git worktree list --porcelain`, `npm run aimvs-worktree -- list`, and focused
