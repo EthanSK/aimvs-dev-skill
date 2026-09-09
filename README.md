@@ -32,6 +32,28 @@ direct commits here can be replaced by its guarded publisher and are never impor
   ordinary Git history.
 - Preserves durable setup, recovery, and testing discoveries through a continuous-improvement contract.
 
+## AIMVS at a glance
+
+AIMVS is an Nx monorepo with an Angular frontend, a NestJS API and Firebase Auth, Firestore and Storage; local
+development adds Firebase emulators, MinIO and a Download Assets Worker. The skill assumes that shape:
+
+- **Stack 0 is Ethan's main VS Code environment.** Its frontend runs on `:4200`, its API on `:3000`, and its Firebase
+  emulators, MinIO and native Worker are the main services. Agent tests use nonzero stacks.
+- **New agent worktrees use `aimvs<N>-<task-slug>` on `codex/<task-slug>`.** `N` is that worktree's reserved nonzero
+  stack from creation until removal. Its frontend (`4200 + N`) and API (`3000 + N`) are native watcher processes, and
+  the API supervisor swaps in each successful build; only its Firebase emulators, MinIO and Download Assets Worker run
+  as private Docker containers, whose volumes survive guarded stop and worktree removal. Each stack also gets its own
+  test browser; Firebase Auth still uses staging Auth rather than a separate local Auth emulator.
+- **Ethan controls review and landing.** He reviews and stages the working changes, with scoped exceptions for
+  task-owned test files and project instructions. Once the requested snapshot is staged, `mmcdw` handles the approved
+  commit, local merge and guarded cleanup: export and stop the stack, remove the workspace folder and worktree, and
+  release `N`. Conflict review and runtime cleanup gate landing; the command never authorizes a push or deletion of
+  branches or volumes.
+
+The exact rules live in [worktree-lifecycle.md](references/worktree-lifecycle.md),
+[stack-lifecycle.md](references/stack-lifecycle.md) and
+[git-state-and-code-review.md](references/git-state-and-code-review.md).
+
 ## Repository layout
 
 ```text
