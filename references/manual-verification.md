@@ -9,6 +9,14 @@ Within the requested feature scope, actively maximize meaningful surface area: c
 entry point, state, and recovery path, and prefer flows that exercise several connected components at once. Compact
 means avoiding redundant repetition, not leaving separate new behavior untested.
 
+For shared card selection or responsive alignment, inventory every distinct list host before testing, including
+in-app panels and embedded pickers. Check first/last rows and columns against clipping ancestors at phone,
+single-column and multi-column widths; measure the visible card, not just its wrapper, and confirm existing
+full-width conditions separately. A passing Project or Playlist screenshot does not cover Explore Videos.
+Record empty or inaccessible hosts as coverage gaps, not passes. Self-improved — 2026-09-10: a narrow Explore
+Video ring remained clipped after representative Project/Playlist checks; the expanded check also caught a
+card-wrapper breakpoint mismatch and overlapping Playlist rows.
+
 For feature testing, prove the behavior at all four layers before calling it done:
 
 - UI: complete the user-visible flow in the stack browser, reload after frontend changes, and verify expected

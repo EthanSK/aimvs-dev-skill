@@ -345,16 +345,29 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
   selected, a POST with no grant reaches that Worker and returns its expected `400` without current-run errors.
 - Indexed Functions `15000 + N`, Firestore `18080 + N`, Storage `16000 + N`, MinIO `17000 + N`, and Worker `18800 + N`
   are listening, every private container reports healthy, and MinIO's `/minio/health/live` returns success.
+- Firestore's indexed HTTP root returns `200` with `Ok`, and a representative document read completes. Docker's
+  published port, the hub's emulator list, and historical readiness logs can all survive an OOM-killed Firestore child.
+  If they disagree, inspect the exact container's `State.OOMKilled`, current logs, and `memory.events` before recovery.
+  The Compose healthcheck must probe the live child with a deadline; its cold-start allowance must not make an already
+  ready container wait forty-five minutes to report a runtime failure. After changing that healthcheck, apply it only
+  through the owning stack's guarded stop/start and verify both success and a refused/stalled probe without killing
+  the retained emulator. (Codex task: 01a05e76-046d-73e1-becd-8f777bd5f02f)
 - A request through the frontend proxy reaches the paired API, and fresh worktree frontend/API logs contain no
   unexplained errors from the current run.
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
-Prefer narrow status/error matching over returning raw log tails. Match the actual `App Check debug token: <value>`
+Require narrow status/error matching and redaction before emitting log excerpts; never return raw `head`, `tail`,
+`sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
 the secret without inserting the marker.
+Filter returned browser-log entries in memory and redact their messages before emitting them; never treat a tool's
+requested severity filter as a redaction boundary. Test the final emission step with a synthetic non-error entry
+containing an App Check token and require that it is omitted or redacted. Self-improved — 2026-09-10: a browser log
+request for errors returned mixed levels; the local error-only projection excluded those entries. (Codex task:
+01a05d3b-2e6b-7f23-8ad8-9748c7dbf858)
 
 A listening port, a `200` root response, or an older successful build is not enough. Angular's dev server can keep
 serving its last successful lazy chunks after a later `Application bundle generation failed`; fetch the relevant
@@ -374,6 +387,13 @@ Repair every in-scope current-run build or runtime error before finishing. Do no
 source that still fails to compile. If an unrelated or ambiguous concurrent edit prevents safe repair, preserve its
 Git boundaries, report the exact blocking error and owner when known, and leave the task explicitly blocked rather
 than calling the stack healthy. (Codex task: 01a062c9-ac08-7d71-b8ae-2e831291d7e3)
+
+For a reported stale frontend, verify the exact worktree/origin, the document's `aimvs-frontend-build-number` meta
+value, and `/frontend-debug-log/build-status` before changing behavior. Compare frontend loaded/latest separately
+from API running/latest, then check the served changed content after a reload. The development toolbar's permanent
+`Reload page` action/tooltip is not itself an update notice; its continued presence does not prove a watcher or reload
+failure. A failed service, a build mismatch, and a misunderstood UI action require different fixes; do not introduce a
+speculative reload change just to remove that label. (Codex task: 01a05e76-046d-73e1-becd-8f777bd5f02f)
 
 ## Stop and close an agent-owned stack
 

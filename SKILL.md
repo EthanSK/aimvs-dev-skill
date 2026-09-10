@@ -70,16 +70,17 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media
   window, and unrelated app. An in-app Browser overflow session stays in one exact task-owned agent tab and has no
   macOS window or physical-display assignment; preserve every pre-existing browser tab.
-- While Ethan is actively using the Mac, try every discrete manual browser action once with the least activating
-  exact-window method available. If it clearly fails and ownership remains exact, the agent may retry once or twice
-  with progressively more direct app- or window-scoped control, using judgment and foregrounding only as the final
-  fallback. Send the normal macOS heads-up before a known focus or window-order change; the current explicit manual-test
-  request authorizes that bounded fallback without separate foreground permission. Re-verify the exact task window,
-  URL, display, and postcondition after every attempt, preserve newer user focus, never use global input, and never
-  retry a consequential action unless its postcondition proves the earlier attempt did not occur. (Codex tasks:
+- While Ethan is actively using the Mac, keep every manual browser action background-only. Try each discrete action
+  once with an exact-window method known not to activate, raise, or reorder the browser; retry once only when another
+  background-safe exact-window method adds a distinct capability. A manual-test request does not authorize foregrounding.
+  Never use a method known to bring Firefox or another test browser forward unless Ethan explicitly asks for foreground
+  interaction in the current task. If background control is unavailable or any method unexpectedly brings the browser
+  forward, stop browser input immediately, preserve Ethan's current focus, and continue only non-UI work. Re-verify the
+  exact task window, URL, display, and postcondition after every background-safe attempt, never use global input, and
+  never retry a consequential action unless its postcondition proves the earlier attempt did not occur. (Codex tasks:
   01a024ca-37e3-7883-89fe-f3233fb75a94, 01a024f9-f80c-71c0-9005-51c76fc2e18d,
   019fe81d-3690-71d3-820f-2a1ca360dcb4, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
-  01a0361a-9cf7-7dc3-b1b6-381b783854d5)
+  01a0361a-9cf7-7dc3-b1b6-381b783854d5, 01a05d3b-2e6b-7f23-8ad8-9748c7dbf858)
 - Use Safari first, then Firefox and Opera for concurrent nonzero stacks. Never use Ethan's personal Chrome for an
   AIMVS manual test. When those desktop browsers are already
   assigned, actively used, incompatible, or unsafe, use a distinct task-scoped in-app Browser binding and agent tab
@@ -225,13 +226,16 @@ linked directly here so an agent never needs to discover operating instructions 
 Before this handoff, apply `references/stack-lifecycle.md`'s completion health gate to every running stack owned by the
 task. A failed latest build makes the task blocked rather than complete even when its ports and frontend URL respond.
 
-Also end every completed implementation or review with a **Manual checks** section containing one to three concise,
+Before the environment footer, end every completed implementation or review with a **Manual checks** section containing one to three concise,
 high-value tests Ethan can perform against the current change set (`PR` shorthand). Choose the smallest set that best
 proves the changed behavior, and give the exact starting state, action, and expected result so Ethan does not have to
 design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
 one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
 keep the section and say why instead of inventing one. Before sending, require a starting state, action, and expected
-result in each proposed check; a list of past test results does not satisfy this section.
+result in each proposed check; a list of past test results does not satisfy this section. Name prerequisite modes and
+their exact entry controls, including where to find them when below the items. A selection check must say to enter
+selection mode before clicking cards, because ordinary card clicks navigate. Self-improved — 2026-09-10: an omitted
+Select playlists prerequisite made a selection handoff ambiguous; verified the required mode in the Yours template.
 
 End every user-facing final AIMVS response with the environment footer defined by the host repository's
 `AGENTS.md` and its referenced project skill. Keep **Manual checks** before that footer; do not maintain a second
