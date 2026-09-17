@@ -103,7 +103,7 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    First distinguish an already-running owned stack from a stopped runtime. If the reserved index's containers,
    mounts, recorded worktree, and ports prove that its private backend is already healthy and belongs to this task,
    retain it and start only missing native roles. Do not call backend `start`, demand an empty network, or stop
-   healthy containers merely to attach new command sessions. A foreign or ambiguous running owner still blocks
+   healthy containers merely to attach new native-role sessions. A foreign or ambiguous running owner still blocks
    launch. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
 
    Before starting a stopped reserved runtime or reusing a legacy stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
@@ -214,33 +214,37 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    the agent frontend can stop at `Waiting for frontend:serve:development in another nx process`. Use
    `.nx/workspace-data-stack-N` for every Nx-backed command in that stack; leave stack 0 on the normal default.
 
-   Use three separate tool-managed long-running sessions: API watcher, standalone API server, and frontend.
-   A visible integrated terminal is optional, not a startup requirement. In Codex, launch each command through
-   `exec_command` with `tty: true`, the exact worktree `workdir`, and a short initial yield. Keep each returned
-   `session_id` and continue it with `write_stdin`; returning a session ID is not proof of build/startup success.
-   Other hosts use their equivalent controllable long-running command facility. Do not background commands with
-   `&`, discard their handles, or replace the existing API supervisor with a new wrapper. (Codex task:
-   01a06eec-07f7-7aa1-a498-15f6334e4b91)
+   Use three separate detached macOS `screen` sessions: API watcher, standalone API server, and frontend. Name them
+   `aimvsN-api-watch`, `aimvsN-api-server`, and `aimvsN-frontend`, and give each role its own
+   `/private/tmp/aimvsN/<role>/screenlog.0` by launching `screen -L` from that role's log directory. `screen` becomes
+   the retained process owner after the launching command exits, so the native roles survive a Codex task ending,
+   the host app quitting, long idle periods, and clamshell sleep; they do not survive logout or reboot. Ethan rejected
+   task-owned command sessions as the retained default after all three Stack 21 roles received simultaneous exit
+   `-1` when their owning execution ended; do not reintroduce that lifecycle. Do not background commands with `&`,
+   use `nohup`, discard the exact screen names/logs, or replace the existing API supervisor with another wrapper.
+   Preserve a healthy process in its current owner unless Ethan requests migration. (Codex tasks:
+   01a06eec-07f7-7aa1-a498-15f6334e4b91, 01a0a16f-d40c-7b10-b1da-e87175b0bcf7)
 
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
    Start the frontend in its own session, or reuse its already healthy owned process. Use the same
    `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on all three commands.
 
-   Keep each role's session handle, launcher/child PIDs, exact worktree, and stack index in the task's live context
-   and continuation handoff, not in committed skill files or a new registry. Read output with empty
-   `write_stdin` calls; bound each wait so progress updates remain possible. Prove command input and shutdown using
-   a disposable shell when needed; never type shell commands into a foreground dev server.
+   Keep each role's exact screen name, log path, launcher/child PIDs, exact worktree, and stack index in the task's
+   live context and continuation handoff, not in committed skill files or a new registry. Read the role's
+   `screenlog.0` with filtered shell commands; bound each wait so progress updates remain possible. Prove command
+   input and shutdown using a disposable screen session when needed; never type shell commands into a dev server.
 
-   These are background command sessions, not hidden integrated-terminal panels. Do not pass a generic exec
-   `session_id` to `open_in_codex` and treat a queued or blank panel as successful attachment. Prefer an actually
+   These are detached terminal sessions, not hidden integrated-terminal panels. Do not pass a screen PID or generic
+   exec `session_id` to `open_in_codex` and treat a queued or blank panel as successful attachment. Prefer an actually
    supported visible view only when it can show the same controlled session without restarting the stack; otherwise
-   continue in the background. Survival across ordinary tool yields is verified, but survival across app quit,
-   agent-runtime restart, or machine sleep is not guaranteed. Say so rather than claiming permanent persistence.
+   continue in the background. Verify detached ownership with `screen -ls` plus current process ancestry, and say
+   explicitly that logout or reboot ends the native roles rather than claiming permanent persistence.
 
-   On continuation, read the saved sessions and recheck their exact process ownership and listeners before reusing
-   or starting anything. If a session handle is lost, inspect the recorded launcher/child PIDs, commands, worktree
-   paths, and reserved index: a lost handle does not prove the processes stopped. Never launch a duplicate stack.
+   On continuation, list the saved screen sessions and recheck their exact process ownership, logs, and listeners
+   before reusing or starting anything. If a screen name is missing, inspect the recorded launcher/child PIDs,
+   commands, worktree paths, and reserved index: a missing screen socket does not prove every child stopped. Never
+   launch a duplicate stack.
    Restart only a proven task-owned process when necessary and authorized; preserve a healthy process in its existing
    terminal unless Ethan requests migration. Do not migrate other tasks or stack 0 merely to apply this default.
 
@@ -249,19 +253,24 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    shell execution; use the supported command tools for the already-authorized stack operation, without bypassing
    the denied app's control boundary.
 
-   For an existing stack, reuse its exact owned command session. A source fix that requires a frontend-process
+   For an existing stack, reuse its exact owned screen session or existing standalone terminal. A source fix that requires a frontend-process
    restart includes that restart within the already-authorized repair: after ownership checks, restart only that
    frontend session and verify the new process serves the changed bundle. Do not ask Ethan to repeat restart approval,
    restart the API/backend unnecessarily, or treat a browser refresh as a plugin reload. Source HMR does not reload
    the running Node process's build-plugin implementation. If control is genuinely blocked, report that precise
    blocker without calling the repair complete. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
 
-   Commands for the three separate long-running sessions (replace the example index 1 consistently):
+   Commands for the three separate durable sessions (replace the example index and worktree consistently):
 
    ```bash
-   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run watch:api -- --dev-stack-index=1                 # build + watch the API
-   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:api:standalone:debug -- --dev-stack-index=1 # standalone API on :3001, inspector :9231
-   NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-1 npm run serve:frontend:standalone-server -- --dev-stack-index=1 # frontend on :4201
+   STACK_INDEX=1
+   STACK_WORKTREE="$(pwd -P)"
+   printf -v STACK_WORKTREE_SHELL '%q' "$STACK_WORKTREE"
+   mkdir -p "/private/tmp/aimvs${STACK_INDEX}/api-watch" "/private/tmp/aimvs${STACK_INDEX}/api-server" "/private/tmp/aimvs${STACK_INDEX}/frontend"
+
+   (cd "/private/tmp/aimvs${STACK_INDEX}/api-watch" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-watch" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run watch:api -- --dev-stack-index=${STACK_INDEX}") # Wait for this initial successful development build before starting the API server.
+   (cd "/private/tmp/aimvs${STACK_INDEX}/api-server" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-server" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")
+   (cd "/private/tmp/aimvs${STACK_INDEX}/frontend" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-frontend" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")
    ```
 
    Waiting for the API watcher's initial build is intentional: starting the standalone API before `dist/apps/api`
@@ -330,10 +339,10 @@ exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
 ## Mandatory live-stack health gates
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
-process restart, inspect current output from that worktree's three exact retained command sessions (or its existing
+process restart, inspect current output from that worktree's three exact retained screen logs (or its existing
 standalone terminal sessions without raising their window). Require API-watch, API-server, and frontend ownership to
 match the exact worktree and the same nonzero `--dev-stack-index=N`; the indexed Worker remains a private container.
-If a historical session handle is unavailable, verify current process ancestry and fresh build markers/logs without
+If a historical screen name or standalone-terminal handle is unavailable, verify current process ancestry and fresh build markers/logs without
 claiming that its terminal is attached or starting a duplicate. Then verify all of the following from their latest/current runs:
 
 - API watch completed its latest build successfully and is still watching.
@@ -414,9 +423,10 @@ Safari window acquired another task's tab. (Codex task: 01a0399b-e199-79d2-b4ec-
 Finish the report and task-fixture cleanup, then close and verify the exact tracked browser window. Stop the native
 frontend/API processes next so they cannot issue another write while Firebase creates its final private export:
 
-Stop each background role through its exact retained session handle: send Ctrl-C with `write_stdin`, wait for the
-session to exit, and verify the recorded launcher/child processes plus ports `4200 + N`, `3000 + N`,
-`9230 + N`, and `9476 + N` are gone. A finished tool session alone does not prove all descendants stopped.
+Stop each default background role through its exact retained screen name: send Ctrl-C with
+`/usr/bin/screen -S "aimvsN-<role>" -p 0 -X stuff $'\003'`, wait for that screen session to exit, and verify the
+recorded launcher/child processes plus ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone. A missing
+screen socket alone does not prove all descendants stopped.
 If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
 and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
 close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it.

@@ -1,7 +1,7 @@
 # Optional standalone terminals
 
 Read this only when Ethan explicitly requests a standalone terminal or a retained stack already uses iTerm.
-The default for new agent-owned nonzero launches is a controllable background command session; use
+The default for new agent-owned nonzero launches is a detached macOS `screen` session; use
 `stack-lifecycle.md` for its startup, health, retention, and shutdown rules. Never migrate a healthy stack solely
 to make its terminal visible.
 
@@ -136,7 +136,6 @@ require exactly one matching prompt and one `OK` button before pressing it, then
 no longer visible; iTerm can retain an invisible stale scripting
 object after a successful close, so `exists` is not a valid success check. Do not leave this dialog for the user or
 confirm an unverified iTerm prompt.
-
 
 Then return to `stack-lifecycle.md` for the private-backend export/stop sequence, if the backend is being stopped.
 A native-process-only migration leaves the private backend and its data running.

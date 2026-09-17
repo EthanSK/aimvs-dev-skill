@@ -44,12 +44,15 @@ It defines the canonical source, guarded public mirror, and private-data safegua
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. Read-only port and log inspection is allowed.
-- Default agent-owned nonzero frontend, API-watch, and API-server processes to separate controllable long-running
-  command sessions. A visible terminal is optional; do not block startup on iTerm or integrated-panel attachment.
-  Retain exact session/process ownership, verify each latest build and startup, and do not promise survival across
-  quitting the host app. Preserve healthy existing sessions unless Ethan requests migration. The earlier iTerm-only
-  prohibition was explicitly reversed; do not reintroduce it. Follow `references/stack-lifecycle.md` for launch,
-  recovery, and shutdown. Stack 0 remains unchanged. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
+- Default newly launched nonzero frontend, API-watch, and API-server processes to separate detached macOS `screen`
+  sessions so they survive a task ending, the host app quitting, long idle periods, and clamshell sleep. A visible
+  terminal is optional; do not block startup on iTerm or integrated-panel attachment. Retain exact session/process
+  ownership and logs, verify each latest build and startup, and do not promise survival across logout or reboot.
+  Preserve healthy existing sessions unless Ethan requests migration. Ethan rejected task-owned command sessions as
+  the retained default after all three Stack 21 roles received simultaneous exit `-1` when their owning execution
+  ended; do not reintroduce that lifecycle. Follow `references/stack-lifecycle.md` for launch, recovery, and shutdown.
+  Stack 0 remains unchanged. (Codex tasks: 01a06eec-07f7-7aa1-a498-15f6334e4b91,
+  01a0a16f-d40c-7b10-b1da-e87175b0bcf7)
 - Create new linked worktrees only through `npm run aimvs-worktree -- create --task-slug=<task-slug>`. Keep the exact
   `aimvs<N>` number for every backend and native process, retain its shared reservation while the worktree exists, and
   release it only after guarded runtime cleanup and successful Git worktree removal. Existing unnumbered worktrees are
