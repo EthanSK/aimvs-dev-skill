@@ -46,3 +46,7 @@ partly restored index.
 Capture the new stash's immutable commit hash immediately and use that hash for every later inspect/apply command.
 Stash ordinals such as `stash@{0}` are shared across worktrees and can move when another task creates a stash, so a
 saved ordinal can silently replay another task's state into a recovery worktree.
+
+In zsh preservation loops, never name a scalar loop variable `path`: `path` is the shell's command-search array, so
+assigning an untracked filename to it makes later tools such as `shasum` disappear. Use a task-specific name such as
+`untracked_file`, and verify the complete sorted hash manifest before any mutation.

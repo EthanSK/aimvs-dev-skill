@@ -112,6 +112,8 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   permission. Read `references/authentication.md` before declaring authentication blocked or asking Ethan to sign in;
   it defines the exact approved account/origin scope and the narrow exception for an active browser tool's mandatory
   action-time confirmation. Reuse an approval already given for that exact sign-in after an interruption.
+- In zsh shell snippets, never assign a variable named `path`; zsh ties lowercase `path` to `PATH`, so reuse can make
+  every later command disappear. Use a descriptive name such as `candidate_file` instead.
 - Keep manual-test evidence in Markdown and PNGs. HTML report generation is disabled; preserve but do not run the
   dormant renderer, and leave existing `index.html` files unchanged unless Ethan explicitly re-enables it.
 - Keep **Preview Rendering** enabled by default on nonzero stacks. Disable it only for a deliberate lean-mode or
@@ -226,6 +228,13 @@ linked directly here so an agent never needs to discover operating instructions 
 
 ## Completion handoff
 
+Agent patches and shell writes do not trigger VS Code's format-on-save. After the final edit, run the existing
+`npm exec -- nx format:write --files=<explicit changed files> --sort-root-tsconfig-paths=false`, then
+`npm exec -- nx format:check --files=<same files>` and require success before handoff. Include new/untracked source
+and test files, preserve the staged snapshot, and inspect the formatter diff; never substitute `git diff --check`
+or passing tests for a format check. Use the repository's existing Prettier configuration without overrides, new
+watchers, or editor-setting changes unless an actual configuration fault is verified.
+
 Before this handoff, apply `references/stack-lifecycle.md`'s completion health gate to every running stack owned by the
 task. A failed latest build makes the task blocked rather than complete even when its ports and frontend URL respond.
 
@@ -240,6 +249,7 @@ their exact entry controls, including where to find them when below the items. A
 selection mode before clicking cards, because ordinary card clicks navigate. Self-improved — 2026-09-10: an omitted
 Select playlists prerequisite made a selection handoff ambiguous; verified the required mode in the Yours template.
 
-End every user-facing final AIMVS response with the environment footer defined by the host repository's
-`AGENTS.md` and its referenced project skill. Keep **Manual checks** before that footer; do not maintain a second
-footer format here.
+End applicable implementation, debugging, formal review, test, Git/worktree, dev-stack, and environment-status
+responses with the environment footer defined by the host repository's `AGENTS.md` and its referenced project skill.
+Ordinary code questions and read-only explanations do not need it. Keep **Manual checks** before that footer; do not
+maintain a second footer format here.
