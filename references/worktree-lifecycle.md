@@ -99,9 +99,11 @@ for the exact path and verify the result before continuing. (Codex task:
 
 ## Land and remove a completed worktree
 
-Treat a current instruction to land or merge a completed task and remove its worktree as authorization to stop that
-exact worktree's runtime unless Ethan explicitly says to keep it running. Before changing local `main`, run a fresh
-ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
+Treat a current instruction to land or merge a completed task or worktree as authorization and direction to complete
+its verified worktree cleanup unless Ethan explicitly says to retain the worktree, runtime, or stack reservation. Do
+not ask separately before stopping its exact runtime, removing its VS Code folder and Git worktree, or releasing its
+stack reservation. This authorization never includes deleting its branch or persistent volumes. Before changing local
+`main`, run a fresh ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
 stop, and retire its cleanup automation when one exists. Verify the browser and indexed ports are absent, no matching
 container is running, the runtime containers and network are released, every persistent and recovery volume remains
 unchanged, and the VS Code folder is absent before removing the Git worktree. The guarded stop releases runtime
