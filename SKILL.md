@@ -249,7 +249,7 @@ their exact entry controls, including where to find them when below the items. A
 selection mode before clicking cards, because ordinary card clicks navigate. Self-improved — 2026-09-10: an omitted
 Select playlists prerequisite made a selection handoff ambiguous; verified the required mode in the Yours template.
 
-Include the environment footer in every AIMVS message, including progress updates, short answers, code questions,
-read-only explanations, and final replies, as defined by the host repository's `AGENTS.md` and its referenced project
-skill. Check for it before sending each message. Keep **Manual checks**, when applicable, before that footer; do not
-maintain a second footer format here.
+Include the environment footer only in final AIMVS replies, as defined by the host repository's `AGENTS.md` and its
+referenced project skill. Before sending each message, check its phase: final replies have the footer; intermediate
+thinking steps, commentary, and progress updates do not. Keep **Manual checks**, when applicable, before that footer;
+do not maintain a second footer format here.
