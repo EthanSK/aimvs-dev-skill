@@ -208,10 +208,10 @@ linked directly here so an agent never needs to discover operating instructions 
    window on `Built-in Retina Display`, or one task-owned in-app Browser tab after the desktop browsers are exhausted.
    Stop if the applicable process/window or tab identity, URL, or worktree banner is ambiguous.
 4. Test a compact set of high-value flows that maximizes meaningful surface area across the requested behavior.
-   Inspect actual screenshot pixels yourself, then have the latest Claude Opus independently review only UI introduced
-   or changed by the current task and regressions those changes caused. Do not ask it to redesign or polish unrelated
-   pre-existing UI. Also inspect emulator state, frontend/API/emulator logs, and relevant UI state;
-   DOM/Accessibility state and the second opinion do not replace your own visual judgment.
+   Inspect actual screenshot pixels yourself, including task-owned UI changes and regressions in affected shared
+   surfaces. Keep that review in the current task; do not invoke Opus or require a second model or approval.
+   Ethan removed the mandatory Opus step on 2026-09-21. Also inspect emulator state, frontend/API/emulator logs,
+   and relevant UI state; DOM/Accessibility state does not replace your own visual judgment.
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, and close the
    exact test tab/window. After the final relevant source or configuration edit, pass the complete live-stack health
    gate before declaring a running stack healthy or completing the handoff. Leave the exact healthy nonzero native
