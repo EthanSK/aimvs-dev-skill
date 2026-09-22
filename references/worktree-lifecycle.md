@@ -4,6 +4,13 @@ Read this reference before any AIMVS task/thread is created, forked, or handed o
 and before a worktree is created, selected, reused, renamed, or removed. The task must apply these rules before doing
 ordinary AIMVS work because a task-creation API can otherwise create the wrong worktree before the skill loads.
 
+## Mandatory source-worktree gate
+
+Every source-changing AIMVS task must create or reuse its named linked worktree before the first mutation. The primary
+`main` checkout is read-only for implementation, fixes, tests, formatting, generation, and skill edits. If work began
+in `main`, stop, preserve the exact Git state, move only the task-owned changes into the named worktree, and continue
+there. The only exception is the narrowly defined primary-checkout `AGENTS.md` instruction-sync workflow below.
+
 ## Choose the task environment first
 
 - Create a new AIMVS task against the normal AIMVS project/main environment. Never ask Codex Desktop or an equivalent
