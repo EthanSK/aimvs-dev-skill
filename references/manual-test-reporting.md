@@ -176,7 +176,10 @@ overwrite an earlier screenshot.
 ## Inspect the actual screenshot pixels
 
 After every capture, load each PNG into the model's visual context with a read-only image inspection tool such as
-`view_image`. The agent performing the test must actually look at and reason from the pixels. A successful capture,
+`view_image`. The agent performing the test must inspect the screenshots itself. Do not use Opus or another external
+model for screenshot review unless Ethan explicitly requests it, and do not treat the absence of an external review
+as a verification gap. Record your own inspection and any issues in the report. Ethan rejected mandatory Opus
+screenshot review; do not reintroduce it. (Codex task: 01a0bec3-1668-72a3-9dcf-84048fd382db) A successful capture,
 nonzero dimensions, captions, Markdown metadata, DOM or Accessibility state, and logs do not prove that the UI looks
 right.
 
