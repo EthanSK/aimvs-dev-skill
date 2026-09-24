@@ -50,3 +50,10 @@ saved ordinal can silently replay another task's state into a recovery worktree.
 In zsh preservation loops, never name a scalar loop variable `path`: `path` is the shell's command-search array, so
 assigning an untracked filename to it makes later tools such as `shasum` disappear. Use a task-specific name such as
 `untracked_file`, and verify the complete sorted hash manifest before any mutation.
+
+## Verify selected Jest specs
+
+- For a spec under `+state`, pass its filename to Nx Jest's `--testFile` and require a Jest `Tests:` total. A full path
+  containing `+` can exit successfully with “No tests found”; Nx success alone does not prove that the suite ran.
+  Self-improved — 2026-09-23: full `+state` paths ran zero tests, while filename reruns executed 63 and 48 tests
+  (Codex task: 01a0c563-e671-72e2-8815-406eda717990).

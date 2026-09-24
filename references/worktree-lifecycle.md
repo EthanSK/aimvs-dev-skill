@@ -89,7 +89,11 @@ code --add "$WORKTREE_DIR"
 
 Use `code --status` before and after to verify the last active window is the AIMVS workspace and that both main and
 the exact worktree appear under `Workspace Stats`. Do not open a separate VS Code window when the main workspace is
-already open.
+already open, including a diagnostic Extension Development Host. Before any VS Code launch, check the active
+workspace and display-routing rules; if that workspace cannot be used safely, report the IDE-verification blocker
+instead of opening another window. Self-improved — 2026-09-23: the spec-error investigation opened a diagnostic
+host before discovering the Mac was locked; checking this gate first avoids that unneeded window. (Codex task:
+01a0c563-e671-72e2-8815-406eda717990)
 
 When explicitly removing a worktree, first complete every matching stack/browser cleanup rule in
 `stack-lifecycle.md`, then remove its VS Code folder and verify it is absent before removing the Git worktree:
