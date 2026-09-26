@@ -77,14 +77,16 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media
   window, and unrelated app. An in-app Browser overflow session stays in one exact task-owned agent tab and has no
   macOS window or physical-display assignment; preserve every pre-existing browser tab.
-- While Ethan is actively using the Mac, keep every manual browser action background-only. Try each discrete action
-  once with an exact-window method known not to activate, raise, or reorder the browser; retry once only when another
-  background-safe exact-window method adds a distinct capability. A manual-test request does not authorize foregrounding.
-  Never use a method known to bring Firefox or another test browser forward unless Ethan explicitly asks for foreground
-  interaction in the current task. If background control is unavailable or any method unexpectedly brings the browser
-  forward, stop browser input immediately, preserve Ethan's current focus, and continue only non-UI work. Re-verify the
-  exact task window, URL, display, and postcondition after every background-safe attempt, never use global input, and
-  never retry a consequential action unless its postcondition proves the earlier attempt did not occur. (Codex tasks:
+- Prefer background-safe, exact-window browser control while Ethan uses the Mac. An explicit manual-test request
+  also authorizes foreground input and visual inspection in the verified agent-owned test window when needed; do not
+  ask for separate foreground approval or declare the test blocked solely because input activates that window. Keep
+  it on `Built-in Retina Display`, preserve unrelated windows and active media, and never use unscoped global input.
+  Re-verify the exact task window, URL, display, and postcondition after each material action; if concurrent user
+  input changes the target or focus, stop that input attempt and re-identify the task window yourself. Never ask Ethan
+  whether browser windows are free or make window availability a waiting-on-you item; follow the recovery checks in
+  `references/browser-control.md` while preserving actual competing user input. Never retry a consequential action
+  unless its postcondition proves the earlier attempt did not occur.
+  User correction — 2026-09-24: the former background-only gate blocked an already-requested manual test. (Codex tasks:
   01a024ca-37e3-7883-89fe-f3233fb75a94, 01a024f9-f80c-71c0-9005-51c76fc2e18d,
   019fe81d-3690-71d3-820f-2a1ca360dcb4, 01a0357e-e591-7381-bc21-f9b5f93ccee7,
   01a0361a-9cf7-7dc3-b1b6-381b783854d5, 01a05d3b-2e6b-7f23-8ad8-9748c7dbf858)
