@@ -10,4 +10,4 @@ Read before any AIMVS local dev-environment, dev-stack, emulator, or fixture ope
 
 ## Dev-only code and fixtures
 
-- Never add or retain production code solely for dev tooling or fixtures. Keep dev-only response fields, helpers, and behavior in dev-only modules, and keep fixture generation and dev-only orchestration in `*.dev.*` files; normal services expose only reusable domain operations required by production callers, never `ForDev` entry points.
+- Never add or retain production code solely for dev tooling or fixtures. Developer stuff must work around normal production behaviour, not change fundamental code or make normal startup slower to accommodate an artificial reset state. Before finishing a dev reset, check that its stored state and browser selections satisfy existing production assumptions and remove any production workaround added solely for that reset. Keep dev-only response fields, helpers, and behavior in dev-only modules, and keep fixture generation and dev-only orchestration in `*.dev.*` files; normal services expose only reusable domain operations required by production callers, never `ForDev` entry points.
