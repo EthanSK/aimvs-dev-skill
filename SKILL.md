@@ -41,7 +41,7 @@ It defines the canonical source, guarded public mirror, and private-data safegua
 
 ## Universal safeguards
 
-- Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task.
+- Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task. Starting a stack for Ethan's own manual checks does not authorize agent browser interaction.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. Read-only port and log inspection is allowed.
 - Default newly launched nonzero frontend, API-watch, and API-server processes to separate detached macOS `screen`
@@ -243,6 +243,12 @@ watchers, or editor-setting changes unless an actual configuration fault is veri
 
 Before this handoff, apply `references/stack-lifecycle.md`'s completion health gate to every running stack owned by the
 task. A failed latest build makes the task blocked rather than complete even when its ports and frontend URL respond.
+
+When a task has any planned manual app check that needs AIMVS running, start or reuse the exact worktree's reserved
+nonzero dev stack, pass its full health gate, and leave it running with a useful URL. Do this before the handoff, even
+without a separate stack request. Do not start a stack just because its number was reserved or when no live manual
+check is needed. User request
+— 2026-09-28: "If there's any manual test, it should boot up." (Codex task: 01a0e9a9-c43a-7610-a8e4-fb75a58741d4)
 
 Before the environment footer, end every completed implementation or review with a **Manual checks** section containing one to three concise,
 high-value tests Ethan can perform against the current change set (`PR` shorthand). Choose the smallest set that best
