@@ -187,6 +187,7 @@ Inspect the whole visible app window at useful detail, not only the control unde
 surrounding UI for clipped, overlapping, obscured, or off-screen elements; unexpected wrapping; misalignment or
 inconsistent spacing; missing text or icons; wrong layering; broken responsive layout; and stale loading, disabled,
 or error feedback. Confirm that every screenshot actually supports its caption and **What this proves** claim.
+For spacing or alignment fixes, reproduce the exact content state in Ethan's report and compare the visible edges he named, such as a floated label, a single-line avatar, and the bottom outline; equal CSS padding or a different wrapped state is not proof. Check empty, short, and wrapped values when their row heights differ, and record the measured gaps and unchanged field height before passing. Self-improved — 2026-09-28: the earlier Channel review checked wrapped names but missed the reported single-line avatar; see the stack 13 spacing entries in `_manual-test-results/2026-09-28-search-prefix-icons/manual-test-results.md` (Codex task: 01a0e8c6-c803-70c2-a1e0-37e123b6dd11).
 For a before/after visual regression, reproduce the baseline's interaction state and browser-viewport geometry where
 practical; otherwise label each unavoidable difference so the review does not confuse geometry or hover/focus state
 with a rendering change.
@@ -268,8 +269,7 @@ Before finishing, verify that:
 Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
 automatically open any evidence file at the end of the task.
 
-Do not stage or commit the folder unless the user asks. When they request the related implementation commit, keep the
-report folder and screenshots with those code changes unless he explicitly excludes the images.
+Never stage screenshots; Ethan stages those himself. Leave the report unstaged unless Ethan explicitly asks you to stage the report. Before handing back a manual test, check `git diff --cached --name-only -- _manual-test-results` and unstage only screenshots or reports staged by this task's agents, preserving their files, all other index entries, and any evidence Ethan staged himself. A request to commit related implementation does not authorize an agent to stage screenshots.
 
 Always include the newest report entry's **Points of weirdness** in the final response so the user sees them without
 opening the report. State `None` explicitly when the section is empty.
