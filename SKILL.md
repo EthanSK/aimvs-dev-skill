@@ -43,7 +43,10 @@ It defines the canonical source, guarded public mirror, and private-data safegua
 
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task. Starting a stack for Ethan's own manual checks does not authorize agent browser interaction.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
-  action. Read-only port and log inspection is allowed.
+  action. A request to fix dev stack 0 authorizes restarting only the affected stack-0 process when needed; verify
+  its owner first, and export the shared Firebase data before restarting that backend. It does not authorize agent
+  browser tests or unrelated service restarts. Read-only port and log inspection is allowed. User clarification —
+  2026-09-29.
 - Default newly launched nonzero frontend, API-watch, and API-server processes to separate detached macOS `screen`
   sessions so they survive a task ending, the host app quitting, long idle periods, and clamshell sleep. A visible
   terminal is optional; do not block startup on iTerm or integrated-panel attachment. Retain exact session/process

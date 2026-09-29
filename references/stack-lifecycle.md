@@ -52,14 +52,17 @@ Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`
 ## Ethan's main environment
 
 Stack 0 is exclusively Ethan's main VS Code environment. Agents must never start, stop, restart, restore, or use
-stack 0 for their own tests unless Ethan explicitly asks for that exact stack 0 action. Read-only port and log
-inspection is allowed. Testing source from the main checkout still uses a free nonzero stack index.
+stack 0 for their own tests unless Ethan explicitly asks for that exact stack 0 action. Asking to fix dev stack 0
+authorizes restarting only the affected process when needed after its owner is verified; a shared Firebase backend
+restart still requires the verified one-shot export below. Read-only port and log inspection is allowed. Testing
+source from the main checkout still uses a free nonzero stack index. User clarification — 2026-09-29.
 
 For questions such as "what is causing the API debug log error?", read the checkout-root `api-debug.log` directly
 with shell tools first; do not open or operate VS Code/Computer Use merely to read API errors. The API truncates
 this file on server start, so it represents the current API session. If stack 0 is missing or unhealthy, report it
-to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action. Agents
-must never invoke `Restore Terminals` for stack 0 on their own.
+to Ethan and leave it alone unless he explicitly asks for the exact start, stop, restart, or restore action, or asks
+to fix dev stack 0 and an affected process needs restarting. Agents must never invoke `Restore Terminals` for
+stack 0 on their own.
 Every stack-0 terminal group in `.vscode/restore-terminals.json` must set `cwd` to
 `${workspaceFolder:ai-music-video-studio}`, and every restored shell command must source the primary sibling's
 `tools/scripts/set-main-worktree-dir.sh` before starting. This second guard corrects a terminal that still inherits
