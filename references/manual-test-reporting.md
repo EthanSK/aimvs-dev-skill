@@ -51,21 +51,20 @@ _manual-test-results/**/*.png filter=lfs diff=lfs merge=lfs -text
 
 The report generator refuses screenshots whose resolved `filter` attribute is not `lfs`, preventing a later commit
 from silently adding large binary blobs to ordinary Git history. Before a requested commit, verify the relevant
-paths with `git check-attr filter -- <path>`; after staging only when explicitly requested, verify the staged
-screenshots appear in `git lfs ls-files`. When introducing this rule to a repository that already tracks manual-test
-PNGs as ordinary blobs, include `git add --renormalize _manual-test-results` in that explicitly requested staging
-operation; never stage or renormalize pre-emptively.
+paths with `git check-attr filter -- <path>`; if Ethan has staged screenshots, check them with read-only
+`git lfs ls-files`. When introducing this rule to a repository that already tracks manual-test
+PNGs as ordinary blobs, report the required renormalization to Ethan; do not stage or renormalize screenshots yourself.
 
 After restoring a dirty worktree through a stash or rebase, inspect every untracked manual-test PNG's actual file
 type before accepting the recovery. Git can restore an untracked LFS screenshot as its small text pointer, which
-makes image viewers fail even though the filename still ends in `.png`. For each pointer, require its recorded object
-to exist in the shared local LFS store, match both the recorded SHA-256 and size, and contain PNG bytes before
-atomically materializing that exact object at the screenshot path; never stage the recovery merely to trigger LFS.
-(Codex task: 01a024c0-a524-7960-a57e-f9fa68536e4c)
+makes image viewers fail even though the filename still ends in `.png`. Report any such pointer and its verified LFS
+object to Ethan; do not overwrite or automatically repair the screenshot. LFS pointer incident: Codex task
+01a024c0-a524-7960-a57e-f9fa68536e4c. User correction — 2026-09-29 (Codex task:
+01a0e8ca-6772-7251-8d07-9979d45bcb56).
 
 Keep this exact visible guardrail directly below the Markdown title:
 
-> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records. Remove only outdated unstaged screenshots; leave staged screenshots untouched.
+> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records. Leave screenshot files and their Git staging untouched after capture; report outdated evidence instead.
 
 ## Capture only important settled states
 
@@ -80,14 +79,12 @@ Never revert, reimplement, or temporarily resurrect earlier product behavior sol
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
 
-At the end of every manual test, audit this worktree's task-owned screenshots against the current UI and fresh Git
-status. Remove an outdated screenshot only when it has an unstaged change or is untracked and has no staged change.
-Leave staged screenshots untouched, including paths with both staged and unstaged changes; never stage, unstage,
-overwrite, or delete them for this cleanup. Leave clean tracked screenshots alone too. For each removed image, remove
-only its `screenshots:` or legacy `proofs:` metadata from the working-copy report without changing the report's index
-entry. Keep older run text and every screenshot that still accurately documents current behavior; age alone is not
-evidence that an image is outdated. This cleanup keeps Ethan's unstaged review view current, not the full historical
-screenshot archive. (Codex task: 01a0696d-6ec6-7960-80f9-414b64bb4299)
+At the end of every manual test, audit this worktree's task-owned screenshots against the current UI. If a retained
+screenshot is outdated, record that limitation in the report; do not stage, unstage, overwrite, delete, or otherwise
+"correct" its file or Git state, regardless of whether it is staged, unstaged, or untracked. Keep older run text and
+metadata so Ethan can manage the evidence himself. New captures may still be created and annotated as part of this
+workflow; once retained, leave them alone. User correction — 2026-09-29 (Codex task:
+01a0e8ca-6772-7251-8d07-9979d45bcb56).
 
 Give every screenshot its own short title, literal caption, and narrow **What this proves** claim. The claim must not
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
@@ -191,6 +188,8 @@ For spacing or alignment fixes, reproduce the exact content state in Ethan's rep
 For a before/after visual regression, reproduce the baseline's interaction state and browser-viewport geometry where
 practical; otherwise label each unavoidable difference so the review does not confuse geometry or hover/focus state
 with a rendering change.
+For a reported interaction defect, replay the user's exact control, action order, timing, and pointer or focus position
+before marking it passed. Record a similar action as a separate scenario; it does not verify the reported reproduction.
 
 If a visual defect was caused by the current task and fixing it stays within scope, fix it automatically, reload or
 restart as needed, rerun the focused flow, capture fresh evidence, and inspect it again. Never overwrite the original
@@ -269,7 +268,11 @@ Before finishing, verify that:
 Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
 automatically open any evidence file at the end of the task.
 
-Never stage screenshots; Ethan stages those himself. Leave the report unstaged unless Ethan explicitly asks you to stage the report. Before handing back a manual test, check `git diff --cached --name-only -- _manual-test-results` and unstage only screenshots or reports staged by this task's agents, preserving their files, all other index entries, and any evidence Ethan staged himself. A request to commit related implementation does not authorize an agent to stage screenshots.
+Leave manual-test reports unstaged unless Ethan explicitly asks to stage a report. Never stage or unstage PNG
+screenshots, including to "correct" ones Ethan staged himself; do not overwrite or delete captured screenshots.
+Do not commit the report folder unless Ethan asks. For a requested implementation commit, preserve his exact staged
+evidence snapshot. User corrections — 2026-09-28 and 2026-09-29 (Codex task:
+01a0e8ca-6772-7251-8d07-9979d45bcb56).
 
 Always include the newest report entry's **Points of weirdness** in the final response so the user sees them without
 opening the report. State `None` explicitly when the section is empty.

@@ -373,6 +373,10 @@ Require narrow status/error matching and redaction before emitting log excerpts;
 `sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
+Before running a log-read command, check its text for an unfiltered `head`, `tail`, `sed`, or `cat`; replace it with a
+script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text.
+Self-improved — 2026-09-29: this command preflight would have stopped a raw log tail during a layout retest from
+surfacing an App Check debug token (Codex task: 01a0e8ca-6772-7251-8d07-9979d45bcb56).
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
 the secret without inserting the marker.
 Filter returned browser-log entries in memory and redact their messages before emitting them; never treat a tool's

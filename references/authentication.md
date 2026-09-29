@@ -67,6 +67,10 @@ visible Sign In button under the authorization above. Never inspect browser stor
 profiles, and never emit credential values through tool output. Keep form snapshots and screenshots out of the
 credential-entry interval. Verify the authenticated redirect and account-only UI exactly as for a desktop browser.
 
+Ethan explicitly wants agents to use the saved `.secret.local` test password for requested AIMVS browser tests. If
+Safari asks for the Mac password to unlock AutoFill, dismiss that prompt and enter the saved AIMVS credentials in the
+ordinary sign-in form instead of asking Ethan to unlock AutoFill.
+
 Safari may cover the app with Auto-Complete or `Update Password` popovers during and after sign-in. Press Escape
 to dismiss each popover, then refresh Computer Use accessibility state before deciding whether sign-in failed or
 reusing an element index. The authenticated redirect may already have completed behind an `Update Password`
