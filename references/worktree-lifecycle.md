@@ -68,6 +68,20 @@ worktree, then verify both the linked worktree and primary checkout immediately 
 Do not rename existing unnumbered worktrees merely to apply this convention. They remain legacy-compatible until
 removed, but every new linked worktree must use the helper and the `aimvs<N>-<task-slug>` form.
 
+## Add the full worktree name to the current Codex chat name
+
+Once the task's worktree and dev stack have been chosen, add the full worktree directory name to the end of the
+current Codex chat name so Ethan can see it quickly. Use ` — <full worktree directory name>`, for example
+`🎬 Defer clip resets until generate — aimvs2-outdated-clip-outputs`. Use the verified source worktree's basename,
+not its full path, branch name, shortened slug, or another chat's worktree. A numbered worktree's reserved stack
+is already chosen before startup; naming does not require starting that stack. User-requested — 2026-09-30.
+
+Apply the suffix after the global new-chat naming workflow, preserving its emoji and descriptive title. Use the
+exact current task ID and the supported Codex title tool, then read back the title. Keep exactly one worktree
+suffix: preserve it through later title changes, and replace the old suffix when this task's verified worktree
+changes. Do not rename other chats as part of this step. Before handoff, check the current chat title against the
+task's verified source worktree; report an unavailable title tool or failed readback instead of claiming success.
+
 ## Rename an active worktree
 
 Rename only when Ethan explicitly requests it. First resolve the owning task and live processes, fingerprint the

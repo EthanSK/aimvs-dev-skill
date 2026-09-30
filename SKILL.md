@@ -209,7 +209,9 @@ linked directly here so an agent never needs to discover operating instructions 
 
 1. Before choosing a task environment or worktree, follow `references/worktree-lifecycle.md`. Then confirm the
    requested action is authorized, identify the exact worktree, preserve its staged, unstaged, untracked, ignored,
-   browser, emulator, and dev-stack state, and read every other matching reference above.
+   browser, emulator, and dev-stack state, and read every other matching reference above. After the worktree and
+   reserved dev stack are chosen, follow that reference's chat-naming step to append the full worktree name after
+   global new-chat naming, and verify the suffix again before handoff.
 2. For a manual test, use the exact stack reserved in a numbered worktree's name; only a legacy unnumbered worktree or
    primary-main test selects a free unreserved nonzero stack. Assign the browser surface, prepare ignored local
    dependencies, start or reuse only the permitted processes, and pass the complete pre-Computer-Use health gate.
