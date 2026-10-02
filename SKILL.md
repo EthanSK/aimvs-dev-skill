@@ -117,6 +117,7 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
   and error payloads.
+- Before displaying frontend or API debug logs, filter token-bearing startup lines and redact sensitive payloads; never use an unfiltered `tail` that can print an App Check debug token. Self-improved — 2026-09-29: a raw stack log read exposed its token line in task output; this check makes the existing no-token rule actionable. (Codex task: 01a09727-c5e5-7672-9047-e0f448963715)
 - Treat the saved AIMVS test-account sign-in as part of an explicitly requested manual test, not a new task requiring
   permission. Read `references/authentication.md` before declaring authentication blocked or asking Ethan to sign in;
   it defines the exact approved account/origin scope and the narrow exception for an active browser tool's mandatory

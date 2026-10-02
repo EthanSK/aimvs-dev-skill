@@ -114,6 +114,10 @@ is under test, exclude the sensitive entry portion and state that limitation in 
 If Chromium DevTools was opened during the test, reset any temporary network preset, close DevTools, and verify the
 tracked window shows only the app before capturing. Never retain a DevTools screenshot: its Console can expose the
 App Check debug token even when the tested panel itself looks harmless.
+Immediately before capture, inspect fresh Accessibility state for DevTools panels and confirm the captured pixels
+contain only the app; record measurements separately from proof images. Self-improved — 2026-09-30: a progress-gap
+capture still showed Console and Network Conditions despite the existing rule (Codex task:
+01a09727-c5e5-7672-9047-e0f448963715).
 
 After creating and verifying the dedicated desktop-browser window and `TEST_WINDOW_ID`, wait for an important state
 to settle and capture it:

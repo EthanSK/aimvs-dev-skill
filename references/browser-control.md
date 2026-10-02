@@ -280,6 +280,12 @@ For each discrete click, keypress, text entry, drag, navigation, or browser-cont
    input on the verified task window and recheck its identity before each material action.
 3. Re-verify ownership and the postcondition after each attempt. Never retry a consequential or state-changing
    action unless the postcondition proves the earlier attempt did not occur.
+   For fixture buttons, a changed Accessibility index or missing immediate diff is ambiguous: check the loading
+   state, snackbar and emulator fixture counts before retrying, then derive the button from a fresh full snapshot.
+   Let each fixture request finish before a full page navigation/reload: closing its connection can clean request
+   temporary files while the backend batch is still writing, creating a test-induced partial failure.
+   Self-improved — 2026-09-30: stale indices and an ambiguous retry created duplicate local fixtures during the
+   Stack 25 sweep; fresh full-snapshot label selection and completion readback prevented further duplicates.
 4. If concurrent user input changes focus or target, stop that action and re-identify the task window; never reclaim
    focus from a newer user action.
 
