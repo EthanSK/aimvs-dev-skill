@@ -141,7 +141,12 @@ the worktree's assigned report directory with `prepare-manual-test-report.mjs`, 
 `screenshot({ fullPage: false })` through `$browser:control-in-app-browser`, and save those returned PNG bytes under a
 new timestamped `.png` filename in that exact report directory. The in-app Browser can return JPEG bytes even though
 the capture is destined for a PNG report; after inspecting the raw pixels, run
-`normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>` and require actual PNG bytes before annotation.
+`normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>`, then run
+`file -b --mime-type <absolute-path>` and require `image/png` before annotation; the `.png` extension and a successful
+image preview do not prove PNG bytes. Self-improved — 2026-10-02: the picker-free upload test missed normalization and
+the annotation helper rejected JPEG captures; the signature check catches this before annotation. Evidence:
+`_manual-test-results/2026-10-02-uploads-without-picker/manual-test-results.md` (Codex task:
+`01a0fcfd-381c-7361-90da-28b9479c768a`).
 When the task's root CWD differs from the verified target worktree, pass only absolute paths inside that target
 worktree to `apply_patch` and every other file-writing tool for temporary captures and final evidence; a relative path
 can resolve in main or a sibling worktree and leave an orphan outside the task's ownership. Verify every temporary

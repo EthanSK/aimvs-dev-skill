@@ -7,6 +7,7 @@
 - [Browser assignment](#browser-assignment)
 - [Best-effort browser-page muting](#best-effort-browser-page-muting)
 - [Background browser control while the user is using the Mac](#background-browser-control-while-the-user-is-using-the-mac)
+- [Picker-free frontend upload tests](#picker-free-frontend-upload-tests)
 - [Close the dedicated test browser window](#close-the-dedicated-test-browser-window)
 - [Browser crash and recovery](#browser-crash-and-recovery)
 
@@ -377,6 +378,61 @@ the existing browser-assignment fallback when the task permits it, without comma
 Before any browser-related question or handoff, verify that fresh state and already-authorized recovery routes cannot
 resolve the problem. Report only a concrete remaining control or ownership limitation, not a request for availability
 approval. User correction — 2026-09-26.
+
+## Picker-free frontend upload tests
+
+For agent-run upload tests that can use disposable fixtures, prefer the real frontend pipeline without opening a
+native macOS file picker. This applies to the in-app Browser and assigned Safari, Firefox or Opera test windows.
+Use the browser-assignment and exact-window ownership rules above; picker-free uploads do not themselves guarantee
+background native-window control or zero focus changes. Use a supported direct file-input API if the assigned controller
+actually exposes one. Chooser interception followed by `setFiles` does not prove that a native panel never appears;
+do not treat it as evidence of picker-free operation.
+
+When direct input assignment is unavailable, use this verified temporary development-only fixture handoff:
+
+1. Use the task-owned named worktree, its nonzero isolated stack and its assigned browser page or dedicated external
+   browser window. Record
+   baseline asset IDs and the exact source content before adding the hook.
+2. Load a fixed-fixture JavaScript script before Angular bootstrap through the existing development-serve guard in
+   `apps/frontend/plugins/frontend-build-status.dev.cjs`, using `setFrontendBuildInIndexHtml`. Keep the script in
+   task-owned scratch storage and require its exact stack origin. Do not change production components, add an
+   arbitrary-local-file endpoint, or mutate the page through browser automation `evaluate`.
+3. In a capture-phase document click listener, match the upload file input and call `event.preventDefault()`
+   synchronously, before any `await`, to cancel its native-picker default action. Generate only disposable fixture
+   bytes, such as a canvas PNG. Add their `File` objects to a `DataTransfer`, assign its `files` to the input, then
+   dispatch a bubbling `change` event. Dispatch fixtures once per page and continue cancelling later picker clicks
+   until the hook is removed; never fall through to the native chooser after the first fixture dispatch.
+4. Click the normal Upload Assets control. Let the unchanged `onFileSelected`, staging and content-validation code
+   process the fixtures, then click the normal Upload control. Include an unsupported fixture when checking rejection;
+   do not pre-stage a session or seed an asset through the API and call that frontend upload coverage.
+5. Verify rejection/preview, enabled Upload after validation, progress, completion and persistence after reload. Check
+   the exact asset, consumed upload token, original bytes/hash, thumbnail and download object in the owned emulators.
+   Capture and inspect the normal UI states using the existing manual-test reporting procedure.
+6. Remove only this run's disposable documents and objects, preserving successful accounting history and baseline
+   data. Restore only the temporary source hook while preserving intervening edits, delete scratch files, restart the
+   owned frontend and verify its served HTML no longer contains the fixture script. Close the owned browser page and
+   retain its healthy worktree stack under the normal lifecycle rules.
+
+State the coverage boundary: generated files replace human selection; the actual frontend validation, upload,
+progress and completion run normally. This does not verify native file selection, desktop drag/drop, clipboard image
+paste, or independently measured macOS focus. If the requested test needs an exact real local file or native selection,
+report that limitation rather than silently substituting a fixture or opening the picker.
+
+The same source-loaded `DataTransfer` handoff was verified in Safari 26.6.2, Firefox 156.0.1 and Opera 136.0:
+each staged a generated PNG without a native picker, completed the normal frontend upload and retained its asset
+after reload. Stored originals and download objects matched the asset hashes; thumbnails and consumed/completed
+upload tokens were verified. Firefox also visibly rejected the unsupported text fixture. No browser-specific upload
+implementation was needed. Canvas PNG encoders produce different bytes between browsers, so verify each upload
+against its own recorded bytes/hash rather than requiring every browser to produce the same PNG. Recheck browser
+versions and controller capabilities on later runs; a browser name alone is not proof of direct file-input support.
+This local development fixture procedure does not make arbitrary websites or human-selected production uploads
+picker-free. Never silently fall back to a native picker when a required fixture cannot be supplied.
+
+User-requested — 2026-10-02: preserve the working picker-free method as an instruction, rather than only in its test
+report. Verified with a rejected text fixture and a successful 960 × 540 PNG upload, matching stored bytes/hash,
+thumbnail, progress and reload persistence (Codex task: `01a0fcfd-381c-7361-90da-28b9479c768a`).
+User-requested — 2026-10-02: test and adapt the procedure for the external browsers we use. Browser evidence is in
+`_manual-test-results/2026-10-02-uploads-without-picker/manual-test-results.md` in the originating task worktree.
 
 ## Close the dedicated test browser window
 
