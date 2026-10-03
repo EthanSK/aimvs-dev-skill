@@ -345,6 +345,9 @@ Before the first browser or Computer Use action for a worktree, and again after 
 process restart, inspect current output from that worktree's three exact retained screen logs (or its existing
 standalone terminal sessions without raising their window). Require API-watch, API-server, and frontend ownership to
 match the exact worktree and the same nonzero `--dev-stack-index=N`; the indexed Worker remains a private container.
+Repeat this gate in the current turn before creating a test browser page; earlier results or listener checks alone do
+not satisfy it. Self-improved — 2026-10-03: checking logs only after opening the test page missed a live dependency
+failure; the same-turn gate checks that boundary (Codex task: 01a09057-ebdc-7ab2-ad84-dcc9260f25f9).
 If a historical screen name or standalone-terminal handle is unavailable, verify current process ancestry and fresh build markers/logs without
 claiming that its terminal is attached or starting a duplicate. Then verify all of the following from their latest/current runs:
 
@@ -375,6 +378,11 @@ log format, including whitespace after the colon, and redact URL query credentia
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
 Before running a log-read command, check its text for an unfiltered `head`, `tail`, `sed`, `cat`, or sliced string prefix; replace it with a
 script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text. Extract timestamps instead of printing truncated log lines. Self-improved — 2026-10-01: a Python prefix check missed this existing guardrail; the command preflight must cover slicing too (Codex task: 01a09727-c5e5-7672-9047-e0f448963715).
+Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
+not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
+synthetic `App Check debug token: <value>` entry that also matches the route filter and require `[REDACTED]` or omission.
+Self-improved — 2026-10-01: a route-filtered inline script still selected a startup token; this emission check covers
+the gap left by shell-command preflight (Codex task: 01a09057-ebdc-7ab2-ad84-dcc9260f25f9).
 Self-improved — 2026-09-29: this command preflight would have stopped a raw log tail during a layout retest from
 surfacing an App Check debug token (Codex task: 01a0e8ca-6772-7251-8d07-9979d45bcb56).
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
