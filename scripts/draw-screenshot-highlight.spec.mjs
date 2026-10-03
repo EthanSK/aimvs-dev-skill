@@ -83,13 +83,12 @@ describe('screenshot highlights', () => {
     });
   }
 
-  it('changes only the two-color outline pixels', () => {
+  it('leaves gaps between translucent outline dots and preserves the interior', () => {
     const width = 100;
     const height = 80;
-    const original = Buffer.alloc(width * height * 4);
-    for (let index = 0; index < original.length; index += 1) {
-      original[index] = index % 251;
-    }
+    const original = Buffer.alloc(width * height * 4, 100);
+    for (let offset = 3; offset < original.length; offset += 4)
+      original[offset] = 255;
     const highlighted = Buffer.from(original);
 
     const rectangle = drawHighlightPixels({
@@ -104,8 +103,22 @@ describe('screenshot highlights', () => {
       readPixel(highlighted, width, 0, 0),
       readPixel(original, width, 0, 0),
     );
-    assert.deepEqual(readPixel(highlighted, width, 25, 20), [255, 235, 0, 255]);
-    assert.deepEqual(readPixel(highlighted, width, 25, 17), [5, 5, 5, 255]);
+    const dot = readPixel(highlighted, width, 25, 20);
+    assert.ok(dot[0] > 100 && dot[0] < 255);
+    assert.ok(dot[1] > 100 && dot[1] < 235);
+    assert.ok(dot[2] > 0 && dot[2] < 100);
+    assert.equal(dot[3], 255);
+    for (const [x, y] of [
+      [31, 20],
+      [31, 60],
+      [25, 26],
+      [75, 26],
+    ]) {
+      assert.deepEqual(
+        readPixel(highlighted, width, x, y),
+        readPixel(original, width, x, y),
+      );
+    }
     assert.deepEqual(
       readPixel(highlighted, width, 50, 40),
       readPixel(original, width, 50, 40),

@@ -39,9 +39,10 @@ its one locally changed report folder; more than one is ambiguous and stops for 
 private assignment marker between worktrees; later capture and create commands use it to select the same folder even
 when several inherited folders are visible.
 
-`manual-test-results.md` is the append-only reviewer-facing artifact. HTML report generation is disabled: do not run
+`manual-test-results.md` is the append-only reviewer-facing artifact. HTML report generation is disabled, including generic Markdown-to-HTML viewers of this report: do not run
 `render-manual-test-report.mjs`, and do not create, update, or delete existing `index.html` files. Keep the dormant
 renderer code so Ethan can re-enable it later without rebuilding it.
+Self-improved — 2026-10-02: the generic response viewer bypassed the existing no-HTML rule; check the artifact type before invoking any viewer. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
 
 Store manual-test PNGs through Git LFS:
 
@@ -75,12 +76,21 @@ reviewer see a result, warning, loading boundary, error path, or regression-sens
 
 Keep decoded frames, contact-sheet inputs, generated fixtures, derivative media, probe outputs, and superseded recordings in a disposable temporary directory, never under `_manual-test-results` or another reviewable repository path. Retain only the few annotated final screenshots and explicitly requested final recordings that a reviewer will actually open; remove the temporary media after extracting the result.
 
+Keep exactly one final screenshot per capture: the inspected, annotated PNG. Raw captures, normalization inputs and annotation candidates stay in a task-owned temporary directory outside the repository until the final image passes visual review; then copy only that image into the assigned report folder and remove the temporary files. Never retain a raw/annotated pair or parallel `-dotted`, `-annotated` or similar copies of the same capture. Retained-capture protection begins after that final copy, not during temporary preparation. Before finishing, compare the new filenames and capture timestamps and require one retained PNG per capture. User correction — 2026-10-02: four raw captures and their dotted versions were both retained. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
+
 Never revert, reimplement, or temporarily resurrect earlier product behavior solely to capture visual evidence. The
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
 
-At the end of every manual test, audit this worktree's task-owned screenshots against the current UI. If a retained
-screenshot is outdated, record that limitation in the report; do not stage, unstage, overwrite, delete, or otherwise
+At the end of every manual test, audit this worktree's task-owned screenshots against the accumulated user requests,
+current UI, and fresh Git status. Check each applicable full page, embedded/sidebar view, and layout variant; matching
+current code does not prove the request was implemented. If Ethan asks for badges after a header, check that they
+share its row when space allows; placing them underneath is not equivalent. Before claiming all evidence is current, record each surface
+as verified or blocked and report gaps. For conditional badges, verify both shown and omitted states in their real
+caller layouts; a hiding class alone does not prove the badge is invisible. Self-improved — 2026-09-30: a full-page
+fix was missed in its Watch sidebar, a matching-but-wrong screenshot was accepted as current, and thumbnail CSS
+overrode a badge's hiding class; a below-heading row also failed the requested after-heading alignment. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
+If a retained screenshot is outdated, record that limitation in the report; do not stage, unstage, overwrite, delete, or otherwise
 "correct" its file or Git state, regardless of whether it is staged, unstaged, or untracked. Keep older run text and
 metadata so Ethan can manage the evidence himself. New captures may still be created and annotated as part of this
 workflow; once retained, leave them alone. User correction — 2026-09-29 (Codex task:
@@ -90,19 +100,22 @@ Give every screenshot its own short title, literal caption, and narrow **What th
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
 evidence in the scenario steps and supporting checks instead.
 
-Every retained evidence screenshot must burn one high-contrast yellow outline and short yellow review label into the
+Every retained evidence screenshot must burn one high-contrast, slightly translucent yellow dotted outline and short yellow review label into the
 final PNG so it is obvious in VS Code, source control, and any image viewer. This is mandatory even
 when the evidence concerns the whole window or animation over time. If no safe label position exists, recapture a
-composition that can be annotated or document the verification without retaining that screenshot. Keep highlights
-narrow and use at most one per screenshot. The agent chooses the rectangle, one concise explanatory sentence, and the
+composition that can be annotated or document the verification without retaining that screenshot. Leave extra space
+(normally 12–16 captured pixels, measured from the nearest dot edge) between the yellow outline and the highlighted control's own border, focus outline,
+text, and icons; also check that gap against neighboring rows and text, especially the line immediately below a badge. If a box around the badge cannot clear both lines, highlight a narrower evidence region or recapture. Self-improved — 2026-10-01: a Comment heading box cleared the badge border but crowded the following body line; compare all four stroke edges with adjacent content before accepting it. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3) Never trace directly over an existing outline. Keep highlights narrow and use at most one per
+screenshot. The agent chooses the rectangle, one concise explanatory sentence, and the
 nearest visually empty label position from the screenshot's proof claim and inspected pixels; the helper does not
 detect or guess any of them. Write the label like a quick update to a reviewer, such as `The dialog shows the parsed
 media error in full.` Do not split it into a title, dash, and description. Prefer a position
 immediately beside one outline edge; move farther away only when every nearby position would cover controls, text,
 visible media, or evidence. The label has yellow glyphs with a thin black outline and no background block, but it
 still must not touch meaningful UI or evidence.
-Inspect the full raw screenshot first, then inspect the annotated PNG again; move the text and regenerate from the raw
-screenshot if it covers anything. The annotation must never replace whole-window review. Never annotate a screenshot
+Inspect the full raw screenshot first, then inspect the annotated PNG again; zoom in and confirm the yellow stroke
+leaves the target's outlines and surrounding container readable through its gaps and slight translucency. Move the rectangle or label and regenerate from the raw screenshot if either
+touches useful UI. The annotation must never replace whole-window review. Never annotate a screenshot
 from an earlier run or draw a second annotation over an existing one. The helper keeps annotation text readable
 across landscape, square, and portrait screenshots and refuses to shrink below its readability floor; shorten the
 sentence if it reports that the label does not fit. Recapture instead when the selected area needs to change.
@@ -129,17 +142,17 @@ screenshot_info="$(bash .agents/skills/aimvs-dev/scripts/capture-manual-test-scr
 printf '%s\n' "$screenshot_info"
 REPORT_DIRECTORY="$(sed -n 's/^report_directory=//p' <<<"$screenshot_info")"
 SCREENSHOT="$(sed -n 's/^screenshot=//p' <<<"$screenshot_info")"
+RAW_SCREENSHOT="$(sed -n 's/^raw_screenshot=//p' <<<"$screenshot_info")"
 ```
 
 The capture helper uses ScreenCaptureKit's `desktopIndependentWindow` filter and refuses non-browser window IDs. It
 captures one PNG of only that exact window at up to 1920 pixels wide, without activating, raising, moving, or resizing
-it, then exits immediately. Never start a continuous recorder or fall back to display capture, rectangle capture,
+it into a task-owned temporary directory outside the repository, then exits immediately. Never start a continuous recorder or fall back to display capture, rectangle capture,
 Preview, OBS, QuickTime, or another capture path.
 
 For a task-scoped in-app Browser session, do not invent `TEST_WINDOW_ID` or call the ScreenCaptureKit helper. Prepare
 the worktree's assigned report directory with `prepare-manual-test-report.mjs`, call the tracked agent tab's
-`screenshot({ fullPage: false })` through `$browser:control-in-app-browser`, and save those returned PNG bytes under a
-new timestamped `.png` filename in that exact report directory. The in-app Browser can return JPEG bytes even though
+`screenshot({ fullPage: false })` through `$browser:control-in-app-browser`, and save the returned bytes in a task-owned temporary directory outside the repository, reserving one new timestamped `.png` filename for the final evidence. The in-app Browser can return JPEG bytes even though
 the capture is destined for a PNG report; after inspecting the raw pixels, run
 `normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>`, then run
 `file -b --mime-type <absolute-path>` and require `image/png` before annotation; the `.png` extension and a successful
@@ -147,8 +160,7 @@ image preview do not prove PNG bytes. Self-improved — 2026-10-02: the picker-f
 the annotation helper rejected JPEG captures; the signature check catches this before annotation. Evidence:
 `_manual-test-results/2026-10-02-uploads-without-picker/manual-test-results.md` (Codex task:
 `01a0fcfd-381c-7361-90da-28b9479c768a`).
-When the task's root CWD differs from the verified target worktree, pass only absolute paths inside that target
-worktree to `apply_patch` and every other file-writing tool for temporary captures and final evidence; a relative path
+When the task's root CWD differs from the verified target worktree, use absolute paths to the task-owned external temporary directory for capture preparation and inside the target worktree for final evidence; a relative path
 can resolve in main or a sibling worktree and leave an orphan outside the task's ownership. Verify every temporary
 capture path is absent from main and sibling worktrees after the final evidence is saved. (Codex task:
 01a0312f-5629-7b23-b7b1-4653b92e9dcc)
@@ -158,12 +170,13 @@ app viewport, record the filename for the report generator, and verify the tab I
 and after capture. Never use full-page or display capture as a substitute for the settled viewport the tester actually
 inspected. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
 
-After inspecting the raw PNG, always replace it atomically with one outlined and labelled version before retaining it
-as evidence. Express the rectangle as `left,top,width,height` percentages of the full screenshot:
+After inspecting the raw PNG, copy it to a candidate in the same temporary directory and annotate that candidate. Express the rectangle as `left,top,width,height` percentages of the full screenshot:
 
 ```bash
+ANNOTATED_SCREENSHOT="$(dirname "$RAW_SCREENSHOT")/annotated.png"
+cp "$RAW_SCREENSHOT" "$ANNOTATED_SCREENSHOT"
 bash .agents/skills/aimvs-dev/scripts/highlight-manual-test-screenshot.sh \
-  --screenshot "$REPORT_DIRECTORY/$SCREENSHOT" \
+  --screenshot "$ANNOTATED_SCREENSHOT" \
   --highlight "34.3,49,31.5,16.5" \
   --label "The dialog shows the parsed media error in full." \
   --label-position "50,41"
@@ -172,8 +185,7 @@ bash .agents/skills/aimvs-dev/scripts/highlight-manual-test-screenshot.sh \
 To convert a pixel rectangle or label position, divide each horizontal value by the screenshot width and each vertical
 value by its height, then multiply by 100. `--label-position` is the label's horizontal center and top edge. Put it in
 the nearest clean empty space beside the outline, not over controls, text, visible media, or the highlighted evidence.
-The helper rewrites the PNG itself while preserving its dimensions and original metadata. It does not add a
-viewer-only overlay.
+The helper rewrites the temporary candidate while preserving its dimensions and original metadata. It does not add a viewer-only overlay. Inspect that candidate's pixels, then require that `$REPORT_DIRECTORY/$SCREENSHOT` does not exist and copy only the accepted candidate there. Remove this capture's raw and candidate files after verifying the retained PNG. If annotation needs adjustment, regenerate the candidate from the temporary raw capture; never create a second retained version.
 
 If capture fails, do not substitute a broader capture mode or reuse an unrelated screenshot. Mark the visual evidence
 partial or blocked and continue with safe UI/emulator/log evidence when that still satisfies the requested test. Never
@@ -273,6 +285,7 @@ Before finishing, verify that:
 - the Markdown source still contains the insertion marker once and every older entry remains unchanged;
 - no `index.html` file was created, updated, or deleted;
 - the folder contains no credentials, logs, PID/state files, recordings, temporary captures, or unrelated artifacts.
+- each capture from this run has exactly one retained PNG, with no raw or alternate-annotation twin; temporary preparation files have been removed.
 
 Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
 automatically open any evidence file at the end of the task.

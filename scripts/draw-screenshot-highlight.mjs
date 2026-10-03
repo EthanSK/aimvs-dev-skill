@@ -5,8 +5,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-const black = [5, 5, 5, 255];
-const yellow = [255, 235, 0, 255];
+const black = [5, 5, 5, 160];
+const yellow = [255, 235, 0, 217]; // Decision: Slightly translucent dots leave the highlighted container visible; solid opaque outlines were rejected by Ethan. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
 const maximumLabelLength = 120;
 
 export function parseHighlight(value) {
@@ -92,7 +92,8 @@ export function drawHighlightPixels({
     height,
     left,
     right,
-    thickness: yellowThickness + 4,
+    spacing: yellowThickness * 3,
+    thickness: yellowThickness + 2,
     top,
     width,
   });
@@ -104,6 +105,7 @@ export function drawHighlightPixels({
     height,
     left,
     right,
+    spacing: yellowThickness * 3,
     thickness: yellowThickness,
     top,
     width,
@@ -378,79 +380,76 @@ function drawStroke({
   height,
   left,
   right,
+  spacing,
   thickness,
   top,
   width,
 }) {
-  const before = Math.floor((thickness - 1) / 2);
-  fillRectangle({
-    color,
-    channels,
-    data,
-    height,
-    left: left - before,
-    top: top - before,
-    width,
-    rectangleHeight: thickness,
-    rectangleWidth: right - left + thickness,
-  });
-  fillRectangle({
-    color,
-    channels,
-    data,
-    height,
-    left: left - before,
-    top: bottom - before,
-    width,
-    rectangleHeight: thickness,
-    rectangleWidth: right - left + thickness,
-  });
-  fillRectangle({
-    color,
-    channels,
-    data,
-    height,
-    left: left - before,
-    top: top - before,
-    width,
-    rectangleHeight: bottom - top + thickness,
-    rectangleWidth: thickness,
-  });
-  fillRectangle({
-    color,
-    channels,
-    data,
-    height,
-    left: right - before,
-    top: top - before,
-    width,
-    rectangleHeight: bottom - top + thickness,
-    rectangleWidth: thickness,
-  });
+  const horizontalSteps = Math.max(1, Math.floor((right - left) / spacing));
+  const verticalSteps = Math.max(1, Math.floor((bottom - top) / spacing));
+  for (let index = 0; index <= horizontalSteps; index += 1) {
+    const centerX =
+      left + Math.round(((right - left) * index) / horizontalSteps);
+    for (const centerY of [top, bottom]) {
+      fillDot({
+        channels,
+        color,
+        data,
+        height,
+        centerX,
+        centerY,
+        thickness,
+        width,
+      });
+    }
+  }
+  for (let index = 1; index < verticalSteps; index += 1) {
+    const centerY = top + Math.round(((bottom - top) * index) / verticalSteps);
+    for (const centerX of [left, right]) {
+      fillDot({
+        channels,
+        color,
+        data,
+        height,
+        centerX,
+        centerY,
+        thickness,
+        width,
+      });
+    }
+  }
 }
 
-function fillRectangle({
+function fillDot({
   channels,
   color,
   data,
   height,
-  left,
-  rectangleHeight,
-  rectangleWidth,
-  top,
+  centerX,
+  centerY,
+  thickness,
   width,
 }) {
-  const startX = Math.max(0, left);
-  const startY = Math.max(0, top);
-  const endX = Math.min(width, left + rectangleWidth);
-  const endY = Math.min(height, top + rectangleHeight);
-  for (let y = startY; y < endY; y += 1) {
-    for (let x = startX; x < endX; x += 1) {
+  const radius = thickness / 2;
+  const startX = Math.max(0, Math.ceil(centerX - radius));
+  const startY = Math.max(0, Math.ceil(centerY - radius));
+  const endX = Math.min(width - 1, Math.floor(centerX + radius));
+  const endY = Math.min(height - 1, Math.floor(centerY + radius));
+  const sourceAlpha = color[3] / 255;
+  for (let y = startY; y <= endY; y += 1) {
+    for (let x = startX; x <= endX; x += 1) {
+      if ((x - centerX) ** 2 + (y - centerY) ** 2 > radius ** 2) continue;
       const offset = (y * width + x) * channels;
-      data[offset] = color[0];
-      data[offset + 1] = color[1];
-      data[offset + 2] = color[2];
-      if (channels === 4) data[offset + 3] = color[3];
+      const destinationAlpha = channels === 4 ? data[offset + 3] / 255 : 1;
+      const outputAlpha = sourceAlpha + destinationAlpha * (1 - sourceAlpha);
+      for (let channel = 0; channel < 3; channel += 1) {
+        data[offset + channel] = Math.round(
+          (color[channel] * sourceAlpha +
+            data[offset + channel] * destinationAlpha * (1 - sourceAlpha)) /
+            outputAlpha,
+        );
+      }
+      if (channels === 4) data[offset + 3] = Math.round(outputAlpha * 255);
     }
   }
 }

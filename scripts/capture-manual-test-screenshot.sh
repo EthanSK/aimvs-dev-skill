@@ -35,20 +35,20 @@ REPORT_DIRECTORY="$(node "$SCRIPT_DIR/prepare-manual-test-report.mjs" --slug "$S
 TIMESTAMP="$(date '+%Y-%m-%d_%H-%M-%S')"
 SCREENSHOT_FILENAME="${TIMESTAMP}-${SLUG}.png"
 SCREENSHOT_PATH="$REPORT_DIRECTORY/$SCREENSHOT_FILENAME"
-TEMPORARY_PATH="$REPORT_DIRECTORY/.${SCREENSHOT_FILENAME}.tmp-$$.png"
 SOURCE_FINGERPRINT="$(shasum -a 256 "$SCRIPT_DIR/capture-browser-window.swift" | awk '{print $1}')"
 CAPTURE_BINARY="/tmp/aimvs-capture-browser-window-${UID}-${SOURCE_FINGERPRINT}"
-trap 'rm -f "$TEMPORARY_PATH"' EXIT
 
 if [[ -e "$SCREENSHOT_PATH" ]]; then
   printf 'Screenshot already exists: %s\n' "$SCREENSHOT_PATH" >&2
   exit 1
 fi
+CAPTURE_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/aimvs-manual-capture.XXXXXX")"
+RAW_SCREENSHOT_PATH="$CAPTURE_DIRECTORY/$SCREENSHOT_FILENAME"
+trap 'rm -rf "$CAPTURE_DIRECTORY"' ERR # Remove this capture's temporary directory if compilation or capture fails before the path can be handed back.
 if [[ ! -x "$CAPTURE_BINARY" ]]; then
   swiftc -parse-as-library "$SCRIPT_DIR/capture-browser-window.swift" -o "$CAPTURE_BINARY"
 fi
 
-CAPTURE_RESULT="$($CAPTURE_BINARY --window-id "$WINDOW_ID" --output "$TEMPORARY_PATH")"
-mv "$TEMPORARY_PATH" "$SCREENSHOT_PATH"
-printf 'report_directory=%s\nscreenshot=%s\n%s\n' \
-  "$REPORT_DIRECTORY" "$SCREENSHOT_FILENAME" "$CAPTURE_RESULT"
+CAPTURE_RESULT="$($CAPTURE_BINARY --window-id "$WINDOW_ID" --output "$RAW_SCREENSHOT_PATH")"
+printf 'report_directory=%s\nscreenshot=%s\nraw_screenshot=%s\n%s\n' \
+  "$REPORT_DIRECTORY" "$SCREENSHOT_FILENAME" "$RAW_SCREENSHOT_PATH" "$CAPTURE_RESULT"

@@ -100,6 +100,9 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   three-session limit. Never use Ethan's personal Chrome for an AIMVS manual test or create an ad hoc isolated
   desktop-browser profile; desktop browsers use their existing persistent profiles. (Codex task:
   01a03a49-3424-7e93-bcd8-f261515ba730)
+  Before the first browser call, compare the controller's browser ID with this assignment; a global browser skill's
+  Chrome allowance does not override AIMVS's prohibition. Self-improved — 2026-10-03: the prior outline check missed
+  that conflict; the final acceptance check used the permitted in-app Browser instead. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
 - Before the first manual-test interaction, treat muting the exact tracked agent-owned browser page as best effort.
   Use an available page-level browser or native UI control, verify it when practical, and keep it muted for the session;
   otherwise continue testing without asking Ethan or reporting a blocker, and note the limitation in the report.
@@ -266,7 +269,9 @@ proves the changed behavior, and give the exact starting state, action, and expe
 design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
 one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
 keep the section and say why instead of inventing one. Before sending, require a starting state, action, and expected
-result in each proposed check; a list of past test results does not satisfy this section. Name prerequisite modes and
+result in each proposed check; screenshot links or past test results do not satisfy this section. Check the final draft
+contains the **Manual checks** heading before sending, including small follow-up implementations whose wider audit is still pending. Self-improved — 2026-10-03: the Notifications follow-up omitted runnable checks while reporting a pending Playlist audit. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3) Self-improved — 2026-10-01: screenshot evidence and passed tests
+were reported without runnable checks. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3) Name prerequisite modes and
 their exact entry controls, including where to find them when below the items. A selection check must say to enter
 selection mode before clicking cards, because ordinary card clicks navigate. Self-improved — 2026-09-10: an omitted
 Select playlists prerequisite made a selection handoff ambiguous; verified the required mode in the Yours template.
