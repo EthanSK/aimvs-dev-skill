@@ -88,6 +88,8 @@ window. Never interpret that error alone as failure and never improvise a second
 non-activating browser or creation method first. For an explicitly requested manual test, use the guarded foreground
 helper when needed:
 
+Before invoking that foreground helper, verify the macOS heads-up was delivered; commentary alone is not the heads-up. Self-improved — 2026-10-03: this task opened Opera before sending the required warning, so check delivery before the shell call rather than after window creation. (Codex task: 01a09057-ebdc-7ab2-ad84-dcc9260f25f9)
+
 ```bash
 inspection="$(bash .agents/skills/aimvs-dev/scripts/open-opera-test-window.sh "$STACK_URL" --allow-foreground)"
 printf '%s\n' "$inspection"
