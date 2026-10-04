@@ -372,7 +372,7 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
-Require narrow status/error matching and redaction before emitting log excerpts; never return raw `head`, `tail`,
+Require narrow status/error matching and redaction before emitting log excerpts, including derived prefixes and truncated lines; removing URLs or selecting a log suffix does not redact token text. Apply and synthetically test redaction in every new log-read script, even when an earlier script passed. Never return raw `head`, `tail`,
 `sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.

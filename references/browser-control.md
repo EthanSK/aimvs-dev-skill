@@ -170,7 +170,12 @@ focus. User correction — 2026-09-24: foreground control of the agent-owned tes
 (Codex tasks:
 01a000ff-9a55-7e93-a300-1b6e91ab3dc6, 01a024ca-37e3-7883-89fe-f3233fb75a94,
 01a024f9-f80c-71c0-9005-51c76fc2e18d) Before acting on fresh Computer Use state, require its accessibility tree to
-show the exact stack URL; if it shows another window or stack, stop page input. Never act on the mismatched page or
+show the exact stack URL; if it shows another window or stack, stop page input. In a batched controller call, make the
+exact window-title and stack-URL checks conditions that must pass before the page action executes; printing the
+state and then clicking unconditionally is not a check. Before finishing, inspect each such call for a real mismatch
+branch that performs no page input. Self-improved — 2026-10-02: concurrent Firefox input changed the target between
+reselection and cleanup; conditional gates completed the exact-window cleanup safely. (Codex task:
+01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d) Never act on the mismatched page or
 invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display windows belong to the
 user: never raise, navigate, move, close, or otherwise interact with them.
 
