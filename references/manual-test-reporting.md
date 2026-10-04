@@ -65,7 +65,7 @@ object to Ethan; do not overwrite or automatically repair the screenshot. LFS po
 
 Keep this exact visible guardrail directly below the Markdown title:
 
-> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records. Leave screenshot files and their Git staging untouched after capture; report outdated evidence instead.
+> Newest entries for this checkout/worktree appear first. Never copy entries between worktrees; retain older run records. Remove outdated or misaligned screenshots and their report references; preserve existing Git staging.
 
 ## Capture only important settled states
 
@@ -90,17 +90,18 @@ as verified or blocked and report gaps. For conditional badges, verify both show
 caller layouts; a hiding class alone does not prove the badge is invisible. Self-improved — 2026-09-30: a full-page
 fix was missed in its Watch sidebar, a matching-but-wrong screenshot was accepted as current, and thumbnail CSS
 overrode a badge's hiding class; a below-heading row also failed the requested after-heading alignment. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
-If a retained screenshot is outdated, record that limitation in the report; do not stage, unstage, overwrite, delete, or otherwise
-"correct" its file or Git state, regardless of whether it is staged, unstaged, or untracked. Keep older run text and
-metadata so Ethan can manage the evidence himself. New captures may still be created and annotated as part of this
-workflow; once retained, leave them alone. User correction — 2026-09-29 (Codex task:
-01a0e8ca-6772-7251-8d07-9979d45bcb56).
+At the end of every manual test and after UI changes or rebasing, inspect every task-owned screenshot against the
+current UI. Outdated means the screenshot content, not its annotation style: keep still-accurate evidence even when its old annotation style differs from current rules. Delete screenshots with outdated content or visible misalignment that obscures or misrepresents the evidence, including misplaced annotations, and remove their
+image and screenshot-metadata references from the report. Preserve historical run text and record the cleanup;
+fix in-scope alignment defects before capturing fresh replacements. Never stage or unstage these deletions
+automatically, even when Ethan staged the original PNG. User correction — 2026-10-02; supersedes the earlier
+preserve-outdated-screenshots instruction. User clarification — 2026-10-04: outdated is about content, not annotation style.
 
 Give every screenshot its own short title, literal caption, and narrow **What this proves** claim. The claim must not
 assert interactions, persistence, backend state, or timing that the pixels cannot establish by themselves; put that
 evidence in the scenario steps and supporting checks instead.
 
-Every retained evidence screenshot must burn one high-contrast, slightly translucent yellow dotted outline and short yellow review label into the
+Every new evidence screenshot must burn one high-contrast, slightly translucent yellow dotted outline and short yellow review label into the
 final PNG so it is obvious in VS Code, source control, and any image viewer. This is mandatory even
 when the evidence concerns the whole window or animation over time. If no safe label position exists, recapture a
 composition that can be annotated or document the verification without retaining that screenshot. Leave extra space
@@ -113,7 +114,8 @@ media error in full.` Do not split it into a title, dash, and description. Prefe
 immediately beside one outline edge; move farther away only when every nearby position would cover controls, text,
 visible media, or evidence. The label has yellow glyphs with a thin black outline and no background block, but it
 still must not touch meaningful UI or evidence.
-Inspect the full raw screenshot first, then inspect the annotated PNG again; zoom in and confirm the yellow stroke
+Inspect the full raw screenshot first, then inspect the annotated PNG again; verify each new capture has a dotted rather than continuous outline, regardless of which helper produced it. Do not delete accurate historical evidence solely for an older annotation style; apply the content and evidence-obscuration checks above. User clarification — 2026-10-04.
+Zoom in and confirm the yellow stroke
 leaves the target's outlines and surrounding container readable through its gaps and slight translucency. Move the rectangle or label and regenerate from the raw screenshot if either
 touches useful UI. The annotation must never replace whole-window review. Never annotate a screenshot
 from an earlier run or draw a second annotation over an existing one. The helper keeps annotation text readable
@@ -206,6 +208,11 @@ surrounding UI for clipped, overlapping, obscured, or off-screen elements; unexp
 inconsistent spacing; missing text or icons; wrong layering; broken responsive layout; and stale loading, disabled,
 or error feedback. Confirm that every screenshot actually supports its caption and **What this proves** claim.
 For spacing or alignment fixes, reproduce the exact content state in Ethan's report and compare the visible edges he named, such as a floated label, a single-line avatar, and the bottom outline; equal CSS padding or a different wrapped state is not proof. Check empty, short, and wrapped values when their row heights differ, and record the measured gaps and unchanged field height before passing. Self-improved — 2026-09-28: the earlier Channel review checked wrapped names but missed the reported single-line avatar; see the stack 13 spacing entries in `_manual-test-results/2026-09-28-search-prefix-icons/manual-test-results.md` (Codex task: 01a0e8c6-c803-70c2-a1e0-37e123b6dd11).
+For selected cards, inspect the longest visible title and every metadata group at desktop and phone widths. Require a
+clear inset between text and the card's right edge or selection ring, as well as a gap between independent
+neighbouring grid/card rings. Joined row outlines are acceptable only when their established design calls for them;
+fix task-owned overflow before keeping evidence or claiming completion. User correction — 2026-09-28 (Codex task:
+01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d).
 For a before/after visual regression, reproduce the baseline's interaction state and browser-viewport geometry where
 practical; otherwise label each unavoidable difference so the review does not confuse geometry or hover/focus state
 with a rendering change.
@@ -275,14 +282,15 @@ Before finishing, verify that:
 - `manual-test-results.md` contains the newest result, confidence, scenarios, coverage areas, screenshot metadata,
   and **Points of weirdness**;
 - every screenshot has its own title, caption, and **What this proves** metadata in the newest Markdown entry;
-- every retained evidence PNG visibly contains exactly one high-contrast yellow outline and a brief yellow
+- every new evidence PNG visibly contains exactly one high-contrast yellow dotted outline and a brief yellow
   reviewer-friendly label without obscuring the evidence; recapture or omit any screenshot that cannot be annotated
   safely, and document the verification gap in the report;
 - every referenced PNG exists beside the report, has nonzero dimensions, was actually inspected by the testing
   agent, shows only the dedicated desktop-browser window or task-owned in-app Browser viewport at the intended
   moment, supports its evidence claim, and has no unaddressed task-caused visual defect;
 - `git check-attr filter -- <each-png>` reports `lfs` so future commits cannot store it as a normal Git blob;
-- the Markdown source still contains the insertion marker once and every older entry remains unchanged;
+- the Markdown source still contains the insertion marker once and older run text remains unchanged, except for
+  removing outdated or misaligned screenshot references and recording the cleanup;
 - no `index.html` file was created, updated, or deleted;
 - the folder contains no credentials, logs, PID/state files, recordings, temporary captures, or unrelated artifacts.
 - each capture from this run has exactly one retained PNG, with no raw or alternate-annotation twin; temporary preparation files have been removed.
@@ -291,7 +299,8 @@ Use a read-only image inspection tool for PNG verification. Never launch, activa
 automatically open any evidence file at the end of the task.
 
 Leave manual-test reports unstaged unless Ethan explicitly asks to stage a report. Never stage or unstage PNG
-screenshots, including to "correct" ones Ethan staged himself; do not overwrite or delete captured screenshots.
+screenshots, including to "correct" ones Ethan staged himself; delete outdated or misaligned task-owned evidence
+as described above, without overwriting retained captures.
 Do not commit the report folder unless Ethan asks. For a requested implementation commit, preserve his exact staged
 evidence snapshot. User corrections — 2026-09-28 and 2026-09-29 (Codex task:
 01a0e8ca-6772-7251-8d07-9979d45bcb56).
