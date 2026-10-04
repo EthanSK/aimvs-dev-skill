@@ -41,6 +41,8 @@ It defines the canonical source, guarded public mirror, and private-data safegua
 
 ## Universal safeguards
 
+- Nonzero stacks serve a one-shot frontend build without an Angular source watcher. After every change to frontend code or its shared dependencies, or a rebase, run `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm run build:frontend:dev -- --dev-stack-index=N`, require success, then reload the browser page before checking it. Keep the small frontend server, API watcher, API supervisor and private backend running under their existing ownership rules. Stack 0 keeps its normal frontend watcher and HMR. User-requested — 2026-10-04: “just fix the front end one”; reducing build workers did not prove an idle-memory saving.
+
 - Run manual browser or Computer Use testing only when Ethan explicitly requests it in the current task. Starting a stack for Ethan's own manual checks does not authorize agent browser interaction.
 - Never start, stop, restart, restore, or test against stack 0 unless Ethan explicitly requests that exact stack-0
   action. A request to fix dev stack 0 authorizes restarting only the affected stack-0 process when needed; verify
@@ -134,10 +136,10 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   across reloads and later uses of the same stack. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 - Close only the tracked agent-owned browser page—its desktop window/tab or in-app Browser tab—after every passed,
   failed, partial, blocked, or interrupted manual-test session. Keep that worktree's exact healthy nonzero backend and
-  native API-watch, API-server, and frontend hot-reload processes running while its worktree exists. Stop them only
+  native API-watch, API-server, and built-frontend server processes running while its worktree exists. Stop them only
   when Ethan explicitly asks or immediately before removing the worktree; the end of a test or task turn is not stop
-  authority. Subsequent ordinary source edits use those normal watchers and hot reload; do not replace them with a
-  second stack or manually restart them when their documented reload path is sufficient. (Codex tasks:
+  authority. Subsequent API edits use the normal watcher and supervisor; frontend edits require the explicit one-shot rebuild above. Do not replace them with a
+  second stack or manually restart them when their documented update path is sufficient. (Codex tasks:
   01a04f3a-a977-7683-81aa-f1452cf39475, 01a05301-5376-77b1-9c70-99e37245cc98)
 - For Safari, record task-created WebContent processes at test-window creation and after an abnormal reload, crash, or
   non-responsive-page recovery. Ordinary healthy route changes do not need another renderer inventory. At cleanup,
@@ -234,7 +236,7 @@ linked directly here so an agent never needs to discover operating instructions 
 5. Remove only task-created fixtures and temporary hooks, update and inspect the durable Markdown report, and close the
    exact test tab/window. After the final relevant source or configuration edit, pass the complete live-stack health
    gate before declaring a running stack healthy or completing the handoff. Leave the exact healthy nonzero native
-   processes and isolated backend running with normal hot reload while the worktree exists, and hand off their exact
+   processes and isolated backend running with frontend builds on demand and normal API hot reload while the worktree exists, and hand off their exact
    stack index, frontend URL, and exact process/session ownership; include a tracked window only when one exists.
    When Ethan asks to stop them or immediately before worktree removal, perform one bounded cleanup pass and require
    the runtime to be fully stopped while every persistent volume remains unchanged. Keep the embedded number reserved

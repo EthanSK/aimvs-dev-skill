@@ -230,8 +230,8 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
-   Start the frontend in its own session, or reuse its already healthy owned process. Use the same
-   `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on all three commands.
+   Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. The API watcher remains unchanged. Use the same
+   `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on all three retained commands and every explicit frontend rebuild.
 
    Keep each role's exact screen name, log path, launcher/child PIDs, exact worktree, and stack index in the task's
    live context and continuation handoff, not in committed skill files or a new registry. Read the role's
@@ -304,9 +304,9 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    browser page distinguishable from main and other worktrees.
 
 6. **Retain the stack after testing.** Close only the exact task browser page but keep this verified private backend
-   plus its native API watcher, supervised API server, and frontend watcher alive until the worktree is removed or
-   Ethan explicitly asks to stop them. Ordinary source edits should flow through frontend hot reload and the nonzero
-   API supervisor; wait for and verify their successful rebuild instead of manually replacing healthy processes. Keep
+   plus its native API watcher, supervised API server, and built-frontend server alive until the worktree is removed or
+   Ethan explicitly asks to stop them. Edits to frontend code or its shared dependencies require the explicit one-shot frontend build and browser reload; API edits still flow through the nonzero
+   API supervisor. Verify the latest successful builds instead of manually replacing healthy processes. Keep
    the exact role/session/process mapping in the task handoff and do not create an idle-cleanup automation merely because the
    stack remains active. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475,
    01a05301-5376-77b1-9c70-99e37245cc98)
@@ -354,7 +354,7 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 - API watch completed its latest build successfully and is still watching.
 - The standalone API completed Nest startup, listens on `3000 + N` with its inspector on `9230 + N`, and has no
   unresolved startup or current-run errors.
-- The frontend's latest build says `Application bundle generation complete`, listens on `4200 + N` with its debug
+- The frontend's latest one-shot build says `Application bundle generation complete`, its compiled HTML and build marker agree, and its small retained server listens on `4200 + N` with its debug
   receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
 - The indexed Download Assets Worker container reports healthy, listens on `18800 + N`, and, when testing Download
   selected, a POST with no grant reaches that Worker and returns its expected `400` without current-run errors.
@@ -425,7 +425,7 @@ Stop and close the agent-owned nonzero stack only when Ethan explicitly asks or 
 worktree. Never stop it merely because a Computer Use session passed, failed, became blocked or interrupted, the task
 turn ended, the stack became idle, or a manual-test session passed, failed, became partial, blocked, or interrupted.
 A documented restart boundary may restart only the affected worktree process; otherwise close its exact test browser
-page, keep the normal hot-reload processes running, and report their stack and URL. Worktree removal is blocked until
+page, keep the built-frontend server and normal API hot-reload processes running, and report their stack and URL. Worktree removal is blocked until
 this whole sequence succeeds; the isolated launcher and Compose file live in the worktree, so never delete or move it
 first. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475, 01a05301-5376-77b1-9c70-99e37245cc98)
 

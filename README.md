@@ -15,7 +15,7 @@ direct commits here can be replaced by its guarded publisher and are never impor
   frontend, API, inspector, and debug-log ports correlated until that worktree is removed.
 - Keeps stack 0 in Ethan's main environment and gives every nonzero stack its own private Firebase, Storage, MinIO,
   and Download Assets Worker backend.
-- Runs each agent stack's frontend, API watcher, and API server in separately controlled background command sessions.
+- Runs each agent stack's small built-frontend server, API watcher, and API server in separately controlled background command sessions.
   Visible terminal panels are optional; session ownership and verified builds are required, and host-app restart
   persistence is not assumed.
 - Routes each stack through Safari, Firefox, or Opera first, then through task-scoped in-app Browser sessions without
@@ -40,8 +40,9 @@ development adds Firebase emulators, MinIO and a Download Assets Worker. The ski
 - **Stack 0 is Ethan's main VS Code environment.** Its frontend runs on `:4200`, its API on `:3000`, and its Firebase
   emulators, MinIO and native Worker are the main services. Agent tests use nonzero stacks.
 - **New agent worktrees use `aimvs<N>-<task-slug>` on `codex/<task-slug>`.** `N` is that worktree's reserved nonzero
-  stack from creation until removal. Its frontend (`4200 + N`) and API (`3000 + N`) are native watcher processes, and
-  the API supervisor swaps in each successful build; only its Firebase emulators, MinIO and Download Assets Worker run
+  stack from creation until removal. Its frontend (`4200 + N`) is built once and served without an Angular source watcher; agents run
+  `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm run build:frontend:dev -- --dev-stack-index=N` after edits to frontend code or its shared dependencies, then reload the browser page. Its native API
+  watcher and supervisor still swap in each successful API build; only its Firebase emulators, MinIO and Download Assets Worker run
   as private Docker containers, whose volumes survive guarded stop and worktree removal. Each stack also gets its own
   test browser; Firebase Auth still uses staging Auth rather than a separate local Auth emulator.
 - **Ethan controls review and landing.** He reviews and stages the working changes, with scoped exceptions for
