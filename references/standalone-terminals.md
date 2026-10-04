@@ -32,13 +32,19 @@ background-safe operation. Send the normal macOS heads-up before launch, remembe
 create the window and tabs in one batch, then immediately restore that app as shown below. Do not ask for exclusive
 keyboard or mouse control and do not claim that removing `activate` prevents the focus change.
 
+The example below is for a new dedicated linked worktree, with `NX_WORKSPACE_DATA_DIRECTORY` unset so the backend,
+native commands, builds and ordinary Nx tooling share its default daemon. For a nonzero stack in the primary checkout
+only, prefix the prebuild with `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` and include that assignment in
+`DEV_COLOR_ENV`; follow `stack-lifecycle.md`'s primary-checkout exception. Preserve existing retained sessions' recorded
+environment until an authorized migration.
+
 ```bash
 WORKTREE_DIR="/absolute/path/to/your-project-worktree"
 STACK_INDEX=1
 STACK_URL="http://localhost:$((4200 + STACK_INDEX))/"
-DEV_COLOR_ENV="NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
+DEV_COLOR_ENV="FORCE_COLOR=1 NX_COLOR=true NPM_CONFIG_COLOR=always CLICOLOR_FORCE=1"
 
-(cd "$WORKTREE_DIR" && NX_WORKSPACE_DATA_DIRECTORY=".nx/workspace-data-stack-${STACK_INDEX}" npm exec -- nx build api --configuration=development)
+(cd "$WORKTREE_DIR" && npm exec -- nx build api --configuration=development)
 
 iterm_command() {
   local title="$1"
