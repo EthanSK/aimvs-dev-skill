@@ -174,7 +174,7 @@ focus. User correction — 2026-09-24: foreground control of the agent-owned tes
 01a024f9-f80c-71c0-9005-51c76fc2e18d) Before acting on fresh Computer Use state, require its accessibility tree to
 show the exact stack URL; if it shows another window or stack, stop page input. In a batched controller call, make the
 exact window-title and stack-URL checks conditions that must pass before the page action executes; printing the
-state and then clicking unconditionally is not a check. Before finishing, inspect each such call for a real mismatch
+state and then clicking unconditionally is not a check. Derive each element index from that same fresh state inside the gate; an index from an earlier response can now point to a different control even when the window and URL still match. Before sending a batched action, require both the current target identity and the current control match. Self-improved — 2026-10-04: a refreshed Safari tree renumbered a Following control and the older index opened a Video instead; matching the control from the gated tree prevented recurrence. (Codex task: 01a10717-3580-7622-9439-28dad3d68db3) Before finishing, inspect each such call for a real mismatch
 branch that performs no page input. Self-improved — 2026-10-02: concurrent Firefox input changed the target between
 reselection and cleanup; conditional gates completed the exact-window cleanup safely. (Codex task:
 01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d) Never act on the mismatched page or
