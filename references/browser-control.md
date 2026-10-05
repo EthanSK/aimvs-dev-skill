@@ -65,7 +65,7 @@ as unavailable and use the next safely assigned browser rather than weakening or
 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
 Immediately before creating the window, record the PID and launch time of every standard Safari
-`com.apple.WebKit.WebContent` process, then recheck after the first load and retain each process created during that
+`com.apple.WebKit.WebContent` process; check that this baseline exists before invoking the creation helper. Then recheck after the first load and retain each process created during that
 exact boundary. Refresh the boundary only after an abnormal reload, forced reload, replacement-window load, crash, or
 non-responsive-page recovery; ordinary healthy route changes and full navigations do not justify repeated process
 forensics. Exclude `WebContent.EnhancedSecurity` and WebKit processes owned by other apps. If another Safari
@@ -177,7 +177,12 @@ exact window-title and stack-URL checks conditions that must pass before the pag
 state and then clicking unconditionally is not a check. Derive each element index from that same fresh state inside the gate; an index from an earlier response can now point to a different control even when the window and URL still match. Before sending a batched action, require both the current target identity and the current control match. Self-improved — 2026-10-04: a refreshed Safari tree renumbered a Following control and the older index opened a Video instead; matching the control from the gated tree prevented recurrence. (Codex task: 01a10717-3580-7622-9439-28dad3d68db3) Before finishing, inspect each such call for a real mismatch
 branch that performs no page input. Self-improved — 2026-10-02: concurrent Firefox input changed the target between
 reselection and cleanup; conditional gates completed the exact-window cleanup safely. (Codex task:
-01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d) Never act on the mismatched page or
+01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d)
+After a native menu closes, resolve the
+next action by its label in fresh Accessibility state; do not reuse an earlier index even when the page is unchanged,
+because dismissing a menu can shift every index. Self-improved — 2026-10-04: a shifted Safari index selected
+Settings instead of Collapse navigation; label-matched indices passed the retest (Codex task:
+01a10321-0e9a-79e1-b75f-8919b5dddcaf). Never act on the mismatched page or
 invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display windows belong to the
 user: never raise, navigate, move, close, or otherwise interact with them.
 

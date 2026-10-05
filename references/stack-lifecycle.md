@@ -387,6 +387,7 @@ log format, including whitespace after the colon, and redact URL query credentia
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
 Before running a log-read command, check its text for an unfiltered `head`, `tail`, `sed`, `cat`, or sliced string prefix; replace it with a
 script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text. Extract timestamps instead of printing truncated log lines. Self-improved — 2026-10-01: a Python prefix check missed this existing guardrail; the command preflight must cover slicing too (Codex task: 01a09727-c5e5-7672-9047-e0f448963715).
+Frontend compiler logs follow this same check: never use a raw `tail` just to confirm a rebuild. Self-improved — 2026-10-04: a cinema-layout retest missed that boundary; derived build markers replaced the raw tail (Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf). Process inventories also need exact known PIDs or launchers selected before emission; a broad task-name match can include another task's token-bearing command line. Check the final projection for secret-bearing arguments before printing it. Self-improved — 2026-10-04: a broad cinema-task process match included a ledger UI command; exact owner projections prevent that exposure (same Codex task).
 Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
 not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
 synthetic `App Check debug token: <value>` entry that also matches the route filter and require `[REDACTED]` or omission.
@@ -394,6 +395,10 @@ Self-improved — 2026-10-01: a route-filtered inline script still selected a st
 the gap left by shell-command preflight (Codex task: 01a09057-ebdc-7ab2-ad84-dcc9260f25f9).
 Self-improved — 2026-09-29: this command preflight would have stopped a raw log tail during a layout retest from
 surfacing an App Check debug token (Codex task: 01a0e8ca-6772-7251-8d07-9979d45bcb56).
+For task-history tools, parse their returned text locally and emit only the needed human instructions or derived
+outcomes, with the same final redaction; never serialize the complete result. Self-improved — 2026-10-04: a bounded
+`read_thread` still returned reasoning and token-bearing log history; projecting message fields avoids that exposure
+(Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf).
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
 the secret without inserting the marker.
 Filter returned browser-log entries in memory and redact their messages before emitting them; never treat a tool's
