@@ -64,6 +64,8 @@ or unhiding Safari can order its window above Ethan's active app without making 
 as unavailable and use the next safely assigned browser rather than weakening or bypassing that guard. (Codex task:
 01a024f9-f80c-71c0-9005-51c76fc2e18d)
 
+Before invoking `open-safari-test-window.sh`, require the baseline PID/launch-time inventory below to be saved in the task context; reject the creation command if that baseline is missing. Recording it after creation cannot prove renderer ownership. Self-improved — 2026-10-03: this task invoked the helper before recording its renderer baseline; the pre-command gate catches that omission (Codex task: 01a102b9-c087-7771-8748-8ee14c4c56e0).
+
 Immediately before creating the window, record the PID and launch time of every standard Safari
 `com.apple.WebKit.WebContent` process; check that this baseline exists before invoking the creation helper. Then recheck after the first load and retain each process created during that
 exact boundary. Refresh the boundary only after an abnormal reload, forced reload, replacement-window load, crash, or
