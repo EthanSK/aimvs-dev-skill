@@ -381,6 +381,7 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+Apply this same redaction to native DevTools Console Accessibility text before emitting selected lines; filtering for errors does not remove URL credentials. Synthetically check that the actual Console readback formatter redacts both `App Check debug token:` and `?key=` before its first output. Self-improved — 2026-10-04: an error-only native Console readback exposed a Firebase URL key during browser verification (Codex task: 01a103f5-147c-72a0-945b-52de8f605c89).
 Require narrow status/error matching and redaction before emitting log excerpts, including derived prefixes and truncated lines; removing URLs or selecting a log suffix does not redact token text. Apply and synthetically test redaction in every new log-read script, even when an earlier script passed. Never return raw `head`, `tail`,
 `sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
