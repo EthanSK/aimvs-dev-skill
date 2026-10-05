@@ -9,6 +9,11 @@ Within the requested feature scope, actively maximize meaningful surface area: c
 entry point, state, and recovery path, and prefer flows that exercise several connected components at once. Compact
 means avoiding redundant repetition, not leaving separate new behavior untested.
 
+Complete every requested agent-owned manual check and review before handoff; do not give those checks to Ethan as
+his completion step. Ethan reviews the code. Keep a surface/state/recovery checklist, reconcile it against all
+uncancelled requests before reporting completion, and state genuine blockers explicitly so unfinished checks do not
+disappear at handoff. User correction — 2026-10-05.
+
 For shared card selection or responsive alignment, inventory every distinct list host before testing, including
 in-app panels and embedded pickers. Check first/last rows and columns against clipping ancestors at phone,
 single-column and multi-column widths; measure the visible card, not just its wrapper, and confirm existing

@@ -249,6 +249,12 @@ linked directly here so an agent never needs to discover operating instructions 
 
 ## Completion handoff
 
+When you have finished writing code or a feature, run the appropriate build and lint once before handoff, including
+changed test files. Check test files with their owning typecheck and test targets while testing. Run independent
+checks in parallel sub-agents where practical, or parallel commands, so we are not waiting; preserve required target
+prerequisites. Skip build and lint for trivial changes, and rerun only checks affected by a later edit or failure.
+User request — 2026-10-04.
+
 Agent patches and shell writes do not trigger VS Code's format-on-save. After the final edit, run the existing
 `npm exec -- nx format:write --files=<explicit changed files> --sort-root-tsconfig-paths=false`, then
 `npm exec -- nx format:check --files=<same files>` and require success before handoff. Include new/untracked source
