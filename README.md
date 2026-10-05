@@ -41,12 +41,13 @@ development adds Firebase emulators, MinIO and a Download Assets Worker. The ski
   emulators, MinIO and native Worker are the main services. Agent tests use nonzero stacks.
 - **New agent worktrees use `aimvs<N>-<task-slug>` on `codex/<task-slug>`.** `N` is that worktree's reserved nonzero
   stack from creation until removal. Its frontend (`4200 + N`) is built once and served without an Angular source watcher; agents run
-  `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm run build:frontend:dev -- --dev-stack-index=N` after edits to frontend code or its shared dependencies, then reload the browser page. Its native API
+  `npm run build:frontend:dev -- --dev-stack-index=N` after edits to frontend code or its shared dependencies, then reload the browser page. New dedicated worktrees leave `NX_WORKSPACE_DATA_DIRECTORY` unset so their builds and tooling share one checkout-local Nx daemon. Only nonzero stacks in the primary checkout use `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N`; existing retained sessions keep their recorded environment until an authorized migration. Its native API
   watcher and supervisor still swap in each successful API build; only its Firebase emulators, MinIO and Download Assets Worker run
   as private Docker containers, whose volumes survive guarded stop and worktree removal. Each stack also gets its own
   test browser; Firebase Auth still uses staging Auth rather than a separate local Auth emulator.
 - **Ethan controls review and landing.** He reviews and stages the working changes, with scoped exceptions for
-  task-owned test files and project instructions. Once the requested snapshot is staged, `mmcdw` handles the approved
+  task-owned test files, project instructions and tiny, obviously correct one-file corrections during already-authorized
+  `mmcdw`. Once the requested snapshot is staged, `mmcdw` handles the approved
   commit, local merge and guarded cleanup: export and stop the stack, remove the workspace folder and worktree, and
   release `N`. Conflict review and runtime cleanup gate landing; the command never authorizes a push or deletion of
   branches or volumes.

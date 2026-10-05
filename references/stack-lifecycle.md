@@ -212,10 +212,18 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 4. **Per worktree, pass the SAME `--dev-stack-index=N` to every worktree process**.
 
-   Give every nonzero stack its own Nx workspace-data directory, including when the agent is testing from the main
-   checkout. Without this, stack 0 and an agent stack in the same checkout can share Nx's running-task records and
-   the agent frontend can stop at `Waiting for frontend:serve:development in another nx process`. Use
-   `.nx/workspace-data-stack-N` for every Nx-backed command in that stack; leave stack 0 on the normal default.
+   For newly launched dedicated linked-worktree stacks, leave `NX_WORKSPACE_DATA_DIRECTORY` unset on backend startup,
+   retained native commands, explicit frontend rebuilds and ordinary Nx tests, lint and formatting. Nx's default
+   `.nx/workspace-data` and daemon are already local to that checkout, whose reservation permits only its own stack.
+   A second indexed directory creates a second daemon when ordinary tooling uses the default, duplicating idle memory.
+
+   Keep the existing `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on Nx-backed commands and frontend
+   rebuilds for a nonzero stack launched from the primary checkout; this change is limited to dedicated linked worktrees.
+   Stack 0 and ordinary primary-checkout tooling keep the default. The built nonzero frontend no longer runs Nx's
+   continuous serve task, so this exception preserves existing behaviour rather than fixing a cross-stack wait.
+   Apply this to future launches; preserve existing retained sessions and their recorded Nx environment until Ethan
+   authorizes migration. Do not restart stacks or stop existing daemons just to apply this rule, and do not disable the
+   daemon globally because `nx watch` needs it. User-requested — 2026-10-04: fix future stacks after the daemon-sharing research.
 
    Use three separate detached macOS `screen` sessions: API watcher, standalone API server, and frontend. Name them
    `aimvsN-api-watch`, `aimvsN-api-server`, and `aimvsN-frontend`, and give each role its own
@@ -230,8 +238,7 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
-   Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. The API watcher remains unchanged. Use the same
-   `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on all three retained commands and every explicit frontend rebuild.
+   Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. The API watcher remains unchanged. Use the checkout's Nx environment rule above consistently for startup and explicit rebuilds.
 
    Keep each role's exact screen name, log path, launcher/child PIDs, exact worktree, and stack index in the task's
    live context and continuation handoff, not in committed skill files or a new registry. Read the role's
@@ -263,7 +270,9 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    the running Node process's build-plugin implementation. If control is genuinely blocked, report that precise
    blocker without calling the repair complete. (Codex task: 01a06eec-07f7-7aa1-a498-15f6334e4b91)
 
-   Commands for the three separate durable sessions (replace the example index and worktree consistently):
+   Commands for the three separate durable sessions in a dedicated linked worktree (replace the example index and
+   worktree consistently; leave `NX_WORKSPACE_DATA_DIRECTORY` unset). For a nonzero stack in primary only, insert
+   `env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX}` after each `exec`:
 
    ```bash
    STACK_INDEX=1
@@ -271,9 +280,9 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
    printf -v STACK_WORKTREE_SHELL '%q' "$STACK_WORKTREE"
    mkdir -p "/private/tmp/aimvs${STACK_INDEX}/api-watch" "/private/tmp/aimvs${STACK_INDEX}/api-server" "/private/tmp/aimvs${STACK_INDEX}/frontend"
 
-   (cd "/private/tmp/aimvs${STACK_INDEX}/api-watch" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-watch" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run watch:api -- --dev-stack-index=${STACK_INDEX}") # Wait for this initial successful development build before starting the API server.
-   (cd "/private/tmp/aimvs${STACK_INDEX}/api-server" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-server" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")
-   (cd "/private/tmp/aimvs${STACK_INDEX}/frontend" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-frontend" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec env NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-${STACK_INDEX} npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")
+   (cd "/private/tmp/aimvs${STACK_INDEX}/api-watch" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-watch" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec npm run watch:api -- --dev-stack-index=${STACK_INDEX}") # Wait for this initial successful development build before starting the API server.
+   (cd "/private/tmp/aimvs${STACK_INDEX}/api-server" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-api-server" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec npm run serve:api:standalone:debug -- --dev-stack-index=${STACK_INDEX}")
+   (cd "/private/tmp/aimvs${STACK_INDEX}/frontend" && /usr/bin/screen -L -dmS "aimvs${STACK_INDEX}-frontend" /bin/zsh -lc "cd $STACK_WORKTREE_SHELL && exec npm run serve:frontend:standalone-server -- --dev-stack-index=${STACK_INDEX}")
    ```
 
    Waiting for the API watcher's initial build is intentional: starting the standalone API before `dist/apps/api`
