@@ -80,6 +80,11 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 ## Run an agent-owned stack
 
+When Ethan resumes work, the owning agent decides whether that work needs its stack running and wakes a stopped stack
+itself through the existing guarded backend start and native-role sequence below. Do not make Ethan request wake-up
+separately, start services merely because a build ran, or add a browser wake listener. Preserve the existing dataset,
+worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc3-58a2-7e30-8e50-013ad83089b1).
+
 1. **Use the worktree's reserved nonzero stack index.** A new `aimvs<N>-<task-slug>` worktree owns `N` from
    creation through removal, even while its runtime is stopped or has never started. Read `N` from the directory name
    and confirm the exact finalized owner with `npm run aimvs-worktree -- list`; never pick another number for that
@@ -329,6 +334,37 @@ mapping in the continuation context and include the stack index and frontend URL
 window ID is relevant only to an existing standalone terminal; do not invent one for background sessions.
 
 ## Schedule an explicitly requested timed cleanup
+
+### Shared 24-hour shutdown
+
+Ethan explicitly approved one shared hourly code job for nonzero stacks. It checks the existing successful API/frontend
+build markers and native/container start times; no source watcher, browser activity tracking, per-chat timer or LLM run
+is involved. After 24 hours without a start, restart or successful build, it verifies the exact worktree/native ownership,
+checks the owning chats' structural turn events, running builds, API child jobs, open request connections and any
+Firebase function start within 75 minutes, then requires the owning launcher's one-shot private export to succeed before sending graceful
+shutdown signals. Unknown state, an unhealthy backend or a failed export keeps the stack running. Preserve every
+volume, worktree and number reservation. The owning agent wakes it through the normal sequence when later work needs
+it; opening its browser URL or merely compiling does not wake it. This approved shared job is the sole exception to the
+normal idle-retention and LaunchAgent prohibitions below. User-requested — 2026-10-08
+(Codex task: 01a11bc3-58a2-7e30-8e50-013ad83089b1).
+
+The approved 75-minute function guard covers the current one-hour execution limit plus a 15-minute margin. Even a
+completed function keeps the stack awake until that window expires; old failed-function logs cannot keep it awake forever.
+
+Use `npm run dev-stack-idle-shutdown -- run --dry-run` for read-only verdicts, `-- install` to enable the single hourly
+macOS user job and `-- uninstall` to disable it. It runs briefly and exits; launchd prevents overlapping scheduled runs.
+The installed job points to the checkout used for installation: retain that checkout, or reinstall from the landed
+primary source before removing it. Inspect `launchctl print gui/$(id -u)/com.aimvs.dev-stack-idle-shutdown` and
+`~/Library/Logs/com.aimvs.dev-stack-idle-shutdown.log` for status. No stack is stopped merely by installation.
+
+The few seconds between the final busy/age check and graceful shutdown can still admit new work; this is a narrow,
+unreproduced window, and the agent recovers through ordinary startup. Do not add a new cross-process lease system for
+that theoretical race without discussing its actual cost and impact. Retained native launchers supply their original
+`CODEX_THREAD_ID`; missing IDs or unrecognised/missing rollout boundaries keep the stack awake. Open HTTP connections
+are conservative busy signals, so a keep-alive connection can delay shutdown. These checks do not infer use from all
+file changes or from CPU usage. (Codex task: 01a11bc3-58a2-7e30-8e50-013ad83089b1)
+
+### Other explicitly requested deadlines
 
 Do not schedule this during ordinary stack startup or retention. Worktree removal is the default cleanup boundary.
 Create a timed check only when Ethan explicitly asks for a time-based cleanup or deadline, then schedule the one-time

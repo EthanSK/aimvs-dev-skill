@@ -148,7 +148,14 @@ It defines the canonical source, guarded public mirror, and private-data safegua
   page with no recorded surviving renderer needs the exact task tab/window closed and its stack origin absent from
   Safari. (Codex tasks: 01a01b02-4104-72a1-8611-5535ace7202a,
   01a0399b-e199-79d2-b4ec-a32664b00adf)
-- Do not create an idle-cleanup automation for a normally retained nonzero stack. Stack retention follows the owning
+- Ethan's shared hourly code job is the explicit exception to normal retention: after 24 hours without a start,
+  restart or successful build, it may stop an owned nonzero stack only after a successful private snapshot and known
+  idle agent/request/job checks. Preserve its worktree, number reservation and every volume. Use
+  `npm run dev-stack-idle-shutdown -- run --dry-run` to inspect it; do not create per-chat timers, LLM cleanup runs,
+  browser wake listeners or source-tree activity watchers. The owning agent wakes a stopped stack itself when later
+  work needs it running; a build alone does not wake it. See `references/stack-lifecycle.md`.
+  User-requested — 2026-10-08 (Codex task: 01a11bc3-58a2-7e30-8e50-013ad83089b1).
+- Apart from that shared code job, do not create an idle-cleanup automation for a normally retained nonzero stack. Stack retention follows the owning
   worktree, not task inactivity: stop it only when Ethan explicitly asks or immediately before removing that worktree.
   Retire any legacy idle-cleanup automation after verifying its exact stack and task ownership so it cannot stop a
   retained or reused stack later. Create a timed cleanup only when Ethan explicitly asks for that timer or deadline;
