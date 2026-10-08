@@ -39,6 +39,10 @@ backend containers plus its own indexed native frontend/API processes.
 Before changing or publishing this skill, read [references/skill-publication.md](references/skill-publication.md).
 It defines the canonical source, guarded public mirror, and private-data safeguards.
 
+## Project skill names
+
+Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter names, including writing skills such as `aimvs-write-specs`. Keep generic or vendor skill names such as `nx-*` unchanged. Keep display names and active links consistent when renaming; do not rewrite archived task evidence. User-requested — 2026-10-07.
+
 ## Universal safeguards
 
 - Nonzero stacks serve a one-shot frontend build without an Angular source watcher. After every change to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N`, require success, then reload the browser page before checking it. Newly launched dedicated linked worktrees leave `NX_WORKSPACE_DATA_DIRECTORY` unset so builds and tooling share their normal checkout-local Nx daemon; only nonzero stacks in the primary checkout prefix their Nx-backed commands with `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N`. Preserve existing retained sessions' recorded Nx environment until an authorized migration; see `references/stack-lifecycle.md`. Keep the small frontend server, API watcher, API supervisor and private backend running under their existing ownership rules. Stack 0 keeps its normal frontend watcher and HMR. User-requested — 2026-10-04: “just fix the front end one”; reducing build workers did not prove an idle-memory saving.

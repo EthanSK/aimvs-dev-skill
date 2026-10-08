@@ -5,6 +5,7 @@
 - [Ports per stack](#ports-per-stack)
 - [Ethan's main environment](#ethans-main-environment)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
+- [Local E2E processes](#local-e2e-processes)
 - [Retain an agent-owned stack after testing](#retain-an-agent-owned-stack-after-testing)
 - [Schedule an explicitly requested timed cleanup](#schedule-an-explicitly-requested-timed-cleanup)
 - [Mandatory live-stack health gates](#mandatory-live-stack-health-gates)
@@ -12,23 +13,27 @@
 
 ## Ports per stack
 
-| Thing                       | Stack 0 = Ethan's main | Every nonzero stack N |
-| --------------------------- | ---------------------- | --------------------- |
-| frontend                    | 4200                   | 4200 + N              |
-| standalone API              | 3000                   | 3000 + N              |
-| standalone API inspector    | 9230                   | 9230 + N              |
-| frontend debug-log receiver | 9476                   | 9476 + N              |
-| Functions                   | 5001                   | 15000 + N             |
-| Firestore                   | 8080                   | 18080 + N             |
-| Firebase Storage            | 9199                   | 16000 + N             |
-| Firebase Auth               | real staging Auth      | real staging Auth     |
-| MinIO                       | 9000                   | 17000 + N             |
-| MinIO console               | 9001                   | 17100 + N             |
-| download-assets-worker      | 8787                   | 18800 + N             |
-| Firestore WebSocket         | —                      | 19150 + N             |
-| Emulator UI                 | —                      | 14000 + N             |
-| Emulator hub                | —                      | 14400 + N             |
-| Emulator logging            | —                      | 14500 + N             |
+| Thing                       | Stack 0 = Ethan's main | Every nonzero stack N                        |
+| --------------------------- | ---------------------- | -------------------------------------------- |
+| frontend                    | 4200                   | 4200 + N                                     |
+| standalone API              | 3000                   | 3000 + N                                     |
+| standalone API inspector    | 9230                   | 9230 + N                                     |
+| frontend debug-log receiver | 9476                   | 9476 + N                                     |
+| E2E frontend                | —                      | 4300 + N                                     |
+| E2E standalone API          | —                      | 3100 + N                                     |
+| E2E API inspector           | —                      | 9330 + N                                     |
+| E2E debug-log receiver      | —                      | 9576 + N                                     |
+| Functions                   | 5001                   | 15000 + N                                    |
+| Firestore                   | 8080                   | 18080 + N                                    |
+| Firebase Storage            | 9199                   | 16000 + N                                    |
+| Firebase Auth               | real staging Auth      | real staging Auth; E2E emulator at 19900 + N |
+| MinIO                       | 9000                   | 17000 + N                                    |
+| MinIO console               | 9001                   | 17100 + N                                    |
+| download-assets-worker      | 8787                   | 18800 + N                                    |
+| Firestore WebSocket         | —                      | 19150 + N                                    |
+| Emulator UI                 | —                      | 14000 + N                                    |
+| Emulator hub                | —                      | 14400 + N                                    |
+| Emulator logging            | —                      | 14500 + N                                    |
 
 The main Restore Terminals setup owns stack 0's native download-assets-worker on `:8787`. Every nonzero stack owns
 an indexed Worker inside its private Docker backend; never point it at the main Worker or start a second native copy.
@@ -47,7 +52,7 @@ before delivering `SIGHUP`, then require the launcher and every recorded descend
 the terminal remains valid does not cover this bug; never use stack 0 for this probe. (Codex tasks:
 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a072dd-5935-7833-8eb4-cd9133acca2f)
 
-Stack 0's debug log is `frontend-debug.log`; stack N's is `frontend-debug-N.log`.
+Stack 0's debug log is `frontend-debug.log`; stack N's manual log is `frontend-debug-N.log` and its local E2E log is `frontend-debug-e2e-N.log`. The E2E pair uses the same indexed backend ports and data as the manual pair.
 
 ## Ethan's main environment
 
@@ -80,6 +85,8 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 ## Run an agent-owned stack
 
+These steps start the ordinary manual-development frontend/API. For the additional E2E pair, use [Local E2E processes](#local-e2e-processes).
+
 When Ethan resumes work, the owning agent decides whether that work needs its stack running and wakes a stopped stack
 itself through the existing guarded backend start and native-role sequence below. Do not make Ethan request wake-up
 separately, start services merely because a build ran, or add a browser wake listener. Preserve the existing dataset,
@@ -100,9 +107,11 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    STACK_INDEX=N
    for STACK_PORT in \
      $((4200 + STACK_INDEX)) $((3000 + STACK_INDEX)) $((9230 + STACK_INDEX)) $((9476 + STACK_INDEX)) \
+     $((4300 + STACK_INDEX)) $((3100 + STACK_INDEX)) $((9330 + STACK_INDEX)) $((9576 + STACK_INDEX)) \
      $((15000 + STACK_INDEX)) $((18080 + STACK_INDEX)) $((16000 + STACK_INDEX)) \
      $((17000 + STACK_INDEX)) $((17100 + STACK_INDEX)) $((18800 + STACK_INDEX)) \
-     $((19150 + STACK_INDEX)) $((14000 + STACK_INDEX)) $((14400 + STACK_INDEX)) $((14500 + STACK_INDEX)); do
+     $((19150 + STACK_INDEX)) $((14000 + STACK_INDEX)) $((14400 + STACK_INDEX)) $((14500 + STACK_INDEX)) \
+     $((19900 + STACK_INDEX)); do
      lsof -nP -iTCP:"$STACK_PORT" -sTCP:LISTEN
    done
    docker container ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
@@ -325,12 +334,34 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    stack remains active. (Codex tasks: 01a04f3a-a977-7683-81aa-f1452cf39475,
    01a05301-5376-77b1-9c70-99e37245cc98)
 
+## Local E2E processes
+
+Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered worktree; follow `aimvs-e2e` for selection
+and retained actors. Preflight uses the same existing backend containers and data, then builds a separate frontend/API
+in `dist/e2e-local/`. Native launchers select this mode with `--e2e` (`AIMVS_E2E_LOCAL=true`); never add it to the shared
+backend command. The E2E frontend always selects Auth emulator sign-in, and its API uses Firebase Admin's per-process
+emulator setting. Ordinary manual processes keep staging Auth. No browser-storage opt-in, dual-directory API lookup
+or staging-account copying is required; tests still create fresh Users, Channels and Billing Accounts.
+
+E2E has finite builds followed by retained `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions, using the
+same exact-owner checks as the manual roles. There is no E2E source watcher: another run builds the current candidate,
+and the API supervisor loads that completed build. Keep E2E output and `.nx/e2e-build-status` separate from the manual
+builds. Its frontend/API ports are `4300 + N` / `3100 + N`, with inspector `9330 + N` and debug-log receiver `9576 + N`.
+
+Shared Functions callbacks still target the manual API. Preflight starts the normal API watcher and server only when
+missing, checks their readiness, and does not force an existing manual API or frontend rebuild or start a missing
+manual frontend. Stopping or rebuilding the manual API while E2E runs can interrupt callbacks; separate E2E binaries
+do not isolate that shared dependency. Candidate build checks apply to the E2E pair; verify the retained manual API
+and backend are ready without treating their existence as proof they were rebuilt for this run. User-requested separate
+local E2E processes — 2026-10-08 (Codex task: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e).
+
 ## Retain an agent-owned stack after testing
 
 The end of a manual test or task turn does not authorize stopping a healthy nonzero stack. Close and verify only the
 exact task-owned browser page, then confirm the retained sessions, worktree path, indexed ports, and private containers
 still match the owning worktree before handing the running stack back to Ethan. Preserve the exact role/session/PID
-mapping in the continuation context and include the stack index and frontend URL in the completion handoff. A visible
+mapping in the continuation context and include the stack index and frontend URL in the completion handoff. Retain
+any verified E2E frontend/API sessions under the same rule, separately identifying their origins. A visible
 window ID is relevant only to an existing standalone terminal; do not invent one for background sessions.
 
 ## Schedule an explicitly requested timed cleanup
@@ -387,20 +418,25 @@ exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
 ## Mandatory live-stack health gates
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
-process restart, inspect current output from that worktree's three exact retained screen logs (or its existing
-standalone terminal sessions without raising their window). Require API-watch, API-server, and frontend ownership to
-match the exact worktree and the same nonzero `--dev-stack-index=N`; the indexed Worker remains a private container.
+process restart, inspect current output from that worktree's exact retained screen logs. For the ordinary manual pair,
+use its three roles below; for local E2E use the E2E roles and candidate-build boundary described above, plus the shared
+manual API/backend readiness checks. Inspect the corresponding logs or existing standalone terminal sessions without
+raising their window. Require every applicable role's ownership to match the exact worktree and the same nonzero
+`--dev-stack-index=N`, with `--e2e` on the E2E roles; the indexed Worker remains a private container.
 Repeat this gate in the current turn before creating a test browser page; earlier results or listener checks alone do
-not satisfy it. Self-improved — 2026-10-03: checking logs only after opening the test page missed a live dependency
+not satisfy it. Keep the final health check and browser/test launch in separate `functions.exec` cells, and read the passing result before launching; two nested calls in one cell do not provide that readback. Self-improved — 2026-10-07: a batched health check and launch skipped that inspection boundary (Codex task: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e). Self-improved — 2026-10-03: checking logs only after opening the test page missed a live dependency
 failure; the same-turn gate checks that boundary (Codex task: 01a09057-ebdc-7ab2-ad84-dcc9260f25f9).
 If a historical screen name or standalone-terminal handle is unavailable, verify current process ancestry and fresh build markers/logs without
 claiming that its terminal is attached or starting a duplicate. Then verify all of the following from their latest/current runs:
 
-- API watch completed its latest build successfully and is still watching.
-- The standalone API completed Nest startup, listens on `3000 + N` with its inspector on `9230 + N`, and has no
-  unresolved startup or current-run errors.
-- The frontend's latest one-shot build says `Application bundle generation complete`, its compiled HTML and build marker agree, and its small retained server listens on `4200 + N` with its debug
-  receiver on `9476 + N`, targets that stack's standalone API, and has no unresolved compilation errors.
+- For manual testing, API watch completed its latest build successfully and is still watching. For E2E, require its
+  latest one-shot API build to succeed and the shared manual watcher to remain alive; do not start an E2E source watcher.
+- The target standalone API completed Nest startup, listens on `3000 + N` with inspector `9230 + N` for manual testing,
+  or `3100 + N` with inspector `9330 + N` for E2E, and has no unresolved startup or current-run errors.
+- The target frontend's latest one-shot build says `Application bundle generation complete`, its compiled HTML and
+  build marker agree, and its small retained server listens on `4200 + N` with debug receiver `9476 + N` for manual
+  testing, or `4300 + N` with debug receiver `9576 + N` for E2E. It targets its paired standalone API and has no
+  unresolved compilation errors.
 - The indexed Download Assets Worker container reports healthy, listens on `18800 + N`, and, when testing Download
   selected, a POST with no grant reaches that Worker and returns its expected `400` without current-run errors.
 - Indexed Functions `15000 + N`, Firestore `18080 + N`, Storage `16000 + N`, MinIO `17000 + N`, and Worker `18800 + N`
@@ -486,13 +522,16 @@ safety checks; do not reread unchanged references, search historical task or pro
 preflight between successful steps. Recheck only the boundary that failed or changed—for example, when the tracked
 Safari window acquired another task's tab. (Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
-Finish the report and task-fixture cleanup, then close and verify the exact tracked browser window. Stop the native
-frontend/API processes next so they cannot issue another write while Firebase creates its final private export:
+Finish the report and task-fixture cleanup, then close and verify the exact tracked manual and E2E browser pages.
+Stop both native frontend/API pairs and the manual API watcher next so they cannot issue another write while Firebase
+creates its final private export:
 
 Stop each default background role through its exact retained screen name: send Ctrl-C with
 `/usr/bin/screen -S "aimvsN-<role>" -p 0 -X stuff $'\003'`, wait for that screen session to exit, and verify the
-recorded launcher/child processes plus ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone. A missing
-screen socket alone does not prove all descendants stopped.
+recorded launcher/child processes plus manual ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone.
+Include any verified `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` owners and require E2E ports `4300 + N`,
+`3100 + N`, `9330 + N`, and `9576 + N` to be clear before stopping the backend. A missing screen socket alone does not
+prove all descendants stopped.
 If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
 and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
 close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it.
@@ -529,7 +568,7 @@ Every nonzero stack owns and exports only its private backend. Before an authori
 writes were persisted.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
-verify ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` have no listeners, then close those tabs and their
+verify the manual and E2E frontend/API/inspector/debug-log ports listed above have no listeners, then close those terminal sessions and their
 window. Never stop stack 0's Worker, quit a terminal app, or close an unrelated window. Only after every applicable
 browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
 Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any

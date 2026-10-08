@@ -26,7 +26,9 @@ URLs, private object contents, transient PIDs, or large raw logs.
 
 Stack 0 is Ethan's main VS Code environment and owns the native main Firebase, Storage, MinIO, and Download Assets
 Worker services. Every nonzero dev stack uses its own indexed native frontend/API processes and its own Docker Compose
-backend containing Functions, Firestore, Storage, MinIO, and the Worker. Real staging Auth remains shared. The stack
+backend containing Functions, Firestore, Storage, an Auth emulator, MinIO, and the Worker. Ordinary native frontend/API
+processes keep staging Auth; a separate `--e2e` native pair uses that same backend's Auth emulator for fresh E2E
+accounts through per-process SDK configuration, without browser-storage selection or staging-account copies. The stack
 index is the only backend-mode source of truth; never point a nonzero stack at stack 0 or add back the removed
 per-command isolation flag. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
@@ -37,7 +39,7 @@ exclusive ownership before starting it because it interrupts stack 0.
 The refusal-only teardown and multi-emulator ownership framework were tried and explicitly rejected in favor of this
 original behavior. (Codex task: 019faf46-16ac-7a90-b650-e988a2e6a505)
 
-Node-side wiring lives in `apps/frontend/plugins/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
+Node-side wiring lives in `tools/scripts/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
 (the CLI the npm scripts call). `--dev-stack-index=N` pairs every native process with that index's private backend;
 native startup refuses a nonzero stack whose matching containers are absent.
 
@@ -261,9 +263,12 @@ from the HTML shell's load time alone.
 
 Treat a nonzero backend as ready only when it has a unique Compose project, loopback-only host ports, a nonzero
 dev-stack index, and private named volumes for Firebase and MinIO. It includes Functions built from that exact
-worktree, Firestore, Firebase Storage, MinIO, and the Download Assets Worker; real staging Firebase Auth stays shared
-and the normal App Check debug-token setup is reused. A new frontend port is a separate browser origin and can require
-one normal sign-in the first time; backend restarts must not replace Auth with private emulator state. The frontend and
+worktree, Firestore, Firebase Storage, an Auth emulator, MinIO, and the Download Assets Worker; real staging Firebase
+Auth remains the ordinary manual frontend/API's account directory and the normal App Check debug-token setup is
+reused. The separate `--e2e` frontend/API uses fresh Auth-emulator accounts, exported with the private Firebase data
+so guarded restarts keep them. Both native pairs share these existing backend containers and data; there is no
+per-browser opt-in or dual-directory API lookup. A new frontend port is a separate browser origin and can require one
+normal sign-in the first time. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e) The frontend and
 hot-reloading standalone API remain native. A new stack defaults to the read-only canonical seed; empty data requires
 explicit `--seed=empty`. Its first launch may therefore use the canonical seed or empty data, but
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
@@ -362,8 +367,10 @@ and clean it up through guarded stop. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4
 ## Worktrees that change emulator triggers
 
 A nonzero stack's private Firebase image owns the Functions, Firestore Rules, and Storage Rules from that exact
-worktree. After changing trigger-local code or a Function definition, stop the stack's native writers, run the guarded
-private-backend stop, then start the same indexed backend again so Docker rebuilds the Function bundle. Verify the
+worktree. Shared Functions callbacks still target the ordinary manual API, which local E2E preflight starts with its
+watcher only when missing; stopping or rebuilding that API can interrupt E2E callbacks. After changing trigger-local
+code or a Function definition, stop the stack's verified native writers, including any retained E2E frontend/API
+owners and their browser pages, run the guarded private-backend stop, then start the same indexed backend again so Docker rebuilds the Function bundle. Verify the
 private containers and indexed ports before testing. Never copy worktree trigger hunks into main or restart stack 0
 for a nonzero test; that old shared-emulator workaround was rejected once every nonzero backend became isolated.
 The nonzero standalone-API supervisor only replaces the native Node child after successful API builds; it deliberately
