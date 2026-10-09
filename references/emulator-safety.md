@@ -388,12 +388,15 @@ loaded rules paths separately before attributing the failure to another worktree
 
 Firebase Tools still has this narrow live-delete export race, but AIMVS deliberately does not patch the export loop:
 making a multi-gigabyte snapshot synchronous blocks ordinary Storage requests for the whole copy. The normal
-`postinstall` patch keeps the larger Storage upload-body limit and actively restores any legacy server/export patches
+`postinstall` patch keeps the larger Storage upload-body limit, acknowledges incomplete GCS resumable chunks and offset
+queries with 308 and the received Range, and actively restores any legacy server/export patches
 left in `node_modules`; Firebase Tools 15.25.1 supplies the line-buffered Storage Rules response handling itself and
 fixes 15.25.0's Functions-emulator secret-param argument transposition.
 Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
 -r ts-node/register tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
-Tools. Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live
+Tools. The regression exercises the actual chunk-handler patch against in-memory dependency copies, including partial
+chunks, offset queries, completion and repeat application, without modifying the running emulator's files.
+Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live
 state and logs and retry only after stopping concurrent Storage mutations; do not delete the shared export as a first
 response because that hides the race and loses reusable local state.
 

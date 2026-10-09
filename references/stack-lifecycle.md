@@ -250,6 +250,10 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    Preserve a healthy process in its current owner unless Ethan requests migration. (Codex tasks:
    01a06eec-07f7-7aa1-a498-15f6334e4b91, 01a0a16f-d40c-7b10-b1da-e87175b0bcf7)
 
+   macOS `screen` does not support GNU `-Logfile`; use the role log directory and `-L` above, then verify its
+   `screenlog.0` exists. Self-improved — 2026-10-07: an unsupported flag prevented a retained role from starting
+   (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
+
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
    Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. The API watcher remains unchanged. Use the checkout's Nx environment rule above consistently for startup and explicit rebuilds.
@@ -458,8 +462,11 @@ Require narrow status/error matching and redaction before emitting log excerpts,
 `sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
+For Docker build progress, emit only the step number and `DONE`, `CACHED` or `ERROR`; a whole `#N ERROR ...` line still needs the same tested redaction. Self-improved — 2026-10-09: an image-build progress reader skipped this check; verify matching synthetic token and query-key lines before its first output. (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168)
 Before running a log-read command, check its text for an unfiltered `head`, `tail`, `sed`, `cat`, or sliced string prefix; replace it with a
-script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text. Extract timestamps instead of printing truncated log lines. Self-improved — 2026-10-01: a Python prefix check missed this existing guardrail; the command preflight must cover slicing too (Codex task: 01a09727-c5e5-7672-9047-e0f448963715).
+script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text. Extract timestamps instead of printing truncated log lines. A Python `print(log[-N:])` is raw log output too; reject that emission before execution unless the selected text has passed the same redaction check. Self-improved — 2026-10-07: a sliced screen-log suffix bypassed the preflight; inspect each print argument, not only shell utilities (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168). Self-improved — 2026-10-01: a Python prefix check missed this existing guardrail; the command preflight must cover slicing too (Codex task: 01a09727-c5e5-7672-9047-e0f448963715).
+After compaction, reread this log-read preflight before the first log command; a summarized recovery plan does not
+authorize raw log excerpts. Self-improved — 2026-10-07: raw `tail` calls resumed after compaction in the same task.
 Frontend compiler logs follow this same check: never use a raw `tail` just to confirm a rebuild. Self-improved — 2026-10-04: a cinema-layout retest missed that boundary; derived build markers replaced the raw tail (Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf). Process inventories also need exact known PIDs or launchers selected before emission; a broad task-name match can include another task's token-bearing command line. Check the final projection for secret-bearing arguments before printing it. Self-improved — 2026-10-04: a broad cinema-task process match included a ledger UI command; exact owner projections prevent that exposure (same Codex task).
 Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
 not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
@@ -532,6 +539,9 @@ recorded launcher/child processes plus manual ports `4200 + N`, `3000 + N`, `923
 Include any verified `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` owners and require E2E ports `4300 + N`,
 `3100 + N`, `9330 + N`, and `9576 + N` to be clear before stopping the backend. A missing screen socket alone does not
 prove all descendants stopped.
+Do not substitute `screen -X quit` for Ctrl-C: it can close the screen handle while npm's child launchers keep
+their ports open. Self-improved — 2026-10-07: verified surviving launchers after that substitution
+(Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
 If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
 and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
 close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it.
