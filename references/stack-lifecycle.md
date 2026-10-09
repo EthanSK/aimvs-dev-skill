@@ -347,6 +347,12 @@ backend command. The E2E frontend always selects Auth emulator sign-in, and its 
 emulator setting. Ordinary manual processes keep staging Auth. No browser-storage opt-in, dual-directory API lookup
 or staging-account copying is required; tests still create fresh Users, Channels and Billing Accounts.
 
+For a manual local-E2E build, derive the child environment through `getDevStackEnv(getDevStackConfig(...))` with the
+reserved nonzero stack index and E2E mode, as preflight does; check both before launching the build. The Nx
+`local-e2e` configuration alone does not supply the stack index. Self-improved — 2026-10-09: a bare configured API
+build refused stack 0; the same build passed with the established child environment. (Codex task:
+01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
+
 E2E has finite builds followed by retained `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions, using the
 same exact-owner checks as the manual roles. There is no E2E source watcher: another run builds the current candidate,
 and the API supervisor loads that completed build. Keep E2E output and `.nx/e2e-build-status` separate from the manual
@@ -468,6 +474,10 @@ script that emits only derived status markers or redacted lines, then test the r
 After compaction, reread this log-read preflight before the first log command; a summarized recovery plan does not
 authorize raw log excerpts. Self-improved — 2026-10-07: raw `tail` calls resumed after compaction in the same task.
 Frontend compiler logs follow this same check: never use a raw `tail` just to confirm a rebuild. Self-improved — 2026-10-04: a cinema-layout retest missed that boundary; derived build markers replaced the raw tail (Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf). Process inventories also need exact known PIDs or launchers selected before emission; a broad task-name match can include another task's token-bearing command line. Check the final projection for secret-bearing arguments before printing it. Self-improved — 2026-10-04: a broad cinema-task process match included a ledger UI command; exact owner projections prevent that exposure (same Codex task).
+E2E runner stdout follows this same check: extract results from the structured run record, or redact selected lines
+before emitting them; never return a raw log tail just because a previous run contained no secrets. Self-improved —
+2026-10-09: a local media-result read skipped the existing redaction boundary. (Codex task:
+01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
 Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
 not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
 synthetic `App Check debug token: <value>` entry that also matches the route filter and require `[REDACTED]` or omission.
