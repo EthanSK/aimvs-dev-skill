@@ -445,9 +445,14 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+Apply the same boundary to local credential files, including `.secret.local`: reject raw `cat`, `rg` or line excerpts
+before execution; parse privately and emit only key names, presence booleans or redacted values. Test the final
+projection with a synthetic credential before emitting it. Self-improved — 2026-10-10: a source-file search bypassed
+the existing log guard (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
 Apply this output guard to provider API and browser URL readbacks too: emit an explicit allow-list of needed fields,
 never a complete Firebase Auth `signIn` object containing `hashConfig.signerKey`, OAuth client secrets, or Google
-challenge query parameters. Before the first output, test the final projection with synthetic secret fields and
+challenge query parameters. Call browser inventory APIs with `emit:false`; project only needed browser IDs/types
+and task-page IDs with credential-free URLs, never unrelated page titles or URLs. Before the first output, test the final projection with synthetic secret fields and
 require them to be absent. Self-improved — 2026-10-10: status inspection exposed sensitive configuration and a
 challenge URL; this checks the projection before emission (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
 Apply this same redaction to native DevTools Console Accessibility text before emitting selected lines; filtering for errors does not remove URL credentials. Synthetically check that the actual Console readback formatter redacts both `App Check debug token:` and `?key=` before its first output. Self-improved — 2026-10-04: an error-only native Console readback exposed a Firebase URL key during browser verification (Codex task: 01a103f5-147c-72a0-945b-52de8f605c89).
