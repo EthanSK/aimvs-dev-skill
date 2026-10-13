@@ -34,7 +34,7 @@ belongs to Ethan's main VS Code environment and is never an agent test target. E
 nonzero stack index, including tests of uncommitted changes in the primary worktree. Every new linked worktree has its
 nonzero index reserved in its `aimvs<N>-<task-slug>` name and the shared Git directory from creation through
 removal, even before startup. Stack 0 keeps Ethan's main native services; every nonzero stack uses its own private
-backend containers plus its own indexed native frontend/API processes.
+backend containers plus its own indexed native frontend/API processes. Local E2E lazily reserves a second E2E-role index for the same source worktree, with its own backend and native processes; it creates no second checkout and keeps the manual stack untouched. Before removing the source worktree, guarded-stop both indexes; ordinary reservation release then verifies and releases the pair while preserving every volume. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
 
 Before changing or publishing this skill, read [references/skill-publication.md](references/skill-publication.md).
 It defines the canonical source, guarded public mirror, and private-data safeguards.

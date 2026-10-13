@@ -140,6 +140,8 @@ has an active `gitdir` link and the indexed runtime is still safe, while preserv
 npm run aimvs-worktree -- release --dev-stack-index=N
 ```
 
+Local E2E may lazily reserve a second E2E-role index owned by the same stable Git metadata directory, without creating another source checkout. Before removing that source worktree, list and guarded-stop both runtimes; the ordinary manual reservation release then verifies and releases its companion too, preserving all volumes. Never release the E2E number while the source worktree still exists. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
+
 Reservation lifetime follows the worktree, never Codex pinning, task activity, or whether the stack was started. A
 never-started owner still runs guarded `stop`: its finalized reservation permits checking the previous owner's saved
 volume identities without starting the stack, while any foreign runtime still blocks cleanup.

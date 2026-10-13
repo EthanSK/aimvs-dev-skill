@@ -52,7 +52,7 @@ before delivering `SIGHUP`, then require the launcher and every recorded descend
 the terminal remains valid does not cover this bug; never use stack 0 for this probe. (Codex tasks:
 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a072dd-5935-7833-8eb4-cd9133acca2f)
 
-Stack 0's debug log is `frontend-debug.log`; stack N's manual log is `frontend-debug-N.log` and its local E2E log is `frontend-debug-e2e-N.log`. The E2E pair uses the same indexed backend ports and data as the manual pair.
+Stack 0's debug log is `frontend-debug.log`; stack N's manual log is `frontend-debug-N.log` and its local E2E log is `frontend-debug-e2e-N.log`. The dedicated E2E pair uses its own role reservation and backend index, distinct from the manual pair; N in the table is the selected runtime's index, not always the number in the source worktree name.
 
 ## Ethan's main environment
 
@@ -340,30 +340,13 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
 
 ## Local E2E processes
 
-Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered worktree; follow `aimvs-e2e` for selection
-and retained actors. Preflight uses the same existing backend containers and data, then builds a separate frontend/API
-in `dist/e2e-local/`. Native launchers select this mode with `--e2e` (`AIMVS_E2E_LOCAL=true`); never add it to the shared
-backend command. The E2E frontend always selects Auth emulator sign-in, and its API uses Firebase Admin's per-process
-emulator setting. Ordinary manual processes keep staging Auth. No browser-storage opt-in, dual-directory API lookup
-or staging-account copying is required; tests still create fresh Users, Channels and Billing Accounts.
+Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered source worktree; follow `aimvs-e2e` for selection and reports. Execution lazily reserves one additional nonzero E2E-role index through `ensureE2eWorktreeStackReservation`, reusing it thereafter. Discovery only reads an existing reservation and never allocates or starts a stack. Both reservations point to the same stable Git metadata directory; no second checkout is created. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
 
-For a manual local-E2E build, derive the child environment through `getDevStackEnv(getDevStackConfig(...))` with the
-reserved nonzero stack index and E2E mode, as preflight does; check both before launching the build. The Nx
-`local-e2e` configuration alone does not supply the stack index. Self-improved — 2026-10-09: a bare configured API
-build refused stack 0; the same build passed with the established child environment. (Codex task:
-01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
+The dedicated E2E runtime has its own Functions, Auth, Firestore, Storage, MinIO and Download Assets Worker containers and persistent volumes. Native frontend/API ports remain `4300 + N` / `3100 + N` for that E2E index, with inspector `9330 + N` and debug receiver `9576 + N`. It retains `dist/e2e-local/` output and `.nx/e2e-build-status`; manual development uses its original reservation, staging Auth and existing outputs. Sharing backend data and requiring the manual API/watcher for callbacks were rejected because manual restarts and edits interfered with tests; do not reintroduce that dependency. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
-E2E has finite builds followed by retained `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions, using the
-same exact-owner checks as the manual roles. There is no E2E source watcher: another run builds the current candidate,
-and the API supervisor loads that completed build. Keep E2E output and `.nx/e2e-build-status` separate from the manual
-builds. Its frontend/API ports are `4300 + N` / `3100 + N`, with inspector `9330 + N` and debug-log receiver `9576 + N`.
+Native launchers require `--e2e` plus the exact E2E-role index. The isolated-backend launcher infers E2E mode from that reservation for start/stop/export, packages the local-e2e Functions build in the canonical container layout, and routes callbacks to the E2E API. Its Rules directory is `.firebase/e2e-rules`, generated during finite preparation; it never starts a manual or E2E source watcher. Derive child settings with `getDevStackEnv(getDevStackConfig(...))`; the Nx `local-e2e` configuration alone does not supply the index. Bare builds without that child environment can produce mismatched native ports. (Codex tasks: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
-Shared Functions callbacks still target the manual API. Preflight starts the normal API watcher and server only when
-missing, checks their readiness, and does not force an existing manual API or frontend rebuild or start a missing
-manual frontend. Stopping or rebuilding the manual API while E2E runs can interrupt callbacks; separate E2E binaries
-do not isolate that shared dependency. Candidate build checks apply to the E2E pair; verify the retained manual API
-and backend are ready without treating their existence as proof they were rebuilt for this run. User-requested separate
-local E2E processes — 2026-10-08 (Codex task: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e).
+Preparation builds the current source, then retains `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions under exact-owner checks. It never starts or rebuilds the manual frontend/API. Admission records the completed E2E API/frontend builds and actual Firebase/Download Worker image IDs; recovery waits for those same builds rather than rebuilding mid-test. Trigger-local or Function-definition changes still require the existing guarded backend stop/start because a native API build cannot replace the Functions image already running. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
 ## Retain an agent-owned stack after testing
 
@@ -429,8 +412,7 @@ exact worktree. (Codex tasks: 01a05301-5376-77b1-9c70-99e37245cc98,
 
 Before the first browser or Computer Use action for a worktree, and again after any relevant source change or
 process restart, inspect current output from that worktree's exact retained screen logs. For the ordinary manual pair,
-use its three roles below; for local E2E use the E2E roles and candidate-build boundary described above, plus the shared
-manual API/backend readiness checks. Inspect the corresponding logs or existing standalone terminal sessions without
+use its three roles below; for local E2E use the E2E roles and dedicated backend/candidate-build boundary described above. Inspect the corresponding logs or existing standalone terminal sessions without
 raising their window. Require every applicable role's ownership to match the exact worktree and the same nonzero
 `--dev-stack-index=N`, with `--e2e` on the E2E roles; the indexed Worker remains a private container.
 Repeat this gate in the current turn before creating a test browser page; earlier results or listener checks alone do
@@ -440,7 +422,7 @@ If a historical screen name or standalone-terminal handle is unavailable, verify
 claiming that its terminal is attached or starting a duplicate. Then verify all of the following from their latest/current runs:
 
 - For manual testing, API watch completed its latest build successfully and is still watching. For E2E, require its
-  latest one-shot API build to succeed and the shared manual watcher to remain alive; do not start an E2E source watcher.
+  latest one-shot API build and dedicated backend to be healthy; do not start a manual or E2E source watcher for it.
 - The target standalone API completed Nest startup, listens on `3000 + N` with inspector `9230 + N` for manual testing,
   or `3100 + N` with inspector `9330 + N` for E2E, and has no unresolved startup or current-run errors.
 - The target frontend's latest one-shot build says `Application bundle generation complete`, its compiled HTML and
@@ -544,7 +526,7 @@ safety checks; do not reread unchanged references, search historical task or pro
 preflight between successful steps. Recheck only the boundary that failed or changed—for example, when the tracked
 Safari window acquired another task's tab. (Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
-Finish the report and task-fixture cleanup, then close and verify the exact tracked manual and E2E browser pages.
+Finish the report and task-fixture cleanup, then close and verify the exact tracked manual and E2E browser pages. Before source worktree removal, list its reservations and clean up both the manual index and its E2E-role index from that still-existing worktree. Guarded stop/export preserves each dataset separately; releasing the manual reservation after Git removal also guard-releases its companion, and refuses while either runtime remains unsafe. Do not infer the E2E index from the worktree name. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 Stop both native frontend/API pairs and the manual API watcher next so they cannot issue another write while Firebase
 creates its final private export:
 
