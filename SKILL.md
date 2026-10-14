@@ -67,10 +67,11 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   release it only after guarded runtime cleanup and successful Git worktree removal. Existing unnumbered worktrees are
   legacy-compatible and must not be renamed merely to apply this rule. (Codex task:
   01a05ebf-a8f9-7f83-a325-1565cf6005a7)
-- Every source-changing AIMVS task must use a named linked worktree before its first mutation. Treat the primary
+- Except for tiny little config changes, every source-changing AIMVS task must use a named linked worktree before its first mutation. Treat the primary
   `main` checkout as read-only for implementation, fixes, tests, formatting, generation, and skill edits; if a task
-  starts there, create or reuse the task-owned worktree and move the in-scope changes before continuing. The only
-  exception is the narrowly defined primary-checkout `AGENTS.md` instruction-sync workflow.
+  starts there, create or reuse the task-owned worktree and move the in-scope changes before continuing. Tiny little
+  config changes like an npm-script preload can be done directly on main; don't make a new worktree just for them.
+  Preserve unrelated Git state. The primary-checkout `AGENTS.md` instruction-sync workflow is also an exception.
 - Treat native standalone-API hot reload as a nonzero-stack feature. After a successful API watcher build, require the
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
