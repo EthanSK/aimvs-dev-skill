@@ -546,7 +546,7 @@ their ports open. Self-improved — 2026-10-07: verified surviving launchers aft
 (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
 If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
 and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
-close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it.
+close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it. Run the ownership proof and stop signal in separate tool calls, and require a zero exit from the proof before signalling; an unconditional multiline shell continues after a failed assertion. Self-improved — 2026-10-14: a failed child-directory assertion still reached the following screen signals; separating this boundary prevents that failure (task `01a12fe4-430c-7a90-bcc4-6fd033ddf5b5`).
 
 For an existing iTerm stack, follow [standalone terminal cleanup](standalone-terminals.md#close-an-existing-iterm-stack)
 instead. Native-process migration stops only the roles being moved, proves their old owners exited, starts one
