@@ -126,7 +126,7 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    Before starting a stopped reserved runtime or reusing a legacy stopped runtime, verify its containers are stopped, its exact network is empty, and every current and
    recovery-backup volume identity is preserved. The launcher performs this proof, records the new runtime worktree,
    removes only stopped containers, reuses the exact empty network, then starts against the existing volumes. `start`,
-   `stop`, `export`, and the read-only `reservable` proof hold one per-index lock in the shared Git directory through
+   `stop`, `export`, and the read-only `reservable` and `releasable` proofs hold one per-index lock in the shared Git directory through
    their final readback, while the lifetime reservation prevents another worktree from claiming an idle index. A running
    lifecycle owner, container, live port, attached/foreign network, incomplete dataset, or ambiguous identity blocks
    reuse. Never delete a volume to free a number, and never use `0`; it belongs to Ethan even when testing source from main.
@@ -537,10 +537,10 @@ creates its final private export:
 
 Stop each default background role through its exact retained screen name: send Ctrl-C with
 `/usr/bin/screen -S "aimvsN-<role>" -p 0 -X stuff $'\003'`, wait for that screen session to exit, and verify the
-recorded launcher/child processes plus manual ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone.
+recorded launcher/child processes plus owned or unidentified listeners on manual ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone.
 Include any verified `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` owners and require E2E ports `4300 + N`,
 `3100 + N`, `9330 + N`, and `9576 + N` to be clear before stopping the backend. A missing screen socket alone does not
-prove all descendants stopped.
+prove all descendants stopped. The guarded cleanup exception below permits only separately verified main Firebase listeners.
 Do not substitute `screen -X quit` for Ctrl-C: it can close the screen handle while npm's child launchers keep
 their ports open. Self-improved — 2026-10-07: verified surviving launchers after that substitution
 (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
@@ -568,11 +568,17 @@ snapshot remains intact. The command removes only exact stopped runtime containe
 that every current and recovery volume has the same identity. Guarded stop always attempts and verifies export-on-exit,
 but a failed or crash-missed export is best-effort dev-data loss rather than permanent quarantine: warn that the latest
 unexported writes may be missing, reuse the last preserved snapshot, and remove only exact dead runtime artifacts while
-keeping every persistent volume. If any indexed port remains live, a container is running, the dataset is incomplete,
+keeping every persistent volume. If any owned or unidentified indexed listener remains live, a container is running, the dataset is incomplete,
 or ownership/topology is ambiguous, stop cleanup and keep every artifact. Never bypass the command with raw `docker
 stop`, `docker compose down`, pruning, reseeding, or volume deletion. (Codex tasks:
 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a024c0-a524-7960-a57e-f9fa68536e4c,
 01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
+
+Guarded cleanup may leave an occupied port only when the helper verifies the exact primary-worktree Firebase CLI by
+PID, working directory and command. Main's Tasks emulator uses 9499, which overlaps Stack 23's debug port; do not stop
+main or share its backend to clear that collision. Post-removal release uses the read-only `releasable` check, while
+allocation and startup keep `reservable`'s strict free-port check and skip the occupied number. Self-improved —
+2026-10-15: verified live owner and cleanup/startup regression tests (Codex task: 01a13a36-0fab-7812-b46a-9b3b6f9d0e49).
 
 Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
 0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own
@@ -580,7 +586,7 @@ Every nonzero stack owns and exports only its private backend. Before an authori
 writes were persisted.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
-verify the manual and E2E frontend/API/inspector/debug-log ports listed above have no listeners, then close those terminal sessions and their
+verify the manual and E2E frontend/API/inspector/debug-log ports listed above have no owned or unidentified listeners, applying only the verified main Firebase exception above, then close those terminal sessions and their
 window. Never stop stack 0's Worker, quit a terminal app, or close an unrelated window. Only after every applicable
 browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
 Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any

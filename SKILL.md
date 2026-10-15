@@ -180,7 +180,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   its isolated backend has completed guarded `stop` from that still-existing worktree, and the indexed runtime is
   absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export warns
   that the newest dev writes may be missing but does not block removal once the stopped runtime and unchanged volumes
-  are verified; a live port, running container, foreign or ambiguous owner, mixed topology, or failed readback still
+  are verified; an owned or unidentified listener, running container, foreign or ambiguous runtime owner, mixed topology, or failed readback still
   blocks removal and preserves all Docker state. After removing a numbered worktree, release its exact shared
   reservation and verify the number is assignable again without changing any volume. (Codex tasks:
   019ff0c1-80ad-79f3-9d60-cbb4004bf608,

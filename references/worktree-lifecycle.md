@@ -130,7 +130,7 @@ its verified worktree cleanup unless Ethan explicitly says to retain the worktre
 not ask separately before stopping its exact runtime, removing its VS Code folder and Git worktree, or releasing its
 stack reservation. This authorization never includes deleting its branch or persistent volumes. Before changing local
 `main`, run a fresh ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
-stop, and retire its cleanup automation when one exists. Verify the browser and indexed ports are absent, no matching
+stop, and retire its cleanup automation when one exists. Verify the browser is closed and no owned or unidentified indexed listener remains (following the exact main Firebase exception in [stack-lifecycle.md](stack-lifecycle.md)), no matching
 container is running, the runtime containers and network are released, every persistent and recovery volume remains
 unchanged, and the VS Code folder is absent before removing the Git worktree. The guarded stop releases runtime
 artifacts but deliberately keeps a numbered worktree's number reserved. After `git worktree remove` succeeds, run the
