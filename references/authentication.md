@@ -2,12 +2,12 @@
 
 ## Sign-in with the test account
 
-Ordinary local frontend/API processes use real Firebase Auth for the staging project on every stack, so the saved
-test account below signs in normally. Local E2E runs use a separate native frontend/API pair with `--e2e`
+Ordinary local frontend/API processes use real Firebase Auth for the legacy staging project selected by the
+`development` alias on every stack, so the saved test account below signs in normally. Local E2E runs use a separate native frontend/API pair with `--e2e`
 (`AIMVS_E2E_LOCAL=true`) and the same worktree's Auth emulator on `19900 + N`. The E2E frontend selects emulator Auth
 at build time, and its API uses Firebase Admin's per-process emulator setting; there is no browser-storage opt-in or
 dual-directory lookup. Tests sign up fresh emulator Users, Channels and Billing Accounts without copying staging
-accounts. Both pairs share the worktree's existing backend containers and data. Do not create a staging sign-up/user
+accounts. Each pair owns its separately reserved backend containers and data. Do not create a staging sign-up/user
 unless the user explicitly asks. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
 
 Read both credentials from ignored repo-root `.secret.local`: `AIMVS_TEST_LOGIN_EMAIL` and
@@ -36,7 +36,9 @@ skill overrides a mandatory tool policy, change browsers to evade it, or ask aga
 
 ### Enter and verify credentials
 
-Before spending time debugging browser focus, verify the saved email exists in staging Auth when ADC is available:
+Before spending time debugging browser focus, verify the saved email exists in local development's real Auth project when ADC is available:
+
+Self-improved — 2026-10-15: read the `development` alias below because hosted `staging` can migrate independently; `.firebaserc`, `environment.development.ts` and the E2E target specs preserve the local project identity.
 
 ```bash
 node - <<'NODE'
@@ -46,8 +48,8 @@ const { getAuth } = require('firebase-admin/auth');
 const line = fs.readFileSync('.secret.local', 'utf8').split(/\r?\n/).find((entry) => entry.startsWith('AIMVS_TEST_LOGIN_EMAIL='));
 if (!line) throw new Error('AIMVS_TEST_LOGIN_EMAIL is missing from .secret.local');
 const email = line.slice('AIMVS_TEST_LOGIN_EMAIL='.length);
-const projectId = JSON.parse(fs.readFileSync('.firebaserc', 'utf8')).projects.staging;
-if (!projectId) throw new Error('The staging Firebase project is missing from .firebaserc');
+const projectId = JSON.parse(fs.readFileSync('.firebaserc', 'utf8')).projects.development;
+if (!projectId) throw new Error('The development Firebase project is missing from .firebaserc');
 if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId });
 getAuth().getUserByEmail(email).then((user) => {
   console.log(JSON.stringify({ savedEmailExists: true, providers: user.providerData.map((p) => p.providerId).sort() }));
