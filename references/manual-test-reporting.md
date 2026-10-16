@@ -14,6 +14,10 @@ and blocked sessions.
 
 ## Artifact contract
 
+Preserve every media output generated for testing (Fal or any other provider, including local synthetic outputs) in the current repository root's Git-ignored `test-generations/` folder, grouped by date, provider/model and request/run ID. Make each test harness write or download its successful outputs there before reporting completion; do not keep the only copy in a temporary folder or delete it during normal scratch cleanup. Record enough non-secret provenance to distinguish provider generations from synthetic fixtures and public examples. Keep credentials and signed query strings out of retained manifests. Verify `git check-ignore` before saving. User-requested — 2026-10-12. This is the test workflow; it does not add a production/app-wide capture hook.
+
+Keep the file-to-context mapping in `test-generations/manifest.json`: provider, exact model/endpoint, request/run ID and generation settings when known, alongside the file's hash, bytes and measured media facts. Run `node tools/scripts/test-generations-manifest.dev.cjs` after saving outputs; it preserves recorded context and adds technical metadata, reusing unchanged entries. Fill missing generation context from the test request, never guess it from the video or filename; leave unknown fields null. Do not save credentials, signed query strings or unrelated private payloads. User-requested — 2026-10-13. The bundled-binary conversion tests refresh this manifest automatically on completion; other provider harnesses must do the same before reporting completion.
+
 Each checkout/worktree owns exactly one independent date-prefixed report folder:
 
 ```text
@@ -82,7 +86,7 @@ Never revert, reimplement, or temporarily resurrect earlier product behavior sol
 code diff and test steps describe what changed; screenshots should show only genuine states reached while testing the
 current working copy.
 
-At the end of every manual test, audit this worktree's task-owned screenshots against the accumulated user requests,
+At the end of every manual test, and when Ethan requests a screenshot audit, audit this worktree's task-owned screenshots against the accumulated user requests,
 current UI, and fresh Git status. Check each applicable full page, embedded/sidebar view, and layout variant; matching
 current code does not prove the request was implemented. If Ethan asks for badges after a header, check that they
 share its row when space allows; placing them underneath is not equivalent. Before claiming all evidence is current, record each surface
