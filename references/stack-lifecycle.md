@@ -187,8 +187,9 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    ```
 
    The stack index is the only backend-mode source of truth. Native nonzero launchers refuse to start until the
-   matching Compose backend exists; there is no shared-mode flag or fallback to stack 0. A genuinely new stack defaults
-   to the canonical stack-0 snapshot; use `--seed=empty` only when an empty first initialization is explicitly required.
+   matching Compose backend exists; there is no shared-mode flag or fallback to stack 0. A genuinely new dataset defaults
+   to empty Firebase and MinIO data; use `--seed=canonical` only when copying main's snapshot and bucket is explicitly required
+   (user-requested — 2026-10-16, Codex task: 01a13cb6-5b1b-7981-bf3f-ec81363cf98d).
    Later starts always retain that stack's existing private Firebase export and MinIO volume, and an interrupted first
    initialization retries with its already-persisted seed choice. Never delete its volumes, reseed it, or merge its data
    into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105)
@@ -565,7 +566,12 @@ removal; only the post-removal
 `npm run aimvs-worktree -- release --dev-stack-index=N` makes it assignable to another worktree. A container that
 failed before readiness instead prints `Firebase never became ready; no private export was required.` so its last good
 snapshot remains intact. The command removes only exact stopped runtime containers and its empty network, then proves
-that every current and recovery volume has the same identity. Guarded stop always attempts and verifies export-on-exit,
+that every current and recovery volume has the same identity. Only after that proof does it remove that stack's own
+unused Firebase and Download Assets Worker software images, selected by the exact Compose project and service labels.
+It skips any image a container still uses and never forces removal or prunes untagged parent images. A Docker image-housekeeping failure warns without
+failing the already-preserved stop, and the next `start` rebuilds as usual, reinstalling dependencies only when Docker's build cache has
+expired. Do not add a separate image or build-cache prune. (Codex task: 01a13cb6-5b1b-7981-bf3f-ec81363cf98d)
+Guarded stop always attempts and verifies export-on-exit,
 but a failed or crash-missed export is best-effort dev-data loss rather than permanent quarantine: warn that the latest
 unexported writes may be missing, reuse the last preserved snapshot, and remove only exact dead runtime artifacts while
 keeping every persistent volume. If any owned or unidentified indexed listener remains live, a container is running, the dataset is incomplete,

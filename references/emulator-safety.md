@@ -269,8 +269,8 @@ reused. The separate `--e2e` runtime reserves its own backend index and uses fre
 with that runtime's private Firebase data so guarded restarts keep them. Manual and E2E native pairs use separate
 backend containers and data; there is no per-browser opt-in or dual-directory API lookup. A new frontend port is a separate browser origin and can require one
 normal sign-in the first time. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5) The frontend and
-standalone API remain native; manual API watches source, while E2E retains a finite build. A new stack defaults to the read-only canonical seed; empty data requires
-explicit `--seed=empty`. Its first launch may therefore use the canonical seed or empty data, but
+standalone API remain native; manual API watches source, while E2E retains a finite build. A new dataset defaults to empty Firebase and MinIO data; copying main's read-only canonical seed requires
+explicit `--seed=canonical` (user-requested — 2026-10-16, Codex task: 01a13cb6-5b1b-7981-bf3f-ec81363cf98d). Its first launch may therefore use the canonical seed or empty data, but
 every later launch must prefer that stack's private Firebase export and existing MinIO volume regardless of the
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
@@ -301,7 +301,9 @@ adopted once and then covered by every later lifecycle. (Codex tasks: 01a024c0-a
 01a067e4-975c-7c71-b393-b27d66080bd9)
 Normal nonzero-stack stop/export is always preservation-only. Guarded `stop` attempts and verifies Firebase export, but
 an export failure only warns that the latest unexported dev writes may be missing; it still removes only exact stopped
-runtime containers and its empty network, and proves every current and recovery volume kept the same identity. A
+runtime containers and its empty network, and proves every current and recovery volume kept the same identity. It then
+removes only that stack's own unused, unforced Firebase and Worker software images, as described in
+`stack-lifecycle.md` (Codex task: 01a13cb6-5b1b-7981-bf3f-ec81363cf98d). A
 numbered worktree keeps the number reserved until that worktree is successfully removed and its shared reservation is
 guardedly released; only then can a later worktree receive the number and continue from the saved dataset. Never delete,
 prune, reclaim, reset, recreate, or reseed a stack's Firebase, Storage, MinIO, backend-state, recovery-backup, or other

@@ -170,7 +170,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
 - Never delete, prune, reclaim, reset, recreate, or reseed a nonzero stack's Firebase, Storage, MinIO, backend-state,
   recovery-backup, or other persistent volume. `stop` must attempt and verify the Firebase export, warn rather than
   quarantine the number when best-effort dev writes were not exported, stop the runtime, remove only replaceable
-  containers and its empty network, and preserve every volume with the same identity. For a numbered worktree, this
+  containers and its empty network, then remove only that stack's own unused Firebase and Worker images without force or parent pruning, and preserve every volume with the same identity. For a numbered worktree, this
   makes the runtime safe but leaves its number reserved until successful worktree removal and guarded reservation
   release. The next worktree assigned that released number continues from its existing dataset. Worktree landing or
   removal never authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure
