@@ -63,13 +63,17 @@ assigning an untracked filename to it makes later tools such as `shasum` disappe
 ### Reply after a rebase
 
 - Before rebasing, save the exact last assistant final reply sent before Ethan's rebase request, including its links, formatting and footer. For a delegated rebase request, use the destination chat's own last final reply. If the rebase was initiated without a new user message, save the last final reply before starting. Keep this snapshot outside the worktree so rebasing cannot overwrite it.
-- After every successful rebase and complete restoration of dirty work, the final reply must be that saved reply copied and pasted word for word, with only the large, all-caps silver heading below added at the very top. Do not summarize, rewrite, omit parts, refresh links or footers, or append new sections to the saved body. This explicit rebase-reply format overrides the usual final-reply formatting and coverage-counter updates. User-requested — 2026-10-17 (Codex task: 01a13a36-0fab-7812-b46a-9b3b6f9d0e49).
+- After every successful rebase and complete restoration of dirty work, the final reply must be that saved reply copied and pasted word for word, with only a newly generated large, all-caps silver heading added at the very top. Do not summarize, rewrite, omit parts, refresh links or footers, or append new sections to the saved body. This explicit rebase-reply format overrides the usual final-reply formatting and coverage-counter updates. User-requested — 2026-10-17 (Codex task: 01a13a36-0fab-7812-b46a-9b3b6f9d0e49).
 - Report the actual new commit, noteworthy conflicts or adaptations, verification, and unresolved work in commentary before the final copy, identifying the copied body as the pre-rebase reply rather than fresh verification. Never use the completion heading while the rebase or dirty-state restoration is incomplete; report the real blocker instead. If no earlier final reply exists, state that rather than inventing one.
 
-```text
-\(\Huge\textsf{\color{#94a3b8}RE\color{#cbd5e1}BA\color{#f8fafc}SE \color{#e2e8f0}CO\color{#f8fafc}MP\color{#cbd5e1}LE\color{#94a3b8}TE}\)
+- Generate a fresh silver shade independently for every letter of `REBASE COMPLETE` on each reply. Keep the letters and spacing unchanged; do not reuse a fixed gradient, word-pair pattern or previous heading. Append a blank line and the exact saved reply after the generated heading. User-requested random lettering — 2026-10-17.
 
-<the exact saved pre-rebase final reply>
+```python
+import secrets
+
+silver = ['#94a3b8', '#b0b8c4', '#cbd5e1', '#e2e8f0', '#f8fafc']
+letters = ''.join(r'\color{' + secrets.choice(silver) + '}' + letter if letter != ' ' else ' ' for letter in 'REBASE COMPLETE')
+print(r'\(\Huge\textsf{' + letters + r'}\)')
 ```
 
 ## Verify selected Jest specs
