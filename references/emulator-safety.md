@@ -39,7 +39,7 @@ exclusive ownership before starting it because it interrupts stack 0.
 The refusal-only teardown and multi-emulator ownership framework were tried and explicitly rejected in favor of this
 original behavior. (Codex task: 019faf46-16ac-7a90-b650-e988a2e6a505)
 
-Node-side wiring lives in `tools/scripts/dev-stack-config.cjs` (pure config) and `tools/scripts/run-dev-stack.cjs`
+Node-side wiring lives in `tools/scripts/dev-stack/dev-stack-config.ts` (pure config) and `tools/scripts/dev-stack/run-dev-stack.ts`
 (the CLI the npm scripts call). `--dev-stack-index=N` pairs every native process with that index's private backend;
 native startup refuses a nonzero stack whose matching containers are absent.
 
@@ -347,7 +347,7 @@ initial fetch cannot poison every later start. Never mount host Google credentia
 cache into Docker: Firebase rejects the root file's reserved `FIREBASE_APPCHECK_DEBUG_TOKEN`, while copying every other
 entry would expose test-login credentials to Functions. Verify secret availability through presence or behavior without
 printing values. After changing the preparation or its Compose wiring, run
-`TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register -r ./tools/scripts/register-workspace-paths.cjs tools/scripts/prepare-isolated-functions-secrets.spec.ts`.
+`TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test -r ts-node/register -r ./tools/scripts/workspace/register-workspace-paths.cjs tools/scripts/dev-stack/prepare-isolated-functions-secrets.spec.ts`.
 (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
 Mount the persistent volume at a parent such as `/data` and give Firebase a replaceable child such as `/data/export`.
@@ -369,7 +369,7 @@ and clean it up through guarded stop. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4
 ## Worktrees that change emulator triggers
 
 A nonzero stack's private Firebase image owns the Functions, Firestore Rules, and Storage Rules from that exact
-worktree. Functions callbacks target their reservation's native API: manual or dedicated E2E. Local E2E never starts or relies on the manual API/watcher; it packages its own local-e2e Functions build and generates `.firebase/e2e-rules`. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). After changing trigger-local
+worktree. Functions callbacks target their reservation's native API: manual or dedicated E2E. Local E2E never starts or relies on the manual API/watcher; it packages its own localE2e Functions build and generates `.firebase/e2e-rules`. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). After changing trigger-local
 code or a Function definition, stop the stack's verified native writers, including any retained E2E frontend/API
 owners and their browser pages, run the guarded private-backend stop, then start the same indexed backend again so Docker rebuilds the Function bundle. Verify the
 private containers and indexed ports before testing. Never copy worktree trigger hunks into main or restart stack 0
@@ -394,7 +394,7 @@ queries with 308 and the received Range, and actively restores any legacy server
 left in `node_modules`; Firebase Tools 15.25.1 supplies the line-buffered Storage Rules response handling itself and
 fixes 15.25.0's Functions-emulator secret-param argument transposition.
 Run the focused regression with `TS_NODE_PROJECT=tools/scripts/tsconfig.json node --test
--r ts-node/register tools/scripts/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
+-r ts-node/register tools/scripts/firebase/emulators/patch-storage-emulator.spec.ts` after changing this patch or upgrading Firebase
 Tools. The regression exercises the actual chunk-handler patch against in-memory dependency copies, including partial
 chunks, offset queries, completion and repeat application, without modifying the running emulator's files.
 Restart only through the terminal that owns the shared emulator. If an export hits `ENOENT`, preserve the live

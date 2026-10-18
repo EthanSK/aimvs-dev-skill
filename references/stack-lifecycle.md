@@ -5,7 +5,7 @@
 - [Ports per stack](#ports-per-stack)
 - [Ethan's main environment](#ethans-main-environment)
 - [Run an agent-owned stack](#run-an-agent-owned-stack)
-- [Local E2E processes](#local-e2e-processes)
+- [Local E2E processes](#localE2e-processes)
 - [Retain an agent-owned stack after testing](#retain-an-agent-owned-stack-after-testing)
 - [Schedule an explicitly requested timed cleanup](#schedule-an-explicitly-requested-timed-cleanup)
 - [Mandatory live-stack health gates](#mandatory-live-stack-health-gates)
@@ -70,7 +70,7 @@ to fix dev stack 0 and an affected process needs restarting. Agents must never i
 stack 0 on their own.
 Every stack-0 terminal group in `.vscode/restore-terminals.json` must set `cwd` to
 `${workspaceFolder:ai-music-video-studio}`, and every restored shell command must source the primary sibling's
-`tools/scripts/set-main-worktree-dir.sh` before starting. This second guard corrects a terminal that still inherits
+`tools/scripts/workspace/set-main-worktree-dir.sh` before starting. This second guard corrects a terminal that still inherits
 the active linked worktree and refuses to continue if the primary checkout is unavailable or not on `main`.
 After installing a Restore Terminals build with `cwd` support, verify `code --list-extensions --show-versions`
 reports that exact version and reload VS Code before running the command; an extension folder on disk does not mean
@@ -85,7 +85,7 @@ terminal tab, panel, or workspace focus unless the task actually requires it.
 
 ## Run an agent-owned stack
 
-These steps start the ordinary manual-development frontend/API. For the additional E2E pair, use [Local E2E processes](#local-e2e-processes).
+These steps start the ordinary manual-development frontend/API. For the additional E2E pair, use [Local E2E processes](#localE2e-processes).
 
 When Ethan resumes work, the owning agent decides whether that work needs its stack running and wakes a stopped stack
 itself through the existing guarded backend start and native-role sequence below. Do not make Ethan request wake-up
@@ -158,7 +158,7 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    with `No value provided for input HTTP label: Bucket`. Run `watch:api` after linking so the build copies the file
    into `dist/apps/api/.env.local` before `serve:api:standalone:debug` starts.
 
-   The frontend App Check debug token is also ignored local config. `apps/frontend/plugins/env-var-plugin.js`
+   The frontend App Check debug token is also ignored local config. `apps/frontend/tools/plugins/env-var-plugin.ts`
    reads `FIREBASE_APPCHECK_DEBUG_TOKEN` from `process.env` or repo-root `.secret.local`; no manual export is
    needed when the frontend command is launched from the worktree root. Restart the frontend after changing
    `.secret.local`.
@@ -345,7 +345,7 @@ Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered so
 
 The dedicated E2E runtime has its own Functions, Auth, Firestore, Storage, MinIO and Download Assets Worker containers and persistent volumes. Native frontend/API ports remain `4300 + N` / `3100 + N` for that E2E index, with inspector `9330 + N` and debug receiver `9576 + N`. It retains `dist/e2e-local/` output and `.nx/e2e-build-status`; manual development uses its original reservation, staging Auth and existing outputs. Sharing backend data and requiring the manual API/watcher for callbacks were rejected because manual restarts and edits interfered with tests; do not reintroduce that dependency. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
-Native launchers require `--e2e` plus the exact E2E-role index. The isolated-backend launcher infers E2E mode from that reservation for start/stop/export, packages the local-e2e Functions build in the canonical container layout, and routes callbacks to the E2E API. Its Rules directory is `.firebase/e2e-rules`, generated during finite preparation; it never starts a manual or E2E source watcher. Derive child settings with `getDevStackEnv(getDevStackConfig(...))`; the Nx `local-e2e` configuration alone does not supply the index. Bare builds without that child environment can produce mismatched native ports. (Codex tasks: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
+Native launchers require `--e2e` plus the exact E2E-role index. The isolated-backend launcher infers E2E mode from that reservation for start/stop/export, packages the localE2e Functions build in the canonical container layout, and routes callbacks to the E2E API. Its Rules directory is `.firebase/e2e-rules`, generated during finite preparation; it never starts a manual or E2E source watcher. Derive child settings with `getDevStackEnv(getDevStackConfig(...))`; the Nx `localE2e` configuration alone does not supply the index. Bare builds without that child environment can produce mismatched native ports. (Codex tasks: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
 Preparation builds the current source, then retains `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions under exact-owner checks. It never starts or rebuilds the manual frontend/API. Admission records the completed E2E API/frontend builds and actual Firebase/Download Worker image IDs; recovery waits for those same builds rather than rebuilding mid-test. Trigger-local or Function-definition changes still require the existing guarded backend stop/start because a native API build cannot replace the Functions image already running. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
