@@ -152,6 +152,11 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
 
    The private backend does not replace ignored API config; R2/Stripe local config still comes from
    `apps/api/.env.local`.
+   Local API secrets follow the selected app mode's staging target through the shared secret cache, while the
+   local Stripe price still comes from this file. When a staging sandbox/key changes, align that price and the
+   Stripe CLI listener account/signing secret before testing local purchases. An old cache can temporarily hide
+   a mismatch; inspect names/equality only and preserve the owning stack's cache, local files and running listener.
+   The cloud-deployment skill's `references/vendors.md` owns the sandbox migration procedure.
    Stack 0 API startup should say `injecting env (4) from .env.local`; a healthy nonzero stack says `(2)` because
    `getDevStackEnv` deliberately pre-sets `CLOUDFLARE_R2_ENDPOINT` and `CLOUDFLARE_R2_BUCKET_NAME`. Both still require
    the same four assignments in the source and copied `.env.local` files. If startup says `(0)`, R2 signing will fail
