@@ -2,7 +2,7 @@
 
 ## Sign-in with the test account
 
-Ordinary local frontend/API processes use real Firebase Auth for the legacy staging project selected by the
+Ordinary local frontend/API processes use real Firebase Auth for the staging project selected by the
 `development` alias on every stack, so the saved test account below signs in normally. Local E2E runs use a separate native frontend/API pair with `--e2e`
 (`AIMVS_E2E_LOCAL=true`) and the same worktree's Auth emulator on `19900 + N`. The E2E frontend selects emulator Auth
 at build time, and its API uses Firebase Admin's per-process emulator setting; there is no browser-storage opt-in or
@@ -38,7 +38,7 @@ skill overrides a mandatory tool policy, change browsers to evade it, or ask aga
 
 Before spending time debugging browser focus, verify the saved email exists in local development's real Auth project when ADC is available:
 
-Self-improved — 2026-10-15: read the `development` alias below because hosted `staging` can migrate independently; `.firebaserc`, `environment.development.ts` and the E2E target specs preserve the local project identity.
+Self-improved — 2026-10-15: read the `development` alias below because hosted `staging` can migrate independently; `.firebaserc`, `environment.development.ts` and the E2E target specs must agree on the local project identity; retained datasets must be migrated before starting against changed defaults.
 
 ```bash
 node - <<'NODE'

@@ -155,6 +155,11 @@ on run argv
     if testWindow is missing value then error "Tracked Opera window " & targetId & " is missing"
     set URL of active tab of testWindow to targetURL
     set bounds of testWindow to {leftBound, topBound, rightBound, bottomBound}
+    -- Navigation is asynchronous: verify this tracked tab after the URL setter, not its previous start page.
+    repeat 20 times
+      if URL of active tab of testWindow is targetURL then exit repeat
+      delay 0.1
+    end repeat
     return URL of active tab of testWindow
   end tell
 end run
