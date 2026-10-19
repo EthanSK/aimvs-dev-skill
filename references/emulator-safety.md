@@ -10,6 +10,7 @@
 - [Persisted data and object drift](#persisted-data-and-object-drift)
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
+- [Leaked WebChannel sessions and idle Functions workers](#leaked-webchannel-sessions-and-idle-functions-workers)
 - [Nonzero isolated backends](#nonzero-isolated-backends)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
@@ -155,8 +156,9 @@ only through the verified owning terminal when Ethan authorizes that stack-0 act
 
 The normal `serve:emulators` and `serve:emulators:standalone-server` commands enable the feature-flagged Firestore
 OpenTelemetry launcher for the next start without rewriting the Firebase emulator JAR. Set
-`AIMVS_FIRESTORE_DIAGNOSTICS=0` before either npm command only when a clean no-agent comparison is required. The Java
-agent adds some measurement overhead, so use the disabled comparison if the diagnostic run itself becomes suspect.
+`AIMVS_FIRESTORE_DIAGNOSTICS=0` before either npm command when a comparison without OpenTelemetry diagnostics is required.
+The WebChannel reaper and its Homebrew Java 21 JDK build requirement stay enabled in both modes. OpenTelemetry adds some measurement overhead, so use the disabled
+comparison if the diagnostic run itself becomes suspect.
 `npm install` updates Firebase Tools but does not download a newly selected Firestore emulator JAR. The launcher must
 run Firebase's supported `setup:emulators:firestore` command when that expected JAR is missing, verify its SHA-256, and
 only then inspect its selected classes with `javap`; otherwise the first start after an upgrade fails with a misleading
@@ -258,6 +260,37 @@ Reconnect browser control to the same browser page, then prove recovery with thr
 the expected rows render and the progress bar disappears. Require no fresh WebChannel transport errors in the frontend
 or Firestore logs. Never quit Chrome, close ambiguous/user-owned pages, delete emulator data, or call the issue fixed
 from the HTML shell's load time alone.
+
+## Leaked WebChannel sessions and idle Functions workers
+
+Firestore emulator 1.22.0 never releases a browser's WebChannel session after the page, browser tab or Playwright
+context closes, even after `terminate(firestore)` (firebase/firebase-tools#11124, no fixed jar). Each session keeps one
+parked `ChannelProcessor` thread (`Thread-N`) and its listen targets, and every commit re-runs every dead listener's
+query on that collection. Symptoms: writes to a collection every page listens to, such as `notifications`, slow from
+milliseconds to seconds over hours while other collections stay fast; the Firestore JVM thread count and heap only grow;
+`firestore-debug.log` fills with `too many pending messagings in the back channel (10001)`. Count threads without
+signalling the JVM: `grep Threads /proc/<firestore-pid>/status` inside a container, or `jstat -snap <pid>` on the host.
+
+`tools/firestore-webchannel-reaper` is a reflection-only Java agent loaded through `JAVA_TOOL_OPTIONS` by the isolated
+Firebase container and stack 0's `serve:emulators` launcher. It logs `[aimvs-webchannel-reaper] started`, then closes
+sessions with no back-channel GET whose own 60 s inactivity deadline is 15 s past, and releases their listen targets
+and thread through the emulator's own methods. A page closed cleanly is released within one 5 s sweep; a killed page
+can take around two minutes including disconnect detection, while open pages keep their sessions. If a firebase-tools upgrade changes the emulator internals it
+uses, the agent aborts Firestore startup. Check `firestore-debug.log` for the message naming its folder: update the agent against the new jar with
+`javap -private` in that upgrade's worktree instead of removing it. Isolated containers also cap each Java emulator
+with `-Xmx2g`; change that cap only with Ethan's permission. Self-improved — 2026-10-19: a 20-hour E2E backend reached
+5,087 leaked sessions, 5–7 s `notifications` writes and 3.4 GB; a scratch reproduction showed the agent returning
+threads and write latency to baseline. (Claude session: 7f38d524-da71-4c33-baa5-09f0bb0c9ad7)
+
+Firebase routes the reaper's stderr to `firestore-debug.log`, rather than normal terminal output. Check that log for
+`[aimvs-webchannel-reaper] started` and any later `STOPPED` message when confirming cleanup is active; a mid-run reaper
+failure leaves the emulator running to preserve unexported data, so leaks can accumulate again until restart.
+
+Firebase Tools 15.25.1 never stops idle Functions workers, so each burst of concurrent triggers left one ~200 MB
+process per request for the emulator's lifetime. The `postinstall` and isolated-image patch in
+`patch-storage-emulator.ts` keeps one warm worker per function and stops the extras after 10 idle minutes. Running
+emulators keep their old code until the isolated backend is restarted (rebuilding its image) or, for stack 0, the
+shared install is re-patched and the emulator restarts.
 
 ## Nonzero isolated backends
 
