@@ -92,6 +92,8 @@ itself through the existing guarded backend start and native-role sequence below
 separately, start services merely because a build ran, or add a browser wake listener. Preserve the existing dataset,
 worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc3-58a2-7e30-8e50-013ad83089b1).
 
+Before starting or retaining any owned manual or E2E stack, apply [the local Firebase name-migration rule](emulator-safety.md#local-firebase-name-changes-on-rebase-or-resume) whenever its saved data or running backend uses names that differ from its current source configuration. Check the manual and E2E indexes separately, including a new worktree's first start on a reused number: it can inherit an old-name dataset.
+
 1. **Use the worktree's reserved nonzero stack index.** A new `aimvs<N>-<task-slug>` worktree owns `N` from
    creation through removal, even while its runtime is stopped or has never started. Read `N` from the directory name
    and confirm the exact finalized owner with `npm run aimvs-worktree -- list`; never pick another number for that
@@ -350,6 +352,8 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    01a05301-5376-77b1-9c70-99e37245cc98)
 
 ## Local E2E processes
+
+Before launching an E2E backend, resolve its assigned index and check retained data against [the same local Firebase name-migration rule](emulator-safety.md#local-firebase-name-changes-on-rebase-or-resume), including the first start on a reused number.
 
 Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered source worktree; follow `aimvs-e2e` for selection and reports. Execution lazily reserves one additional nonzero E2E-role index through `ensureE2eWorktreeStackReservation`, reusing it thereafter. Discovery only reads an existing reservation and never allocates or starts a stack. Both reservations point to the same stable Git metadata directory; no second checkout is created. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
 

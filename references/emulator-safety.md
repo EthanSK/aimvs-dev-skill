@@ -11,6 +11,7 @@
 - [Storage customTime limitation](#storage-customtime-limitation)
 - [Firestore WebChannel wedge recovery](#firestore-webchannel-wedge-recovery)
 - [Leaked WebChannel sessions and idle Functions workers](#leaked-webchannel-sessions-and-idle-functions-workers)
+- [Local Firebase name changes on rebase or resume](#local-firebase-name-changes-on-rebase-or-resume)
 - [Nonzero isolated backends](#nonzero-isolated-backends)
 - [Worktrees that change emulator triggers](#worktrees-that-change-emulator-triggers)
 - [Shared Storage emulator export failures](#shared-storage-emulator-export-failures)
@@ -291,6 +292,16 @@ process per request for the emulator's lifetime. The `postinstall` and isolated-
 `patch-storage-emulator.ts` keeps one warm worker per function and stops the extras after 10 idle minutes. Running
 emulators keep their old code until the isolated backend is restarted (rebuilding its image) or, for stack 0, the
 shared install is re-patched and the emulator restarts.
+
+## Local Firebase name changes on rebase or resume
+
+Old reserved worktrees can keep their matching old source and data; do not force bulk rebases or rename their data early. When a worktree rebases onto a changed local Firebase project or default bucket, its owning agent must migrate its retained manual and E2E datasets before restarting with the new settings. Check already-updated worktrees on resume and inherited datasets when reusing a stack number too. No further rebase or rename is needed when source and data already match. User-requested — 2026-10-19 (Codex task: 01a1403f-7f51-7c70-a0fa-604d8cb72e0e).
+
+- Derive the intended names from `getDevStackConfig` / `getDevStackEnv`; compare the saved export for each owned role. For a running old-name backend, stop native writers and require a verified current guarded export using its old configuration before replacing that configuration. A stopped dataset can use its verified intact export. Hold the existing per-index lifecycle lock through mutation and readback, matching `acquireStackLifecycleLock`'s owner record and token-checked release in `isolated-backend.dev.ts`; release it before invoking another guarded lifecycle command. <!-- Decision: A temporary migration driver can use the existing lock protocol; a missing standalone CLI command does not make the lock unusable. Keep this protection against concurrent startup during metadata writes. (Codex task: 01a1403f-7f51-7c70-a0fa-604d8cb72e0e) -->
+- Preserve volume identities and a verified recoverable original, sharing unchanged media through hard links or a filesystem clone. Atomically replace only the approved default-bucket mapping in `storage_export/buckets.json` and object `metadata.bucket`. Preserve other fields, filenames, media, Firestore and Auth; leave other buckets alone and stop on destination collisions. Do not reseed, merge datasets or copy media merely to rename it.
+- Prove the change on a temporary isolated copy through import/export and reimport/restart, comparing recursive Firestore contents/reference targets, stable Auth fields, Storage metadata and media hashes. Require the real export to match the tested result and recovery to remain unchanged, then verify normal guarded startup and affected app/uploads. Measure recovery growth and remove disposable probes.
+
+This is agent guidance; Git and startup do not migrate data automatically. It grants no authority over unrelated stacks, hosted resources or stack 0, which still requires Ethan's exact action authorization and a verified current export.
 
 ## Nonzero isolated backends
 
