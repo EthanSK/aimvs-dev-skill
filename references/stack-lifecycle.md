@@ -107,7 +107,6 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    STACK_INDEX=N
    for STACK_PORT in \
      $((4200 + STACK_INDEX)) $((3000 + STACK_INDEX)) $((9230 + STACK_INDEX)) $((9476 + STACK_INDEX)) \
-     $((4300 + STACK_INDEX)) $((3100 + STACK_INDEX)) $((9330 + STACK_INDEX)) $((9576 + STACK_INDEX)) \
      $((15000 + STACK_INDEX)) $((18080 + STACK_INDEX)) $((16000 + STACK_INDEX)) \
      $((17000 + STACK_INDEX)) $((17100 + STACK_INDEX)) $((18800 + STACK_INDEX)) \
      $((19150 + STACK_INDEX)) $((14000 + STACK_INDEX)) $((14400 + STACK_INDEX)) $((14500 + STACK_INDEX)) \
@@ -116,6 +115,12 @@ worktree and reserved number. User-requested — 2026-10-08 (Codex task: 01a11bc
    done
    docker container ls --filter "label=com.docker.compose.project=aimvs-isolated-backend-stack-${STACK_INDEX}" --format '{{.Names}}'
    ```
+
+   That probe uses the manual role's native ports. For a separately reserved E2E runtime, use its own index and the
+   four E2E native ports in the table instead. Never add an obsolete same-index E2E layout to a manual runtime's check.
+   The guarded helper reads the existing pending/final reservation to select the actual role for allocation and release.
+   Self-improved — 2026-10-19: separate role and unused-port regression cases caught the legacy cleanup collision
+   (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
 
    First distinguish an already-running owned stack from a stopped runtime. If the reserved index's containers,
    mounts, recorded worktree, and ports prove that its private backend is already healthy and belongs to this task,
@@ -544,8 +549,9 @@ creates its final private export:
 Stop each default background role through its exact retained screen name: send Ctrl-C with
 `/usr/bin/screen -S "aimvsN-<role>" -p 0 -X stuff $'\003'`, wait for that screen session to exit, and verify the
 recorded launcher/child processes plus owned or unidentified listeners on manual ports `4200 + N`, `3000 + N`, `9230 + N`, and `9476 + N` are gone.
-Include any verified `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` owners and require E2E ports `4300 + N`,
-`3100 + N`, `9330 + N`, and `9576 + N` to be clear before stopping the backend. A missing screen socket alone does not
+Include any verified `aimvsM-e2e-frontend` and `aimvsM-e2e-api-server` owners, where M is the separately reserved E2E
+index, and require its ports `4300 + M`, `3100 + M`, `9330 + M`, and `9576 + M` to be clear before stopping that E2E backend.
+Do not check those E2E formulas against the manual index N. A missing screen socket alone does not
 prove all descendants stopped. The guarded cleanup exception below permits only separately verified main Firebase listeners.
 Do not substitute `screen -X quit` for Ctrl-C: it can close the screen handle while npm's child launchers keep
 their ports open. Self-improved — 2026-10-07: verified surviving launchers after that substitution
@@ -586,10 +592,17 @@ stop`, `docker compose down`, pruning, reseeding, or volume deletion. (Codex tas
 01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
 
 Guarded cleanup may leave an occupied port only when the helper verifies the exact primary-worktree Firebase CLI by
-PID, working directory and command. Main's Tasks emulator uses 9499, which overlaps Stack 23's debug port; do not stop
+PID, working directory and command. Main's Tasks emulator defaults to 9499, which overlaps Stack 23's debug port, but
+can choose another free port; do not stop
 main or share its backend to clear that collision. Post-removal release uses the read-only `releasable` check, while
 allocation and startup keep `reservable`'s strict free-port check and skip the occupied number. Self-improved —
 2026-10-15: verified live owner and cleanup/startup regression tests (Codex task: 01a13a36-0fab-7812-b46a-9b3b6f9d0e49).
+
+New allocations also exclude the known configured/default ports in `reservedDevStackPorts` in
+`tools/scripts/dev-stack/isolated-backend.dev.ts`, deriving unavailable stack numbers from each candidate's actual role
+map. Keep the reasons and port entries there, not in another stack-number list. Existing reservations retain their live-port
+startup and cleanup checks, so growing the list does not prevent already-assigned work from resuming. An observed
+unrelated listener is not proof of a permanent port; keep the live checks for changing or newly occupied ports.
 
 Every nonzero stack owns and exports only its private backend. Before an authorized manual stop or restart of stack
 0's shared backend, run `npm run export-emulator-data` once from the primary main worktree and require Firebase's own
@@ -597,7 +610,7 @@ Every nonzero stack owns and exports only its private backend. Before an authori
 writes were persisted.
 
 For a fallback terminal, use the same order on only its tracked tabs and window: send Ctrl-C to each stack process,
-verify the manual and E2E frontend/API/inspector/debug-log ports listed above have no owned or unidentified listeners, applying only the verified main Firebase exception above, then close those terminal sessions and their
+verify each reserved runtime's actual frontend/API/inspector/debug-log ports listed above have no owned or unidentified listeners, applying only the verified main Firebase exception above, then close those terminal sessions and their
 window. Never stop stack 0's Worker, quit a terminal app, or close an unrelated window. Only after every applicable
 browser, native-process, export, and container check above succeeds may an agent remove the worktree from VS Code and
 Git. Recheck that its frontend/API/debug ports and isolated Docker project have no running owner before removal; any
