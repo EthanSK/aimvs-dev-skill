@@ -310,7 +310,8 @@ dev-stack index, and private named volumes for Firebase and MinIO. It includes F
 worktree, Firestore, Firebase Storage, an Auth emulator, MinIO, and the Download Assets Worker; real staging Firebase
 Auth remains the ordinary manual frontend/API's account directory and the normal App Check debug-token setup is
 reused. The separate `--e2e` runtime reserves its own backend index and uses fresh Auth-emulator accounts, exported
-with that runtime's private Firebase data so guarded restarts keep them. Manual and E2E native pairs use separate
+with that runtime's private Firebase data so guarded restarts keep them until the next local run's preparation
+discards that data (User-requested — 2026-10-20, Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522). Manual and E2E native pairs use separate
 backend containers and data; there is no per-browser opt-in or dual-directory API lookup. A new frontend port is a separate browser origin and can require one
 normal sign-in the first time. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5) The frontend and
 standalone API remain native; manual API watches source, while E2E retains a finite build. A new dataset defaults to empty Firebase and MinIO data; copying main's read-only canonical seed requires
@@ -319,12 +320,16 @@ every later launch must prefer that stack's private Firebase export and existing
 requested seed. Persist writes only inside those volumes; never merge datasets or let an isolated stack export into
 the shared canonical directory.
 If Docker reports `all predefined address pools have been fully subnetted` while creating a new isolated Compose
-network, do not prune networks, stop another stack, or reuse another stack's subnet. For stack indices 1 through 254,
-first prove that Docker has no network and macOS has no host route overlapping `10.250.N.0/24`, then create only
-`aimvs-isolated-backend-stack-N_default` as a bridge with subnet `10.250.N.0/24`, gateway `10.250.N.1`, and the Compose
+network, do not prune networks, stop another stack, or reuse another stack's subnet. The stack's subnet is
+`10.250.N.0/24` with gateway `10.250.N.1` for dev stack indices 1 through 254, or `10.251.(N-20000).0/24` with gateway
+`10.251.(N-20000).1` for E2E stacks 20001 through 20099 (for example `10.251.1.0/24` for stack 20001), as
+`getRecoveryNetworkIpam` in `isolated-backend.dev.ts` checks. User-requested — 2026-10-20 (Claude session:
+9c17bfea-3daf-4e85-a316-2ccf89954522). First prove that Docker has no network and macOS has no host route overlapping
+that subnet, then create only
+`aimvs-isolated-backend-stack-N_default` as a bridge with that subnet and gateway, and the Compose
 labels `com.docker.compose.project=aimvs-isolated-backend-stack-N` and `com.docker.compose.network=default`. Rerun the
 normal guarded start and require every indexed container, mount, and loopback port to pass its usual ownership checks;
-never use this recovery when the subnet overlaps, the index is outside that range, or ownership is ambiguous. Guarded
+never use this recovery when the subnet overlaps, the index is outside those ranges, or ownership is ambiguous. Guarded
 start reuses that fully verified empty recovery network until Compose uses it; guarded stop removes it with the other
 replaceable runtime artifacts, while every persistent and recovery volume remains unchanged and a numbered worktree's
 stack reservation remains held. (Codex tasks:
@@ -354,6 +359,10 @@ prune, reclaim, reset, recreate, or reseed a stack's Firebase, Storage, MinIO, b
 persistent volume. Completion, inactivity, missing worktrees, disk pressure, and stale owner labels never authorize
 data deletion. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
 01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+The only exception is the per-run E2E discard described in `stack-lifecycle.md`'s Local E2E processes: when a local
+E2E run is admitted, `isolated-backend -- discard-e2e-data` deletes only that E2E-range stack's (20001–20099) own
+three data volumes, without export, image removal or pruning, and refuses every dev stack number. User-requested —
+2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. Exact reads of the signed-in User's own `channel-collaborators/{userId}` path intentionally
 return a normal missing snapshot because public Channel cards use that same read to decide whether to show Switch

@@ -54,6 +54,8 @@ the terminal remains valid does not cover this bug; never use stack 0 for this p
 
 Stack 0's debug log is `frontend-debug.log`; stack N's manual log is `frontend-debug-N.log` and its local E2E log is `frontend-debug-e2e-N.log`. The dedicated E2E pair uses its own role reservation and backend index, distinct from the manual pair; N in the table is the selected runtime's index, not always the number in the source worktree name.
 
+Dev worktrees use N = 1–99. E2E-role runtimes use their own N = 20001–20099 with the same formulas, so E2E stack 20001 serves frontend 24301, API 23101, Firestore 38081 and Auth 39901, and every E2E port stays within 23101–39999. Neither allocator crosses into the other range. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
+
 ## Ethan's main environment
 
 Stack 0 is exclusively Ethan's main VS Code environment. Agents must never start, stop, restart, restore, or use
@@ -204,7 +206,15 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    (user-requested — 2026-10-16, Codex task: 01a13cb6-5b1b-7981-bf3f-ec81363cf98d).
    Later starts always retain that stack's existing private Firebase export and MinIO volume, and an interrupted first
    initialization retries with its already-persisted seed choice. Never delete its volumes, reseed it, or merge its data
-   into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105)
+   into stack 0. (Codex tasks: 019fe10d-0cee-7192-a8d9-19bdf0ba7666, 01a02060-8246-7b91-9540-bbd3d4d5a105) Only an
+   E2E-range runtime's per-run discard in [Local E2E processes](#localE2e-processes) is excepted.
+
+   After readiness, `start` and `status` on a dev stack (1–99) read the Firestore emulator JVM's resident memory
+   inside its Firebase container. At 1.5 GiB or more they print one warning with the stack number and size. Relay that
+   warning to Ethan in chat with a targeted cleanup plan naming the largest collections and the fixtures that created
+   them, then wait: never delete, reset or reseed anything without his explicit approval. A failed measurement prints
+   a short "could not measure" note and never fails the command. Do not add timers, daemons or automatic cleanup.
+   User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 
    If Docker exhausts its predefined address pools, follow `emulator-safety.md`'s canonical fixed-subnet recovery. A
    stopped container can still reference a deleted network ID and fail with `network <id> not found`; let the guarded
@@ -355,13 +365,15 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
 
 Before launching an E2E backend, resolve its assigned index and check retained data against [the same local Firebase name-migration rule](emulator-safety.md#local-firebase-name-changes-on-rebase-or-resume), including the first start on a reused number.
 
-Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered source worktree; follow `aimvs-e2e` for selection and reports. Execution lazily reserves one additional nonzero E2E-role index through `ensureE2eWorktreeStackReservation`, reusing it thereafter. Discovery only reads an existing reservation and never allocates or starts a stack. Both reservations point to the same stable Git metadata directory; no second checkout is created. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
+Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered source worktree; follow `aimvs-e2e` for selection and reports. Execution lazily reserves one additional nonzero E2E-role index through `ensureE2eWorktreeStackReservation`, reusing it thereafter. Discovery only reads an existing reservation and never allocates or starts a stack. Both reservations point to the same stable Git metadata directory; no second checkout is created. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). The E2E index comes from 20001–20099, starting at 20001, never from a dev worktree's 1–99; a manual or legacy runtime refuses those numbers. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 
 The dedicated E2E runtime has its own Functions, Auth, Firestore, Storage, MinIO and Download Assets Worker containers and persistent volumes. Native frontend/API ports remain `4300 + N` / `3100 + N` for that E2E index, with inspector `9330 + N` and debug receiver `9576 + N`. It retains `dist/e2e-local/` output and `.nx/e2e-build-status`; manual development uses its original reservation, staging Auth and existing outputs. Sharing backend data and requiring the manual API/watcher for callbacks were rejected because manual restarts and edits interfered with tests; do not reintroduce that dependency. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
 Native launchers require `--e2e` plus the exact E2E-role index. The isolated-backend launcher infers E2E mode from that reservation for start/stop/export, packages the localE2e Functions build in the canonical container layout, and routes callbacks to the E2E API. Its Rules directory is `.firebase/e2e-rules`, generated during finite preparation; it never starts a manual or E2E source watcher. Derive child settings with `getDevStackEnv(getDevStackConfig(...))`; the Nx `localE2e` configuration alone does not supply the index. Bare builds without that child environment can produce mismatched native ports. (Codex tasks: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
-Preparation builds the current source, then retains `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions under exact-owner checks. It never starts or rebuilds the manual frontend/API. Admission records the completed E2E API/frontend builds and actual Firebase/Download Worker image IDs; recovery waits for those same builds rather than rebuilding mid-test. Trigger-local or Function-definition changes still require the existing guarded backend stop/start because a native API build cannot replace the Functions image already running. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
+Every admitted run starts from empty E2E data. Its preparation sends Ctrl-C only to the freshly ownership-verified E2E frontend/API launchers and waits for them to exit, then runs `npm run isolated-backend -- discard-e2e-data --dev-stack-index=N`. That command hard-refuses every number outside 20001–20099, refuses live native listeners, another worktree's containers and unexpected containers or volumes, then kills and removes only that stack's containers and network and deletes its three data volumes, including their owner and runtime-state records. It skips export, keeps the Firebase and Download Assets Worker images and never prunes. Preparation then starts the backend empty with no canonical seed. Restart recovery never runs this, so a deliberate restart keeps the current run's data, and a failed run's data stays inspectable until the next run starts. This is the only exception to the never-delete rule for nonzero stacks. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
+
+Preparation builds the current source, then starts and retains `aimvsN-e2e-frontend` and `aimvsN-e2e-api-server` screen sessions under exact-owner checks. It never starts or rebuilds the manual frontend/API. Admission records the completed E2E API/frontend builds and actual Firebase/Download Worker image IDs; recovery waits for those same builds rather than rebuilding mid-test. Trigger-local or Function-definition changes still require the existing guarded backend stop/start because a native API build cannot replace the Functions image already running. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
 ## Retain an agent-owned stack after testing
 

@@ -34,7 +34,7 @@ belongs to Ethan's main VS Code environment and is never an agent test target. E
 nonzero stack index, including tests of uncommitted changes in the primary worktree. Every new linked worktree has its
 nonzero index reserved in its `aimvs<N>-<task-slug>` name and the shared Git directory from creation through
 removal, even before startup. Stack 0 keeps Ethan's main native services; every nonzero stack uses its own private
-backend containers plus its own indexed native frontend/API processes. Local E2E lazily reserves a second E2E-role index for the same source worktree, with its own backend and native processes; it creates no second checkout and keeps the manual stack untouched. Before removing the source worktree, guarded-stop both indexes; ordinary reservation release then verifies and releases the pair while preserving every volume. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5).
+backend containers plus its own indexed native frontend/API processes. Local E2E lazily reserves a second E2E-role index for the same source worktree, with its own backend and native processes; it creates no second checkout and keeps the manual stack untouched. Before removing the source worktree, guarded-stop both indexes; ordinary reservation release then verifies and releases the pair while preserving every volume. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). E2E-role indexes come only from 20001–20099 and dev worktrees only from 1–99, and each new local E2E run starts its E2E backend with empty data. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 
 Before changing or publishing this skill, read [references/skill-publication.md](references/skill-publication.md).
 It defines the canonical source, guarded public mirror, and private-data safeguards.
@@ -176,6 +176,10 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   removal never authorizes data deletion, and no completion wording, missing owner, age, idleness, or disk pressure
   weakens this rule. (Codex tasks: 01a024c0-a524-7960-a57e-f9fa68536e4c,
   01a05ebf-a8f9-7f83-a325-1565cf6005a7, 01a067e4-975c-7c71-b393-b27d66080bd9)
+  The only exception: when a local E2E run is admitted, its preflight's guarded `isolated-backend -- discard-e2e-data`
+  deletes that E2E-range stack's (20001–20099) own Firebase, MinIO and backend-state volumes and starts it empty. The
+  command refuses every other number, so dev stacks 1–99 keep this rule unchanged; it exists for E2E preparation, not
+  as a general cleanup tool. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 - Never land or remove a completed worktree until its tracked browser window and native stack processes are closed,
   its isolated backend has completed guarded `stop` from that still-existing worktree, and the indexed runtime is
   absent while every persistent volume remains. Retire its cleanup automation when one exists. A failed export warns
@@ -205,8 +209,8 @@ linked directly here so an agent never needs to discover operating instructions 
   chosen or task work begins.
 - **Any local dev-environment, stack, emulator, or fixture operation, or adding, changing, or reviewing dev-only tooling, fixtures, or production code supporting them:** read
   [references/dev-environment-contract.md](references/dev-environment-contract.md).
-- **Starting, inspecting, controlling, or stopping a dev stack; checking stack health:** read
-  [references/stack-lifecycle.md](references/stack-lifecycle.md).
+- **Starting, inspecting, controlling, or stopping a dev stack; checking stack health or a Firestore emulator size
+  warning:** read [references/stack-lifecycle.md](references/stack-lifecycle.md).
 - **An explicitly requested standalone terminal or an existing iTerm-owned stack:** also read
   [references/standalone-terminals.md](references/standalone-terminals.md). New background launches do not need it.
 - **Any emulator operation or diagnosis, persisted-data mismatch, WebChannel wedge, trigger-changing worktree, Storage
