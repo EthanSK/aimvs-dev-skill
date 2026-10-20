@@ -32,7 +32,7 @@ just for them. Preserve unrelated Git state. The primary-checkout `AGENTS.md` in
   request is not permission to create a second worktree or duplicate the change set; preserve one review/staging source.
   Before creating another path, verify that Ethan requested the extra worktree itself. A new topic, implementation request,
   cleaner branch, or mixed scope does not authorize another worktree; if the existing worktree cannot safely contain
-  the work, stop and ask before creating anything. (Codex task: 01a04e25-fccc-72c2-816b-7d29c151a7d5)
+  the work, stop and ask before creating anything. (Codex task: 01a04e25-fccc-72c2-816b-7d29c151a7d5) Being behind `main` is not such a reason: when a follow-up needs newer `main`, sync the owned worktree with the dirty-state workflow, and check the task's owned worktrees before running the create helper. Self-improved — 2026-10-20: a landing follow-up opened aimvs26 beside the task's own aimvs24 because aimvs24 was on an older `main`, and Ethan said it belonged in aimvs24 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 
 ## Create or reuse the named worktree
 
@@ -130,7 +130,7 @@ its verified worktree cleanup unless Ethan explicitly says to retain the worktre
 not ask separately before stopping its exact runtime, removing its VS Code folder and Git worktree, or releasing its
 stack reservation. This authorization never includes deleting its branch or persistent volumes. Before changing local
 `main`, run a fresh ownership audit, close the exact task-owned browser and native processes, complete the isolated backend's guarded
-stop, and retire its cleanup automation when one exists. Verify the browser is closed and no owned or unidentified indexed listener remains (following the exact main Firebase exception in [stack-lifecycle.md](stack-lifecycle.md)), no matching
+stop, and retire its cleanup automation when one exists. Order check: before each `git merge` into local `main`, require the guarded stop's `Verified the isolated backend stopped` line for every runtime the worktree owns; finish any pending follow-up for that worktree first, such as a requested change that needs one more live E2E run, so the cleanup happens once before the first merge. Self-improved — 2026-10-20: a landing merged first and stopped the worktree's two runtimes only after a follow-up guard landed; ownership survived only because the worktree still existed (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522). Verify the browser is closed and no owned or unidentified indexed listener remains (following the exact main Firebase exception in [stack-lifecycle.md](stack-lifecycle.md)), no matching
 container is running, the runtime containers and network are released, every persistent and recovery volume remains
 unchanged, and the VS Code folder is absent before removing the Git worktree. The guarded stop releases runtime
 artifacts but deliberately keeps a numbered worktree's number reserved. After `git worktree remove` succeeds, run the
