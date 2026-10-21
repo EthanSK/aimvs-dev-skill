@@ -157,7 +157,15 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    from inside that worktree. The `node_modules` symlink is important for Nx's normal Node
    webpack externalization: without `node_modules` at the worktree root, webpack bundles dependencies like
    Nest/Pino/sharp and standalone API builds can fail or produce worker/native-module path bugs. If you do
-   not want a symlink, run `npm install` in the worktree instead.
+   not want a symlink, use a private dependency directory in the worktree instead.
+
+   **Remove the link first before installing private dependencies.** Before `npm install` or `npm ci`, check
+   `ls -ld node_modules`. If it is a symlink, run `unlink node_modules` from the exact worktree, then run
+   `npm ci` there using its checked-in lockfile. Remove only the link, never its shared target: installing through
+   that link can empty or replace main's dependencies and break every linked worktree. Verify afterward that
+   the worktree has a real `node_modules` directory and main's dependency directory is unchanged. Do not reinstall
+   main's shared dependencies without authorization. User-requested — 2026-10-19 (Codex task:
+   `01a1548b-ec58-7db3-9044-78b5eb7c1918`).
 
    The private backend does not replace ignored API config; R2/Stripe local config still comes from
    `apps/api/.env.local`.
