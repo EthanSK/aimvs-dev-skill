@@ -51,7 +51,9 @@ development adds Firebase emulators, MinIO and a Download Assets Worker. The ski
   `mmcdw`. Once the requested snapshot is staged, `mmcdw` handles the approved
   commit, local merge and guarded cleanup: export and stop the stack, remove the workspace folder and worktree, and
   release `N`. Conflict review and runtime cleanup gate landing; the command never authorizes a push or deletion of
-  branches or volumes.
+  branches or volumes. When Ethan explicitly authorizes repeated commits to main until a named flow works, the
+  agent may stage and land the necessary in-scope fixes after review and verification, then leave one final
+  worktree with those changes unstaged for his review.
 
 The exact rules live in [worktree-lifecycle.md](references/worktree-lifecycle.md),
 [stack-lifecycle.md](references/stack-lifecycle.md) and
