@@ -79,6 +79,8 @@ ordinary sign-in form instead of asking Ethan to unlock AutoFill.
 
 For Google OAuth, suppress automatic observation output before opening the popup and read its next state with `emit: false`. Report only an allowlist of relevant buttons, headings and plain text, plus separately extracted bare hostnames. Exclude link, HTML-content, address, URL, help and query/fragment-bearing lines even when the URL has no `https://` prefix: Firebase's handler URL can contain an App Check token in its fragment, so scheme-only redaction is insufficient. Check the filtered result before emitting it; never emit the full URL or unfiltered Accessibility tree. Self-improved — 2026-10-12: popup observations exposed tokenized URLs, including a scheme-less URL that escaped scheme-only filtering; the control allowlist avoided both forms (task `01a12d17-c483-78b1-996d-5ca6e8036df4`).
 
+Apply that filtered-observation rule to custom OAuth pages and browser diagnostics too. Keep automatic output suppressed until a fresh state proves the popup or inspector is closed: opening an inspector can complete after the first observation, so an initially absent inspector is not clearance to print the next tree. Self-improved — 2026-10-24: delayed Safari inspector content escaped the first filtered observation during the login review; checking every observation until verified closure catches it (task `01a16a35-e451-7852-966d-25f9b6397432`).
+
 Safari may cover the app with Auto-Complete or `Update Password` popovers during and after sign-in. Press Escape
 to dismiss each popover, then refresh Computer Use accessibility state before deciding whether sign-in failed or
 reusing an element index. The authenticated redirect may already have completed behind an `Update Password`

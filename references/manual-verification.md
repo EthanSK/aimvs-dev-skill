@@ -32,9 +32,13 @@ For feature testing, prove the behavior at all four layers before calling it don
   the expected documents, counters, operation statuses, links, and storage side effects. Every nonzero stack uses its
   own private indexed emulator; use stack 0 only when Ethan explicitly authorized that exact stack. Use the staging
   project namespace when connecting to either local emulator.
-- Logs: inspect the stack frontend debug log (`frontend-debug.log` for stack 0, `frontend-debug-N.log` for stack
-  N), the standalone API logs, and emulator output. Treat fresh console/runtime errors, failed HTTP calls, and
-  backend exceptions as test failures unless they are already known and irrelevant to the touched code.
+- Logs: check the browser console on page load, after meaningful actions, before navigation or a reload can clear
+  it, and when testing is done. Keep track of new errors throughout the test, rather than checking only at the end;
+  preserve relevant errors before clearing the console. Also inspect the stack frontend debug log
+  (`frontend-debug.log` for stack 0, `frontend-debug-N.log` for stack N), the standalone API logs, and emulator output.
+  Record which checkpoints were checked and any errors in the manual-test report. Treat fresh console/runtime
+  errors, failed HTTP calls, and backend exceptions as test failures unless they are already known and irrelevant
+  to the touched code. User-requested — 2026-10-25 (Codex task: 01a16a35-e451-7852-966d-25f9b6397432).
 
 For a viewport-height overlay, drawer, menu, or dialog, test at least one short-height viewport where fixed toolbar,
 padding, safe-area, or anchor offsets dominate; a tall portrait viewport can hide a missing fixed subtraction inside
