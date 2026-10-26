@@ -81,7 +81,7 @@ Apply the suffix after the global new-chat naming workflow, preserving its emoji
 exact current task ID and the supported Codex title tool, then read back the title. Keep exactly one worktree
 suffix: preserve it through later title changes, and replace the old suffix when this task's verified worktree
 changes. Do not rename other chats as part of this step. Before handoff, check the current chat title against the
-task's verified source worktree; report an unavailable title tool or failed readback instead of claiming success.
+task's verified source worktree; report an unavailable title tool or failed readback instead of claiming success. If the title service shortens the name, shorten the descriptive prefix until the readback retains the complete worktree suffix. Self-improved — 2026-10-25: a long E2E title lost its worktree name during review-title readback (Codex task: 01a16aa1-69de-7931-895b-e0b6cd9f9409).
 
 ## Rename an active worktree
 
