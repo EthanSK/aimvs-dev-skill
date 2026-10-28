@@ -127,8 +127,14 @@ across landscape, square, and portrait screenshots and refuses to shrink below i
 sentence if it reports that the label does not fit. Recapture instead when the selected area needs to change.
 
 Complete sign-in and credential entry before capturing evidence. Never capture credentials, tokens, signed URLs,
-personal data, another app, the whole display, the user's media, or a broader screen region. If authentication itself
-is under test, exclude the sensitive entry portion and state that limitation in the report.
+another app, the whole display, the user's media, or a broader screen region. Use suitable test data or redact personal
+details from the retained PNG without hiding the tested layout; do not omit all screenshots for a visual change.
+Before completion, verify retained screenshot files and report/reply links under the shared
+[mandatory visual-evidence rule](/Users/ethansarif-kattan/.codex/skills/development-workflow/SKILL.md#definition-of-done).
+If authentication itself is under test, exclude the sensitive entry portion and state that limitation in the report.
+User-requested — 2026-10-28 (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975).
+
+Before opening DevTools, suppress automatic Accessibility output and print only the needed controls after filtering token-bearing lines; the Console can expose the App Check debug token in text even without a screenshot. Check the outgoing observation call for `emit: false` before opening or switching DevTools panels. Self-improved — 2026-10-28: an unfiltered Console AX state exposed that token during the final spacing check (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975).
 
 If Chromium DevTools was opened during the test, reset any temporary network preset, close DevTools, and verify the
 tracked window shows only the app before capturing. Never retain a DevTools screenshot: its Console can expose the
@@ -211,6 +217,8 @@ Inspect the whole visible app window at useful detail, not only the control unde
 surrounding UI for clipped, overlapping, obscured, or off-screen elements; unexpected wrapping; misalignment or
 inconsistent spacing; missing text or icons; wrong layering; broken responsive layout; and stale loading, disabled,
 or error feedback. Confirm that every screenshot actually supports its caption and **What this proves** claim.
+For small text separators, compare the painted dot with the visible centre of its neighboring name and handle at desktop and wrapped phone widths; a shared baseline or equal element boxes do not prove glyph alignment. User correction — 2026-10-28 (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975).
+For compacted interactive rows, inspect hover and keyboard focus at the first and last scroll boundaries, including the open popup. Idle screenshots do not prove outer rings or overlays are unclipped. Self-improved — 2026-10-28: the compact collaborator header passed idle checks but clipped its avatar ring at the dialog content edge (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975).
 For spacing or alignment fixes, reproduce the exact content state in Ethan's report and compare the visible edges he named, such as a floated label, a single-line avatar, and the bottom outline; equal CSS padding or a different wrapped state is not proof. Check empty, short, and wrapped values when their row heights differ, and record the measured gaps and unchanged field height before passing. Self-improved — 2026-09-28: the earlier Channel review checked wrapped names but missed the reported single-line avatar; see the stack 13 spacing entries in `_manual-test-results/2026-09-28-search-prefix-icons/manual-test-results.md` (Codex task: 01a0e8c6-c803-70c2-a1e0-37e123b6dd11).
 For selected cards, inspect the longest visible title and every metadata group at desktop and phone widths. Require a
 clear inset between text and the card's right edge or selection ring, as well as a gap between independent
