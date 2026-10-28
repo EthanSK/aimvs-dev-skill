@@ -496,8 +496,9 @@ Require narrow status/error matching and redaction before emitting log excerpts,
 log format, including whitespace after the colon, and redact URL query credentials such as `key=<value>`. Verify a
 filtered sample contains `[REDACTED]` for every matching secret shape before returning those lines through a tool.
 For Docker build progress, emit only the step number and `DONE`, `CACHED` or `ERROR`; a whole `#N ERROR ...` line still needs the same tested redaction. Self-improved — 2026-10-09: an image-build progress reader skipped this check; verify matching synthetic token and query-key lines before its first output. (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168)
-Before running a log-read command, check its text for an unfiltered `head`, `tail`, `sed`, `cat`, or sliced string prefix; replace it with a
+Before running a log-read command, including Nx typecheck/lint and harness-unit verification logs, check its text for an unfiltered `head`, `tail`, `sed`, `cat`, or sliced string prefix; replace it with a
 script that emits only derived status markers or redacted lines, then test the redaction on synthetic token text. Extract timestamps instead of printing truncated log lines. A Python `print(log[-N:])` is raw log output too; reject that emission before execution unless the selected text has passed the same redaction check. Self-improved — 2026-10-07: a sliced screen-log suffix bypassed the preflight; inspect each print argument, not only shell utilities (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168). Self-improved — 2026-10-01: a Python prefix check missed this existing guardrail; the command preflight must cover slicing too (Codex task: 01a09727-c5e5-7672-9047-e0f448963715).
+Self-improved — 2026-10-28: verification-result summaries must use the same emission check as runtime logs.
 After compaction, reread this log-read preflight before the first log command; even a summary recommending `tail`
 does not authorize raw log excerpts. Use a saved, synthetically tested redactor for E2E progress too, before the first
 read. Self-improved — 2026-10-07 and 2026-10-23: raw `tail` calls resumed after compaction; the saved redactor was
