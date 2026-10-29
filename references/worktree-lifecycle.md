@@ -10,7 +10,7 @@ Except for tiny little config changes, every source-changing AIMVS task must cre
 `main` checkout is read-only for implementation, fixes, tests, formatting, generation, and skill edits. If work began
 in `main`, stop, preserve the exact Git state, move only the task-owned changes into the named worktree, and continue
 there. Tiny little config changes like an npm-script preload can be done directly on main; don't make a new worktree
-just for them. Preserve unrelated Git state. The primary-checkout `AGENTS.md` instruction-sync workflow below is also an exception.
+just for them. Preserve unrelated Git state. Project `AGENTS.md` and skill instruction updates use the instruction-sync exception below; executable skill code does not.
 
 ## Choose the task environment first
 
@@ -23,10 +23,10 @@ just for them. Preserve unrelated Git state. The primary-checkout `AGENTS.md` in
 - Before repository work begins, unless it is a tiny little config change on main, create or reuse the exact task-owned linked worktree at
   `/Users/ethansarif-kattan/Projects/aimvs<N>-<task-slug>` on `codex/<task-slug>`. `N` is that worktree's
   reserved nonzero dev stack from creation through removal, even before any runtime starts.
-- Project `AGENTS.md` instruction changes are the one repository-work exception: follow the project instruction-synchronization
-  skill linked from the host repository's `AGENTS.md`, which requires the approved change to be made or consolidated in primary `main` as a
-  standalone `AGENTS.md` commit while preserving unrelated state. The general linked-worktree rule does not override
-  that narrower workflow.
+- Project `AGENTS.md` and skill instruction changes follow the instruction-synchronization skill linked from the host
+  repository’s `AGENTS.md`: make or consolidate them in primary `main`, then automatically commit only the task-owned
+  instruction changes separately. Preserve all unrelated state. Executable skill code keeps the normal worktree and
+  review rules. This instruction-only exception overrides the general source-worktree gate. User-requested — 2026-10-29.
 - If the current task already owns an eligible named worktree, reuse it for every additive follow-up. Never create a
   second worktree for that task unless Ethan explicitly asks for another worktree. A temporary or fresh dev-stack
   request is not permission to create a second worktree or duplicate the change set; preserve one review/staging source.

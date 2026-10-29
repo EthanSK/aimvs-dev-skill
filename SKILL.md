@@ -7,7 +7,7 @@ description: Use for every AI Music Video Studio development interaction involvi
 
 ## Continuous improvement
 
-Improve this skill as part of using it. Whenever usage, debugging, investigation, or user feedback produces a
+Potentially improve this skill as part of using it. Whenever usage, debugging, investigation, or user feedback produces a
 durable verified AIMVS setup, browser, emulator, screenshot, reporting, login, Git/worktree, or recovery finding, update this
 skill during the same task without waiting for a separate request. Adjust its instructions, scripts, tests, or
 references as appropriate, retest affected behavior, and validate the skill before finishing. After every
@@ -45,6 +45,8 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
 
 ## Universal safeguards
 
+- Whenever changing or reviewing anything related to the dev stack or development setup, consider the performance implications, especially likely problems after it has been running for a while. Look at relevant recent fixes so those problems are not reintroduced; follow [the performance-over-time check](references/dev-environment-contract.md#performance-over-time). User-requested — 2026-10-24.
+
 - Nonzero stacks serve a one-shot frontend build without an Angular source watcher. After every change to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N`, require success, then reload the browser page before checking it. Newly launched dedicated linked worktrees leave `NX_WORKSPACE_DATA_DIRECTORY` unset so builds and tooling share their normal checkout-local Nx daemon; only nonzero stacks in the primary checkout prefix their Nx-backed commands with `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N`. Preserve existing retained sessions' recorded Nx environment until an authorized migration; see `references/stack-lifecycle.md`. Keep the small frontend server, API watcher, API supervisor and private backend running under their existing ownership rules. Stack 0 keeps its normal frontend watcher and HMR. User-requested — 2026-10-04: “just fix the front end one”; reducing build workers did not prove an idle-memory saving.
 
 - Run manual browser or Computer Use testing when Ethan requests it directly or under his [standing development request](/Users/ethansarif-kattan/.codex/skills/development-workflow/SKILL.md#definition-of-done) for relatively large features, UI features, and other changes that benefit from manual checking. Starting a stack for Ethan's own checks alone does not authorize agent browser interaction. User-requested — 2026-10-24.
@@ -71,7 +73,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   `main` checkout as read-only for implementation, fixes, tests, formatting, generation, and skill edits; if a task
   starts there, create or reuse the task-owned worktree and move the in-scope changes before continuing. Tiny little
   config changes like an npm-script preload can be done directly on main; don't make a new worktree just for them.
-  Preserve unrelated Git state. The primary-checkout `AGENTS.md` instruction-sync workflow is also an exception.
+  Preserve unrelated Git state. Project `AGENTS.md` and skill instruction updates use the host repository’s instruction-sync exception: commit them separately on local main; executable skill code keeps the normal worktree rule.
 - Treat native standalone-API hot reload as a nonzero-stack feature. After a successful API watcher build, require the
   supervisor to replace that stack's exact API PID and require the latest startup to say `development` before Computer
   Use; stack 0 remains manually controlled, and trigger-local or Function-definition changes still require the guarded
@@ -82,6 +84,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   full live-stack health gate before handoff; preserve and report an unrelated or ambiguous concurrent-change blocker
   instead of hiding it with a restart or describing stale output as current. (Codex task:
   01a062c9-ac08-7d71-b8ae-2e831291d7e3)
+- Prefer a new task-owned tab in an eligible existing browser window on the MacBook Pro screen, including one from another Computer Use task, before creating another window. Follow [the shared window-reuse preference](/Users/ethansarif-kattan/.codex/skills/use-macbook-display/SKILL.md#workflow). Preserve the browser assignment below: personal Chrome remains excluded, and an existing window is ineligible when concurrent control or browser/profile-wide state would interfere with another task. Keep each task's tab, stack URL and ownership distinct; do not close a shared window during cleanup. User-requested — 2026-10-27.
 - For desktop browsers, Ethan uses two display setups. When the MacBook is standalone, keep the verified test window on its sole
   `Built-in Retina Display` without pointless display movement. When external monitors are attached, keep the one
   agent-owned test window on `Built-in Retina Display` and preserve every external-display workspace, active media

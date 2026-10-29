@@ -48,8 +48,9 @@ it to an AIMVS test. Record the pre-existing window IDs and whether the assigned
 never claim they were created by the test. Do not infer the display from a window's size, a negative X coordinate,
 or whichever display is currently main.
 
-When Safari is assigned, create exactly one dedicated test window and navigate it to the exact stack URL in the
-same operation with:
+Before creating a desktop window, prefer an eligible existing window under [the shared window-reuse preference](/Users/ethansarif-kattan/.codex/skills/use-macbook-display/SKILL.md#workflow), including a window opened by another Computer Use task. Keep the assigned browser/profile, exact stack URL and independent task-owned tab; reuse is not permission for concurrent foreground input, shared-session changes or personal Chrome. Record the existing window ID and the new `TEST_BROWSER_TAB_ID`; never claim the reused window or its other tabs as this task's own. If exact-window tab creation cannot be verified safely, use the normal isolated-window or overflow route. User-requested — 2026-10-27.
+
+When Safari is assigned and no existing window is eligible, create one dedicated test window and navigate it to the exact stack URL in the same operation with:
 
 ```bash
 inspection="$(bash .agents/skills/aimvs-dev/scripts/open-safari-test-window.sh "$STACK_URL")"
@@ -76,7 +77,7 @@ search old task/session logs during cleanup to reconstruct renderer ownership th
 (Codex task: 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
 When Firefox or Opera is assigned to a concurrent stack, use that browser's normal persistent profile—never a fresh
-or isolated profile. After recording the existing window IDs, create exactly one dedicated window at `STACK_URL`,
+or isolated profile. Prefer a new task-owned tab in an eligible existing window as above. Only when none is eligible, record the existing window IDs and create one dedicated window at `STACK_URL`,
 place it within the live `Built-in Retina Display` bounds, then immediately re-run the inventory. Accept the window
 only when one new ID for the assigned browser appears on that display and the controller state shows `STACK_URL`;
 save that ID as `TEST_WINDOW_ID`. When Accessibility returns a window query or collection, bind the exact new window
@@ -449,6 +450,8 @@ User-requested — 2026-10-02: test and adapt the procedure for the external bro
 `_manual-test-results/2026-10-02-uploads-without-picker/manual-test-results.md` in the originating task worktree.
 
 ## Close the dedicated test browser window
+
+If this task reused an existing window, close only its recorded `TEST_BROWSER_TAB_ID` and verify that tab is gone. Preserve the shared window, other tasks' tabs and browser process; the whole-window cleanup below applies only to a window created and still exclusively owned by this task. User-requested — 2026-10-27.
 
 At the end of every Computer Use manual-test session—passed, failed, partial, or blocked—finish capturing and
 verifying the report evidence, then close the exact dedicated task page identified by `TEST_WINDOW_ID` or
