@@ -222,9 +222,9 @@ linked directly here so an agent never needs to discover operating instructions 
 - **Any browser or Computer Use interaction, browser assignment, window creation, focus issue, cleanup, or crash:**
   read [references/browser-control.md](references/browser-control.md).
 - **Agent-run frontend upload tests using disposable fixtures:** use the
-  [picker-free upload procedure](references/browser-control.md#picker-free-frontend-upload-tests) by default in the
-  in-app Browser and the assigned Safari, Firefox or Opera window; do not
-  open a native file picker merely to supply test bytes. Test native file selection only when explicitly requested.
+  [picker-free upload procedure](references/browser-control.md#picker-free-frontend-upload-tests) by default for
+  disposable fixtures. Codex's own picker needs Ethan's explicit request; pickers in assigned external browsers are
+  allowed without separate picker permission, preserving the existing window-ownership checks. User-corrected — 2026-10-28.
 - **Any sign-in, test-account, App Check, browser autofill, or authenticated file-picker flow:** read
   [references/authentication.md](references/authentication.md).
 - **Any code review, task-owned test ready for review, staging/unstaging, commit, stash, rebase, worktree landing, or staged/unstaged preservation operation:** read

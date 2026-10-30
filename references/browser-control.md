@@ -397,7 +397,9 @@ approval. User correction — 2026-09-26.
 ## Picker-free frontend upload tests
 
 For agent-run upload tests that can use disposable fixtures, prefer the real frontend pipeline without opening a
-native macOS file picker. This applies to the in-app Browser and assigned Safari, Firefox or Opera test windows.
+native macOS file picker. Codex itself, including the in-app Browser, must use a picker-free route unless Ethan
+explicitly requests its picker. Pickers in assigned external browsers are allowed without separate picker permission;
+the fixture method remains useful when human file selection is outside the test's scope.
 Use the browser-assignment and exact-window ownership rules above; picker-free uploads do not themselves guarantee
 background native-window control or zero focus changes. Use a supported direct file-input API if the assigned controller
 actually exposes one. Chooser interception followed by `setFiles` does not prove that a native panel never appears;
@@ -431,7 +433,8 @@ When direct input assignment is unavailable, use this verified temporary develop
 State the coverage boundary: generated files replace human selection; the actual frontend validation, upload,
 progress and completion run normally. This does not verify native file selection, desktop drag/drop, clipboard image
 paste, or independently measured macOS focus. If the requested test needs an exact real local file or native selection,
-report that limitation rather than silently substituting a fixture or opening the picker.
+use the permitted picker in the assigned external browser, or use Codex's picker when Ethan explicitly requested it.
+Otherwise report the limitation in Codex rather than silently substituting a fixture.
 
 The same source-loaded `DataTransfer` handoff was verified in Safari 26.6.2, Firefox 156.0.1 and Opera 136.0:
 each staged a generated PNG without a native picker, completed the normal frontend upload and retained its asset
@@ -441,7 +444,10 @@ implementation was needed. Canvas PNG encoders produce different bytes between b
 against its own recorded bytes/hash rather than requiring every browser to produce the same PNG. Recheck browser
 versions and controller capabilities on later runs; a browser name alone is not proof of direct file-input support.
 This local development fixture procedure does not make arbitrary websites or human-selected production uploads
-picker-free. Never silently fall back to a native picker when a required fixture cannot be supplied.
+picker-free. If a required fixture cannot be supplied, preserve its test requirements when choosing another upload route.
+
+User-corrected — 2026-10-28: “You can use the picker for other apps, just not your own app.” Keep the existing
+browser assignment, task-window ownership and display-routing checks for external-browser pickers.
 
 User-requested — 2026-10-02: preserve the working picker-free method as an instruction, rather than only in its test
 report. Verified with a rejected text fixture and a successful 960 × 540 PNG upload, matching stored bytes/hash,
