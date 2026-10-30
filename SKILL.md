@@ -30,8 +30,8 @@ verified runtime result from a documentation change that has not yet been merged
 Use this skill as the AIMVS source of truth for task-environment and worktree decisions, Computer Use interactions,
 local browser tests, dev-stack actions, emulator investigations, authentication flows, code reviews, dirty Git-state
 operations, and prior manual-test evidence questions. It overrides global browser-testing defaults for AIMVS. Stack 0
-belongs to Ethan's main VS Code environment and is never an agent test target. Every agent-run test uses a free
-nonzero stack index, including tests of uncommitted changes in the primary worktree. Every new linked worktree has its
+belongs to Ethan's main VS Code environment and is never an agent test target. Every agent-run test that accesses a runtime uses a free
+nonzero stack index, including tests of uncommitted changes in the primary worktree. Pure unit tests with local doubles need no running stack; source-changing tasks still use their owned linked worktree. Self-improved — 2026-10-28: distinguish pure unit checks from runtime tests (Codex task: `01a17f2e-00a9-75a1-9365-dcd025a5e32c`). Every new linked worktree has its
 nonzero index reserved in its `aimvs<N>-<task-slug>` name and the shared Git directory from creation through
 removal, even before startup. Stack 0 keeps Ethan's main native services; every nonzero stack uses its own private
 backend containers plus its own indexed native frontend/API processes. Local E2E lazily reserves a second E2E-role index for the same source worktree, with its own backend and native processes; it creates no second checkout and keeps the manual stack untouched. Before removing the source worktree, guarded-stop both indexes; ordinary reservation release then verifies and releases the pair while preserving every volume. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). E2E-role indexes come only from 20001–20099 and dev worktrees only from 1–99, and each new local E2E run starts its E2E backend with empty data. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
@@ -270,10 +270,12 @@ linked directly here so an agent never needs to discover operating instructions 
 ## Completion handoff
 
 When you have finished writing code or a feature, run the appropriate build and lint once before handoff, including
-changed test files. Check test files with their owning typecheck and test targets while testing. Run independent
-checks in parallel sub-agents where practical, or parallel commands, so we are not waiting; preserve required target
-prerequisites. Skip build and lint for trivial changes, and rerun only checks affected by a later edit or failure.
+changed test files. Check test files with their owning typecheck and test targets while testing. Parallelize lightweight
+inspection, but serialize heavyweight checks within the shared Mac memory budget, including other chats' work; preserve required target
+prerequisites. Before launching Nx validation, check both its task concurrency and the test runner's worker count: one selected project can still run several prerequisite targets. User-requested — 2026-10-28. Skip build and lint for trivial prose/static changes, retain the spec skill's validation for changed typed tests, and rerun only checks affected by a later edit or failure.
 User request — 2026-10-04.
+
+Before dispatching formatting, verify the literal command includes `--sort-root-tsconfig-paths=false`; file selection does not replace that check. Self-improved — 2026-10-28: the overnight unit run omitted this existing flag (Codex task: 01a17f2e-00a9-75a1-9365-dcd025a5e32c).
 
 Agent patches and shell writes do not trigger VS Code's format-on-save. After the final edit, run the existing
 `npm exec -- nx format:write --files=<explicit changed files> --sort-root-tsconfig-paths=false`, then
