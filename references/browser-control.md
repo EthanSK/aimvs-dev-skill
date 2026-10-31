@@ -294,9 +294,11 @@ For each discrete click, keypress, text entry, drag, navigation, or browser-cont
    postcondition before input.
 2. Use an exact-window background method when it can complete the action. Otherwise, use target-scoped foreground
    input on the verified task window and recheck its identity before each material action.
-   For an unlabeled icon, verify its meaning from the current pixels or exposed tooltip before acting; never reuse an
-   old index-to-icon mapping after the UI changes. Self-improved — 2026-10-31: a shifted Clip action opened Remove instead
-   of Select Asset; its confirmation was cancelled without mutation (Codex task: 01a17fc9-2554-7772-a4e9-641816b1f486).
+   For an unlabeled icon, verify its meaning from the current pixels or exposed tooltip before acting; a fresh AX
+   snapshot proving only that an index is a blank button does not identify it. Use its verified current screenshot
+   coordinates when the AX index cannot be matched to that exact icon; never reuse an old index-to-icon mapping.
+   Self-improved — 2026-10-31: shifted Clip indexes opened Remove and later History instead of Select Asset; no mutation
+   followed, and verified screenshot coordinates reached Select Asset (Codex task: 01a17fc9-2554-7772-a4e9-641816b1f486).
 3. Re-verify ownership and the postcondition after each attempt. Never retry a consequential or state-changing
    action unless the postcondition proves the earlier attempt did not occur.
    For fixture buttons, a changed Accessibility index or missing immediate diff is ambiguous: check the loading
