@@ -129,7 +129,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
 - Never run `npm run rules:test` while stack 0's shared Storage `:9199` is listening. Distinct emulator ports do not isolate
   Firebase Tools' user-global Storage blobs.
 - Never print or commit credentials, App Check tokens, secrets, cookies, signed URLs, or unfiltered provider request
-  and error payloads.
+  and error payloads. For process ownership checks, print only the required PID/parent and exact expected launcher; never emit every command containing a worktree path, which can include local viewer access tokens. Self-improved — 2026-11-02: a broad ownership lookup included a viewer command; verify the final projected output excludes unrelated arguments before printing. (Codex task: 01a192d9-8cab-7dc2-9c87-af1638c51c75)
 - Before displaying frontend or API debug logs, filter token-bearing startup lines and redact sensitive payloads; never use an unfiltered `tail` that can print an App Check debug token. Self-improved — 2026-09-29: a raw stack log read exposed its token line in task output; this check makes the existing no-token rule actionable. (Codex task: 01a09727-c5e5-7672-9047-e0f448963715)
 - Treat the saved AIMVS test-account sign-in as part of an explicitly requested manual test, not a new task requiring
   permission. Read `references/authentication.md` before declaring authentication blocked or asking Ethan to sign in;
