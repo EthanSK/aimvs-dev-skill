@@ -54,7 +54,7 @@ When Safari is assigned and no existing window is eligible, create one dedicated
 
 ```bash
 inspection="$(bash .agents/skills/aimvs-dev/scripts/open-safari-test-window.sh "$STACK_URL")"
-printf '%s\n' "$inspection"
+printf '%s\n' "$inspection" | sed -n '/^window=[0-9][0-9]*$/p'
 TEST_WINDOW_ID="$(sed -n 's/^window=//p' <<<"$inspection")"
 ```
 
@@ -95,10 +95,12 @@ Before invoking that foreground helper, verify the macOS heads-up was delivered;
 
 ```bash
 inspection="$(bash .agents/skills/aimvs-dev/scripts/open-opera-test-window.sh "$STACK_URL" --allow-foreground)"
-printf '%s\n' "$inspection"
+printf '%s\n' "$inspection" | sed -n '/^window=[0-9][0-9]*$/p;/^scripting_window=[0-9][0-9]*$/p'
 TEST_WINDOW_ID="$(sed -n 's/^window=//p' <<<"$inspection")"
 OPERA_SCRIPTING_WINDOW_ID="$(sed -n 's/^scripting_window=//p' <<<"$inspection")"
 ```
+
+Capture creation-helper output privately and print only the task-owned numeric window IDs; before invoking a helper, check that its raw inventory cannot reach tool output. Self-improved — 2026-10-29: Opera's helper also returned unrelated browser titles; the examples now filter that inventory before emission (Codex task: 01a18497-18bd-7820-8ac3-4efbd0843d86).
 
 The helper accepts `-10000` only when delayed before/after inventories prove exactly one new Opera scripting window,
 then navigates and sizes that exact object in a later AppleEvent and independently resolves one new CoreGraphics ID.

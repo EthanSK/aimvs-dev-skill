@@ -392,6 +392,12 @@ nonzero backend is stopped. During host slowness, compare the current Docker Des
 stop stack 0's MinIO or apply a lower global memory setting without Ethan's approval because both interrupt his main
 environment. (Codex task: 019ff0c1-80ad-79f3-9d60-cbb4004bf608)
 
+Before starting another backend or a large dev-media fixture batch, check the shared Docker VM's `MemAvailable` and
+`SwapFree` alongside `docker stats`; macOS free-memory percentages do not prove guest headroom. Serialize heavy setup
+when the guest is constrained, and never stop another stack or change global Docker resources without authority.
+Self-improved — 2026-10-29: a Firestore JVM was OOM-killed while macOS still reported free memory; the guest had almost
+no free swap (Codex task: 01a18497-18bd-7820-8ac3-4efbd0843d86).
+
 Use the standalone API's normal host cache as the single GCP-secret source for isolated Functions. Before Docker starts,
 the host launcher must reuse that loader so a missing cache is populated through the Mac's existing Google
 authentication, then write an ignored stack-specific Functions `.secret.local` containing only `API_TOKEN` and mount

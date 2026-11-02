@@ -293,18 +293,16 @@ without a separate stack request. Do not start a stack just because its number w
 check is needed. User request
 — 2026-09-28: "If there's any manual test, it should boot up." (Codex task: 01a0e9a9-c43a-7610-a8e4-fb75a58741d4)
 
-Before the environment footer, end every completed implementation or review with a **Manual checks** section containing one to three concise,
-high-value tests Ethan can perform against the current change set (`PR` shorthand). Choose the smallest set that best
-proves the changed behavior, and give the exact starting state, action, and expected result so Ethan does not have to
-design the test himself. Prefer realistic user-visible checks that cover the main success path and, only when useful,
-one important edge or failure case; do not pad the list with redundant checks. If the change has no honest manual test,
-keep the section and say why instead of inventing one. Before sending, require a starting state, action, and expected
-result in each proposed check; screenshot links or past test results do not satisfy this section. Check the final draft
-contains the **Manual checks** heading before sending, including small follow-up implementations whose wider audit is still pending. Self-improved — 2026-10-03: the Notifications follow-up omitted runnable checks while reporting a pending Playlist audit. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3) Self-improved — 2026-10-01: screenshot evidence and passed tests
-were reported without runnable checks. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3) Name prerequisite modes and
-their exact entry controls, including where to find them when below the items. A selection check must say to enter
-selection mode before clicking cards, because ordinary card clicks navigate. Self-improved — 2026-09-10: an omitted
-Select playlists prerequisite made a selection handoff ambiguous; verified the required mode in the Yours template.
+Before the environment footer, report the agent's actual manual results under **Manual checks**, with concise evidence
+and any genuine coverage gaps. Complete requested agent-owned checks yourself; do not make Ethan repeat a specific
+check already performed or give him unfinished checks as his next step. Ethan reviews the code. User correction —
+2026-10-29 (Codex task: 01a18497-18bd-7820-8ac3-4efbd0843d86).
+
+Include **Manual checks for you** only when Ethan asks for checks to run or a concrete user-only action is required.
+Give its starting state, exact action and expected result, including prerequisite modes and entry controls; for example,
+enter selection mode before clicking cards because ordinary clicks navigate. Before handoff, compare every proposed
+user check with the agent's completed-check list and unresolved coverage: report completed checks as results, and keep
+agent-owned unfinished checks active or explicitly blocked instead of transferring them to Ethan.
 
 Include the environment footer only in final AIMVS replies, as defined by the host repository's `AGENTS.md` and its
 referenced project skill. Before sending each message, check its phase: final replies have the footer; intermediate
