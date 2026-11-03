@@ -35,6 +35,7 @@ stages manually afterward.
 
 When applying or landing a linked worktree back to main, preserve the exact staged, unstaged, and untracked boundaries
 of both worktrees. Re-read those boundaries immediately before the landing operation; an earlier snapshot is stale.
+Wait for each Git command's final exit status before starting a dependent operation; a returned tool session ID is still running. In particular, never start stash restoration while a rebase process is pending. Self-improved — 2026-11-03: an execution call yielded before a rebase exited, and the next call began restoration too early (Codex task: `01a192d9-8cab-7dc2-9c87-af1638c51c75`).
 
 When Ethan asks to move dirty changes from main into an owning worktree, a verified copy is only the preservation
 checkpoint, not completion. After proving that every staged, unstaged, and untracked item exists in the destination,
