@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Stops the specified dev-stack terminals and closes their exact iTerm window. Used by the legacy standalone-terminal cleanup workflow; it must not close unrelated windows.
 
 set -euo pipefail
 

@@ -1,3 +1,4 @@
+// Note: Regression tests for manual-test-report-common.mjs, keeping its tooling behaviour verifiable without running the normal app flow. Run through Node's test runner; the fixtures and test setup below define any required isolation.
 import * as assert from 'node:assert/strict';
 import {
   mkdirSync,

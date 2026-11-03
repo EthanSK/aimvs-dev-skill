@@ -1,3 +1,4 @@
+// Note: Provides report-folder validation, Git fingerprinting and atomic file helpers shared by the manual-test report scripts. Import it from those scripts; it is not a standalone report command.
 import { execFileSync } from 'node:child_process';
 import {
   existsSync,

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Captures a selected browser window into the current manual-test report folder. Run through the aimvs-dev screenshot workflow with the window ID and evidence filename.
 
 set -euo pipefail
 

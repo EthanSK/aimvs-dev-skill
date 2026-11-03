@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Note: Writes a dated manual-test report entry and its source fingerprint so browser evidence remains attributable. Used by the aimvs-dev manual reporting workflow after preparing its report folder.
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';

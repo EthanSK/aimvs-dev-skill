@@ -1,4 +1,5 @@
 #!/bin/bash
+# Note: Converts an in-app Browser capture to real PNG bytes while retaining its evidence filename. The manual-test workflow calls it with --screenshot before annotating the image.
 
 set -euo pipefail
 

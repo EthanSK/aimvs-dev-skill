@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Opens an Opera test window on the MacBook display and reports verified identifiers for later cleanup. Use through the aimvs-dev browser assignment workflow with the intended URL.
 
 set -euo pipefail
 

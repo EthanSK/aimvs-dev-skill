@@ -1,3 +1,4 @@
+// Note: Reports browser window IDs and their physical displays so manual tests can target the MacBook screen. Run from the aimvs-dev browser workflow before choosing a window.
 import AppKit
 import CoreGraphics
 

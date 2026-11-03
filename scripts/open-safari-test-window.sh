@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Opens and verifies a Safari test window on the MacBook display. Use through the aimvs-dev browser assignment workflow; retain the reported ID for exact-window cleanup.
 
 set -euo pipefail
 
