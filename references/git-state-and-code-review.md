@@ -41,6 +41,8 @@ remove only those exact duplicates from main in the same task when the request a
 Git boundaries, use recoverable deletion for discarded artifacts, and report the operation as a copy if main remains
 dirty for any reason.
 
+For a requested split between feature worktrees, check both the working files and the index for moved services, types, callers and tests before calling it complete. Remove only the moved behavior, preserve shared callers that also serve the retained feature, and verify each worktree independently. If the destination depends on unlanded feature code, preserve and validate a restoration-only companion patch there; that dependency is not a reason to leave duplicate implementation in the source. User-requested hardening — 2026-11-03: “fully clean it up if it shouldn’t overlap” (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859).
+
 When preserving a dirty worktree through a stash or rebase, restore with `git stash apply --index` when safe and
 verify the staged, unstaged, and untracked state separately before dropping the recovery stash. Restored file
 contents alone do not prove that the index was restored.
