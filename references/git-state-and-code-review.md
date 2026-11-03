@@ -92,7 +92,7 @@ print(r'\(\Huge\textsf{' + letters + r'}\)')
 ## Rerun only what is needed
 
 - Iterate on failures without rerunning everything: use Jest 30's native `--onlyFailures` for unit specs, and Playwright's native `--last-failed` for E2Es as `aimvs-e2e` describes. Finish with the selection the landing or deploy rules require. User-requested — 2026-10-21 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522)
-- Keep Nx's cache for lint, typecheck and test targets, which already reruns only projects whose inputs changed; never add `--skip-nx-cache` to them out of habit. Keep it only where a target deliberately skips the cache, such as the E2E app builds. Self-improved — 2026-10-21: this session's checks passed `--skip-nx-cache` to lint and typecheck and redid unchanged projects (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522)
+- Keep Nx's cache for lint, typecheck and test targets, which already reruns only projects whose inputs changed; never add `--skip-nx-cache` to them out of habit. Keep it only where a target deliberately skips the cache, such as the E2E app builds. Before launching, inspect the actual command, including Fleet request/profile arguments, and remove cache-bypass flags unless that target requires them. Self-improved — 2026-10-21: this session's checks passed `--skip-nx-cache` to lint and typecheck and redid unchanged projects (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522). Hardened — 2026-11-03: a Fleet command repeated the bypass (Codex task: `01a18920-a780-70f0-ba0a-1e9dfae6088c`).
 
 ## Verify selected Jest specs
 
