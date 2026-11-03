@@ -29,8 +29,8 @@ URLs, private object contents, transient PIDs, or large raw logs.
 Stack 0 is Ethan's main VS Code environment and owns the native main Firebase, Storage, MinIO, and Download Assets
 Worker services. Every nonzero dev stack uses its own indexed native frontend/API processes and its own Docker Compose
 backend containing Functions, Firestore, Storage, an Auth emulator, MinIO, and the Worker. Ordinary native frontend/API
-processes keep staging Auth; a dedicated `--e2e` runtime has a second role reservation and its own backend/Auth emulator for fresh E2E
-accounts through per-process SDK configuration, without browser-storage selection or staging-account copies. The stack
+processes use their own Auth emulator; a dedicated `--e2e` runtime has a second role reservation and its own backend/Auth emulator for fresh E2E
+accounts through the same per-process SDK configuration, without browser-storage selection or staging-account copies. The stack
 index is the only backend-mode source of truth; never point a nonzero stack at stack 0 or add back the removed
 per-command isolation flag. (Codex task: 019fe10d-0cee-7192-a8d9-19bdf0ba7666)
 
@@ -307,9 +307,7 @@ This is agent guidance; Git and startup do not migrate data automatically. It gr
 
 Treat a nonzero backend as ready only when it has a unique Compose project, loopback-only host ports, a nonzero
 dev-stack index, and private named volumes for Firebase and MinIO. It includes Functions built from that exact
-worktree, Firestore, Firebase Storage, an Auth emulator, MinIO, and the Download Assets Worker; real staging Firebase
-Auth remains the ordinary manual frontend/API's account directory and the normal App Check debug-token setup is
-reused. The separate `--e2e` runtime reserves its own backend index and uses fresh Auth-emulator accounts, exported
+worktree, Firestore, Firebase Storage, an Auth emulator, MinIO, and the Download Assets Worker. Its ordinary manual frontend/API use that Auth emulator, while the normal App Check debug-token setup is reused. The separate `--e2e` runtime reserves its own backend index and uses fresh Auth-emulator accounts, exported
 with that runtime's private Firebase data so guarded restarts keep them until the next local run's preparation
 discards that data (User-requested — 2026-10-20, Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522). Manual and E2E native pairs use separate
 backend containers and data; there is no per-browser opt-in or dual-directory API lookup. A new frontend port is a separate browser origin and can require one
@@ -363,7 +361,7 @@ The only exception is the per-run E2E discard described in `stack-lifecycle.md`'
 E2E run is admitted, `isolated-backend -- discard-e2e-data` deletes only that E2E-range stack's (20001–20099) own
 three data volumes, without export, image removal or pruning, and refuses every dev stack number. User-requested —
 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
-Real Auth and browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
+Retained browser storage can outlive a private dataset reset, so an origin can remember a Channel ID that the new
 Firestore no longer contains. Exact reads of the signed-in User's own `channel-collaborators/{userId}` path intentionally
 return a normal missing snapshot because public Channel cards use that same read to decide whether to show Switch
 Channel; the old Rules denial produced one null-value error for every unrelated public Channel. The identity listener

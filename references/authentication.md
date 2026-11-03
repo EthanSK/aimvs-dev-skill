@@ -2,63 +2,29 @@
 
 ## Sign-in with the test account
 
-Ordinary local frontend/API processes use real Firebase Auth for the staging project selected by the
-`development` alias on every stack, so the saved test account below signs in normally. Local E2E runs use a separate native frontend/API pair with `--e2e`
-(`AIMVS_E2E_LOCAL=true`) and the same worktree's Auth emulator on `19900 + N`. The E2E frontend selects emulator Auth
-at build time, and its API uses Firebase Admin's per-process emulator setting; there is no browser-storage opt-in or
-dual-directory lookup. Tests sign up fresh emulator Users, Channels and Billing Accounts without copying staging
-accounts. Each pair owns its separately reserved backend containers and data. Do not create a staging sign-up/user
-unless the user explicitly asks. (Codex tasks: 019ff0c1-80ad-79f3-9d60-cbb4004bf608, 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
+Ordinary local development and local E2E each use Firebase Auth's emulator through the standard client and Admin SDK settings. Each process uses one Auth mode; never restore the former dual-Auth adapter, browser-storage switches, staging-account copies, or custom token verification. Stack 0 uses `9099`; a nonzero runtime uses `19900 + N`. Derive the exact origin from `getDevStackConfig`, including the separately reserved E2E index. Hosted staging, production and cloud E2E continue using real Firebase Auth. User-requested — 2026-10-28 (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7); supersedes the former preference to retain staging accounts for manual development.
 
-Read both credentials from ignored repo-root `.secret.local`: `AIMVS_TEST_LOGIN_EMAIL` and
-`AIMVS_TEST_LOGIN_PASSWORD`. If either variable is missing, stop and ask the user to add it; never invent a
-fallback account. Never print or commit these values. Use the assigned desktop browser's persistent profile or the
-task-scoped in-app Browser binding for the stack so App Check/Auth state can survive the current run.
+Manual frontend startup prepares a verified local account when the ignored `.secret.local` supplies `AIMVS_TEST_LOGIN_EMAIL` and a separate `AIMVS_LOCAL_TEST_LOGIN_PASSWORD`. Never reuse `AIMVS_TEST_LOGIN_PASSWORD`: that password belongs to hosted Auth. Startup reuses the existing emulator UID, verifies its email, and creates a missing account with the local password; it never resets an existing password or creates User/Channel fixtures. Configure a matching local password explicitly if that email already belonged to another emulator account. User-requested — 2026-10-31 (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
+
+The manual development frontend signs into that account through the normal Firebase SDK before route guards run. It preserves an existing session and remembers only a handled boolean per browser origin, so Sign out followed by reload stays signed out. Clearing that origin's site data enables its first-load automatic sign-in again. These credentials are bundled only into manual development builds, never hosted builds or local/cloud E2E. Never publish a manual development bundle. For tests of another account or the Sign in screen, sign out first; local E2E keeps its own independent actors. User-requested — 2026-10-31 (same task).
+
+Additional local accounts can use the ordinary Sign up screen or Auth Emulator UI. The shared development/localE2e deployment targets enable local signup and all configured emulated providers; do not open hosted signup or change hosted provider settings. Complete normal User/Channel setup once per new account/dataset so Auth UIDs and Firestore identities agree; do not copy real staging UIDs into a new account. Existing local Auth accounts persist with their stack's Firebase export/import. A local E2E run discards only its own E2E dataset during its existing preflight.
+
+Firebase verification and password-reset emails are recorded by the emulator instead of delivered. App notification emails, including collaboration and account-deletion notices, still use real AWS SES in manual development and go to the local account's email address; use addresses you control. Only E2E uses the existing isolated mail transport. Read only the task account's action link from its emulator UI/logs or `/emulator/v1/projects/<project-id>/oobCodes`, follow it privately, and keep codes and full action URLs out of reports/tool output. Exercise the emulator's recorded action page when verifying the browser flow; applying the code through the official SDK proves a narrower SDK path. Neither path qualifies hosted email templates or hosted action handlers. Social popups use Firebase's fake provider pages. Their success/cancellation and account linking can be tested locally, but only hosted checks can qualify real provider dashboard settings and consent. App Check keeps the existing registered local debug token and real exchange; Auth emulator mode does not disable API App Check.
+
+For a nonzero Docker stack, Firebase records action links with its container-internal Auth origin (`127.0.0.1:9099`). Before opening one, replace only that origin with the current runtime's published Auth origin from `getDevStackConfig`; keep the path and action-code query intact. Never open the internal `9099` URL from the Mac, where it could reach stack 0. This is a Docker port translation, not a second Auth mode. Self-improved — 2026-10-28: the unmodified verification link refused the container-only port; the same recorded code succeeded after translating only the origin (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
+
+### Phone and LAN testing
+
+Preserve phone/LAN testing from named worktrees as well as main; Ethan needs to test branch changes on a real phone, so emulator Auth is not a reason to impose a Mac-only policy. The frontend deliberately uses the page's LAN hostname for Firebase SDK connections. An exposed frontend can proxy `/api` to a loopback native API, so the API bind alone does not decide phone access. The existing nonzero Docker mappings publish Firebase ports on loopback, and MinIO signed URLs use localhost: frontend LAN serving alone therefore does not prove a complete worktree phone flow. Check those actual routes before claiming it works or proposing a restriction; report the concrete reachability gap rather than treating it as Ethan's preference. User-requested — 2026-10-28 (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
 
 ### Authorization and confirmation
 
-An explicit AIMVS manual-browser-test request authorizes the saved `.secret.local` test account to sign in through
-the exact verified nonzero-stack origin in its assigned browser. Do not ask Ethan to provide or paste credentials,
-reapprove the test account, or perform the sign-in himself when the saved credentials and supported controls exist.
-This covers the ordinary local sign-in form and its existing staging Firebase Auth destination; it does not authorize
-another account, origin, sign-up, password change, account recovery, or saving a password in the browser.
+An explicit AIMVS manual-browser-test request authorizes disposable emulator account signup/sign-in, verification and password reset within its exact owned nonzero stack when those flows are requested. Never use or mutate a real hosted account as a substitute. A resumed test keeps that authorization: check current authenticated UI before resubmitting. Do not save test passwords in the browser.
 
-Before any retry or resumption, check the authenticated URL and account-only UI. A completed sign-in must not be
-submitted again. An interruption, context recovery, or replacement task-owned browser page does not discard Ethan's
-approval for the same account, origin, and sign-in action.
-
-Do not invent a separate per-run credential-transmission approval requirement. If the active browser tool explicitly
-requires action-time confirmation even for a preapproved password entry, follow that requirement: ask once when the
-verified form is ready, identify the saved test credentials and exact local origin/staging Auth destination, and say
-that the browser tool requires the confirmation—not that AIMVS lacks authorization. Reuse Ethan's reply for that
-exact sign-in, including a safe retry whose postcondition proves it did not complete. Do not promise that this repo
-skill overrides a mandatory tool policy, change browsers to evade it, or ask again without a material new risk.
+For an explicitly authorized hosted sign-in, the ignored repo-root `.secret.local` retains `AIMVS_TEST_LOGIN_EMAIL` and `AIMVS_TEST_LOGIN_PASSWORD`; read them privately and never print or commit them. Their absence does not block local emulator signup. If an active browser tool explicitly requires action-time confirmation, ask once for that exact action and explain the tool requirement; reuse an existing confirmation on safe resumption. Do not invent another credential-transmission approval requirement.
 
 ### Enter and verify credentials
-
-Before spending time debugging browser focus, verify the saved email exists in local development's real Auth project when ADC is available:
-
-Self-improved — 2026-10-15: read the `development` alias below because hosted `staging` can migrate independently; `.firebaserc`, `environment.development.ts` and the E2E target specs must agree on the local project identity; retained datasets must be migrated before starting against changed defaults.
-
-```bash
-node - <<'NODE'
-const fs = require('fs');
-const { initializeApp, applicationDefault, getApps } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
-const line = fs.readFileSync('.secret.local', 'utf8').split(/\r?\n/).find((entry) => entry.startsWith('AIMVS_TEST_LOGIN_EMAIL='));
-if (!line) throw new Error('AIMVS_TEST_LOGIN_EMAIL is missing from .secret.local');
-const email = line.slice('AIMVS_TEST_LOGIN_EMAIL='.length);
-const projectId = JSON.parse(fs.readFileSync('.firebaserc', 'utf8')).projects.development;
-if (!projectId) throw new Error('The development Firebase project is missing from .firebaserc');
-if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId });
-getAuth().getUserByEmail(email).then((user) => {
-  console.log(JSON.stringify({ savedEmailExists: true, providers: user.providerData.map((p) => p.providerId).sort() }));
-}).catch((error) => {
-  console.log(JSON.stringify({ savedEmailExists: false, code: error.code || 'unknown' }));
-  process.exitCode = 1;
-});
-NODE
-```
 
 When filling the Angular/Firebase sign-in form, do not use Accessibility/AX `set_value`. It can make fields look
 filled without updating Angular/TanStack form state, leaving stale validation and causing misleading login
@@ -73,9 +39,7 @@ visible Sign In button under the authorization above. Never inspect browser stor
 profiles, and never emit credential values through tool output. Keep form snapshots and screenshots out of the
 credential-entry interval. Verify the authenticated redirect and account-only UI exactly as for a desktop browser.
 
-Ethan explicitly wants agents to use the saved `.secret.local` test password for requested AIMVS browser tests. If
-Safari asks for the Mac password to unlock AutoFill, dismiss that prompt and enter the saved AIMVS credentials in the
-ordinary sign-in form instead of asking Ethan to unlock AutoFill.
+If Safari asks for the Mac password to unlock AutoFill during a local test, dismiss the prompt and enter the disposable emulator credentials in the ordinary form. A separately authorized hosted test can use the saved `.secret.local` test credentials; never ask Ethan to unlock AutoFill just to enter them.
 
 For Google OAuth, suppress automatic observation output before opening the popup and read its next state with `emit: false`. Report only an allowlist of relevant buttons, headings and plain text, plus separately extracted bare hostnames. Exclude link, HTML-content, address, URL, help and query/fragment-bearing lines even when the URL has no `https://` prefix: Firebase's handler URL can contain an App Check token in its fragment, so scheme-only redaction is insufficient. Check the filtered result before emitting it; never emit the full URL or unfiltered Accessibility tree. Self-improved — 2026-10-12: popup observations exposed tokenized URLs, including a scheme-less URL that escaped scheme-only filtering; the control allowlist avoided both forms (task `01a12d17-c483-78b1-996d-5ca6e8036df4`).
 
@@ -107,7 +71,7 @@ Login verification must be based on authenticated UI state, not just the public 
 can show a `Create Project` button while still unauthenticated. Treat login as successful only after the top-right
 `Sign In` control is gone and an authenticated-only account/channel/project UI is visible, for example
 `/dashboard` with the side nav, credits, notifications, and profile picture controls. If Firebase says
-`No account found`, re-run the Auth preflight before retrying UI steps.
+`No account found`, check the exact stack's Auth emulator for that test account before retrying UI steps.
 
 ## App Check debug token
 

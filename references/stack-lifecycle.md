@@ -13,27 +13,27 @@
 
 ## Ports per stack
 
-| Thing                       | Stack 0 = Ethan's main | Every nonzero stack N                        |
-| --------------------------- | ---------------------- | -------------------------------------------- |
-| frontend                    | 4200                   | 4200 + N                                     |
-| standalone API              | 3000                   | 3000 + N                                     |
-| standalone API inspector    | 9230                   | 9230 + N                                     |
-| frontend debug-log receiver | 9476                   | 9476 + N                                     |
-| E2E frontend                | —                      | 4300 + N                                     |
-| E2E standalone API          | —                      | 3100 + N                                     |
-| E2E API inspector           | —                      | 9330 + N                                     |
-| E2E debug-log receiver      | —                      | 9576 + N                                     |
-| Functions                   | 5001                   | 15000 + N                                    |
-| Firestore                   | 8080                   | 18080 + N                                    |
-| Firebase Storage            | 9199                   | 16000 + N                                    |
-| Firebase Auth               | real staging Auth      | real staging Auth; E2E emulator at 19900 + N |
-| MinIO                       | 9000                   | 17000 + N                                    |
-| MinIO console               | 9001                   | 17100 + N                                    |
-| download-assets-worker      | 8787                   | 18800 + N                                    |
-| Firestore WebSocket         | —                      | 19150 + N                                    |
-| Emulator UI                 | —                      | 14000 + N                                    |
-| Emulator hub                | —                      | 14400 + N                                    |
-| Emulator logging            | —                      | 14500 + N                                    |
+| Thing                       | Stack 0 = Ethan's main | Every nonzero stack N |
+| --------------------------- | ---------------------- | --------------------- |
+| frontend                    | 4200                   | 4200 + N              |
+| standalone API              | 3000                   | 3000 + N              |
+| standalone API inspector    | 9230                   | 9230 + N              |
+| frontend debug-log receiver | 9476                   | 9476 + N              |
+| E2E frontend                | —                      | 4300 + N              |
+| E2E standalone API          | —                      | 3100 + N              |
+| E2E API inspector           | —                      | 9330 + N              |
+| E2E debug-log receiver      | —                      | 9576 + N              |
+| Functions                   | 5001                   | 15000 + N             |
+| Firestore                   | 8080                   | 18080 + N             |
+| Firebase Storage            | 9199                   | 16000 + N             |
+| Firebase Auth               | emulator 9099          | emulator 19900 + N    |
+| MinIO                       | 9000                   | 17000 + N             |
+| MinIO console               | 9001                   | 17100 + N             |
+| download-assets-worker      | 8787                   | 18800 + N             |
+| Firestore WebSocket         | —                      | 19150 + N             |
+| Emulator UI                 | —                      | 14000 + N             |
+| Emulator hub                | —                      | 14400 + N             |
+| Emulator logging            | —                      | 14500 + N             |
 
 The main Restore Terminals setup owns stack 0's native download-assets-worker on `:8787`. Every nonzero stack owns
 an indexed Worker inside its private Docker backend; never point it at the main Worker or start a second native copy.
@@ -375,7 +375,7 @@ Before launching an E2E backend, resolve its assigned index. Its retained data n
 
 Run the suite through `npm exec -- nx run e2e:e2e` from its reserved numbered source worktree; follow `aimvs-e2e` for selection and reports. Execution lazily reserves one additional nonzero E2E-role index through `ensureE2eWorktreeStackReservation`, reusing it thereafter. Discovery only reads an existing reservation and never allocates or starts a stack. Both reservations point to the same stable Git metadata directory; no second checkout is created. User-requested — 2026-10-12 (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5). The E2E index is 20000 + the worktree's dev number, inside 20001–20099 and never one of a dev worktree's 1–99; a manual or legacy runtime refuses those numbers. An E2E reservation on any other number, such as an older branch's 1–99 number, is moved to its pair by the next local run's preflight (see `aimvs-e2e`); never release or delete it by hand. User-requested — 2026-10-20 (Claude session: 9c17bfea-3daf-4e85-a316-2ccf89954522).
 
-The dedicated E2E runtime has its own Functions, Auth, Firestore, Storage, MinIO and Download Assets Worker containers and persistent volumes. Native frontend/API ports remain `4300 + N` / `3100 + N` for that E2E index, with inspector `9330 + N` and debug receiver `9576 + N`. It retains `dist/e2e-local/` output and `.nx/e2e-build-status`; manual development uses its original reservation, staging Auth and existing outputs. Sharing backend data and requiring the manual API/watcher for callbacks were rejected because manual restarts and edits interfered with tests; do not reintroduce that dependency. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
+The dedicated E2E runtime has its own Functions, Auth, Firestore, Storage, MinIO and Download Assets Worker containers and persistent volumes. Native frontend/API ports remain `4300 + N` / `3100 + N` for that E2E index, with inspector `9330 + N` and debug receiver `9576 + N`. It retains `dist/e2e-local/` output and `.nx/e2e-build-status`; manual development uses its original reservation, its own Auth emulator and existing outputs. Sharing backend data and requiring the manual API/watcher for callbacks were rejected because manual restarts and edits interfered with tests; do not reintroduce that dependency. (Codex task: 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
 Native launchers require `--e2e` plus the exact E2E-role index. The isolated-backend launcher infers E2E mode from that reservation for start/stop/export, packages the localE2e Functions build in the canonical container layout, and routes callbacks to the E2E API. Its Rules directory is `.firebase/e2e-rules`, generated during finite preparation; it never starts a manual or E2E source watcher. Derive child settings with `getDevStackEnv(getDevStackConfig(...))`; the Nx `localE2e` configuration alone does not supply the index. Bare builds without that child environment can produce mismatched native ports. (Codex tasks: 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e, 01a12fe4-430c-7a90-bcc4-6fd033ddf5b5)
 
@@ -486,10 +486,11 @@ projection with a synthetic credential before emitting it. Self-improved — 202
 the existing log guard (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
 Apply this output guard to provider API and browser URL readbacks too: emit an explicit allow-list of needed fields,
 never a complete Firebase Auth `signIn` object containing `hashConfig.signerKey`, OAuth client secrets, or Google
-challenge query parameters. Call browser inventory APIs with `emit:false`; project only needed browser IDs/types
+challenge query parameters. Before each browser inventory call, inspect the actual call arguments and require `cua.getState({ emit: false })` (or the equivalent supported option); then project only needed browser IDs/types
 and task-page IDs with credential-free URLs, never unrelated page titles or URLs. Before the first output, test the final projection with synthetic secret fields and
 require them to be absent. Self-improved — 2026-10-10: status inspection exposed sensitive configuration and a
 challenge URL; this checks the projection before emission (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
+Self-improved — 2026-10-28: check the actual inventory call before execution; a first CUA inventory emitted unrelated browsing context despite the projection rule (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
 Apply this same redaction to native DevTools Console Accessibility text before emitting selected lines; filtering for errors does not remove URL credentials. Synthetically check that the actual Console readback formatter redacts both `App Check debug token:` and `?key=` before its first output. Self-improved — 2026-10-04: an error-only native Console readback exposed a Firebase URL key during browser verification (Codex task: 01a103f5-147c-72a0-945b-52de8f605c89).
 Require narrow status/error matching and redaction before emitting log excerpts, including decoded Playwright trace console records, derived prefixes and truncated lines; selecting JSON fields such as `text`, removing URLs or selecting a log suffix does not redact token text. Treat trace DOM snapshots the same way: emit only explicitly allowed attributes, never arbitrary `__playwright*` attributes, which can contain signed resource URLs. Test the final snapshot projection with a synthetic signed URL before its first output. Self-improved — 2026-10-31: a wildcard trace-attribute projection exposed signed image URLs despite the existing log guard (Codex task: `01a16aa1-69de-7931-895b-e0b6cd9f9409`). Apply and synthetically test redaction in every new log-read script, even when an earlier script passed. Self-improved — 2026-10-27: decoded trace console text bypassed this same log guard (Codex task: 01a16aa1-69de-7931-895b-e0b6cd9f9409). Never return raw `head`, `tail`,
 `sed` or width-truncated `cut` output, because startup logs contain App Check tokens even without errors. Match the actual `App Check debug token: <value>`
@@ -584,8 +585,9 @@ index, and require its ports `4300 + M`, `3100 + M`, `9330 + M`, and `9576 + M` 
 Do not check those E2E formulas against the manual index N. A missing screen socket alone does not
 prove all descendants stopped. The guarded cleanup exception below permits only separately verified main Firebase listeners.
 Do not substitute `screen -X quit` for Ctrl-C: it can close the screen handle while npm's child launchers keep
-their ports open. Self-improved — 2026-10-07: verified surviving launchers after that substitution
+their ports open. Before executing a stop batch, inspect its actual commands for Ctrl-C and a separate successful native-port readback before backend stop; reject `screen -X quit` and any unconditional mutation after a failed proof. Self-improved — 2026-10-07: verified surviving launchers after that substitution
 (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
+Self-improved — 2026-10-28: the command-level stop check catches a repeated screen-quit substitution and failed preflight; the guarded backend correctly refused to export while native ports remained open (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
 If a handle is unavailable or a child survives, freshly verify that exact PID's command, worktree, stack role,
 and recorded ancestry before a bounded graceful signal to that process. Never use broad process-name or port kills,
 close unrelated sessions, or stop stack 0. If ownership is ambiguous, stop and report it. Run the ownership proof and stop signal in separate tool calls, and require a zero exit from the proof before signalling; an unconditional multiline shell continues after a failed assertion. Self-improved — 2026-10-14: a failed child-directory assertion still reached the following screen signals; separating this boundary prevents that failure (task `01a12fe4-430c-7a90-bcc4-6fd033ddf5b5`).

@@ -168,6 +168,12 @@ test, use semantic Browser locators before coordinate input, and reset any tempo
 cleanup. If no supported in-app Browser controller or binding is available, report that exact blocker; personal
 Chrome and a standalone automation profile are still not fallbacks. (Codex task: 01a03a49-3424-7e93-bcd8-f261515ba730)
 
+For routine Auth provider coverage, use the existing headless E2E journeys. An in-app Browser can open a native
+provider sign-in window that takes focus without appearing in its browser-page inventory. Never repeat the provider
+click merely because that popup is unlisted; stop the manual popup path and use headless coverage. Test a visible
+provider popup only when Ethan specifically requests that interaction. User-requested — 2026-10-29: repeated
+manual Google emulator checks interrupted his screen. (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7)
+
 After desktop-browser setup, prefer non-activating screenshots, Accessibility state, scripting, and logs, but use
 target-scoped foreground input when needed for an explicitly requested test. The installed Sky Window2 API says input
 methods activate their target, and an observed app-targeted `sky.drag` reordered Opera without changing the reported
@@ -187,7 +193,8 @@ After a native menu closes, resolve the
 next action by its label in fresh Accessibility state; do not reuse an earlier index even when the page is unchanged,
 because dismissing a menu can shift every index. Self-improved — 2026-10-04: a shifted Safari index selected
 Settings instead of Collapse navigation; label-matched indices passed the retest (Codex task:
-01a10321-0e9a-79e1-b75f-8919b5dddcaf). Never act on the mismatched page or
+01a10321-0e9a-79e1-b75f-8919b5dddcaf). Before describing a URL mismatch as navigation in the owned window, join the fresh controller state to that exact numeric window; a different active window is a controller-routing change. Self-improved — 2026-10-29: the final inventory distinguished the owned window from a separate concurrent window after an app-scoped controller switch (Codex task: 01a184c4-e842-7242-884c-4cd979a6beb7).
+Never act on the mismatched page or
 invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display windows belong to the
 user: never raise, navigate, move, close, or otherwise interact with them.
 
