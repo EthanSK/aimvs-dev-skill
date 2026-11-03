@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Adds the requested labelled highlight to a retained manual-test PNG and replaces it atomically. Use this report-workflow helper with the screenshot path and highlight coordinates.
 
 set -euo pipefail
 

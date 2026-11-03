@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Note: Contains the legacy HTML renderer for Markdown manual-test reports. HTML report generation is currently disabled by aimvs-dev; keep this implementation for an explicitly authorised return to that workflow.
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';

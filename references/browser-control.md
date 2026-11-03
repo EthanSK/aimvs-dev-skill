@@ -198,6 +198,8 @@ Never act on the mismatched page or
 invoke the creation flow again while `TEST_WINDOW_ID` still exists. Existing external-display windows belong to the
 user: never raise, navigate, move, close, or otherwise interact with them.
 
+After an address-bar shortcut or Open Location command, confirm that the browser's address field actually has focus before typing; an ignored command can leave focus in an app form. Verify navigation from the page URL field, not a URL string found elsewhere in the Accessibility tree. Self-improved — 2026-10-28: Safari ignored Open Location and navigation text landed in an empty Email field; the text was cleared and the project browser fallback completed the check (Codex task: 01a17da7-1942-7872-ac9a-624a9b7d7322).
+
 `@oai/sky` currently targets Safari by app and can return whichever Safari window is frontmost; it does not accept the
 saved Safari window ID as an interaction target. If fresh state returns another Safari window, do not act on its page.
 First confirm that the tracked window ID still exists on `Built-in Retina Display`. A unique, exact task-window title

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Note: Closes and verifies removal of the exact Opera test window recorded by the opener. Called by the aimvs-dev browser cleanup workflow with its saved window identifiers.
 
 set -euo pipefail
 

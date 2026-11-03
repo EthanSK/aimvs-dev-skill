@@ -136,6 +136,13 @@ User-requested — 2026-10-28 (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975)
 
 Before opening DevTools, suppress automatic Accessibility output and print only the needed controls after filtering token-bearing lines; the Console can expose the App Check debug token in text even without a screenshot. Check the outgoing observation call for `emit: false` before opening or switching DevTools panels. Self-improved — 2026-10-28: an unfiltered Console AX state exposed that token during the final spacing check (Codex task: 01a182e8-2d01-7822-a9ec-011c79310975).
 
+For an authentication-form capture, inspect only credential-value presence booleans in a separate tool call before
+capturing; browser autofill can populate a newly opened form. Read that result before the capture call, and clear only
+fields in a fresh task-created test form or exclude the sensitive area. Never batch the presence check with an
+unconditional screenshot. Self-improved — 2026-10-27: autofill populated a fresh dialog before visual inspection
+(Codex task: 01a17da7-1942-7872-ac9a-624a9b7d7322).
+This check also precedes an initial screenshot-only inspection, not just saved evidence. After clearing autofill, verify in a separate call that both fields are empty or match the deliberately synthetic test values; navigation can refill them after an early clear. Self-improved — 2026-10-28: the initial Material-auth screenshot still showed autofill, and an immediate clear was later repopulated (Codex task: 01a17da7-1942-7872-ac9a-624a9b7d7322).
+
 If Chromium DevTools was opened during the test, reset any temporary network preset, close DevTools, and verify the
 tracked window shows only the app before capturing. Never retain a DevTools screenshot: its Console can expose the
 App Check debug token even when the tested panel itself looks harmless.

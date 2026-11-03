@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Note: Creates or resolves the report folder for a manual-test slug. Run before capturing evidence so screenshots and Markdown entries share the same destination.
 
 import {
   assertValidSlug,

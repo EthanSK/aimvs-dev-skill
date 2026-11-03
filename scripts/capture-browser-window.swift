@@ -1,3 +1,4 @@
+// Note: Captures one explicit macOS window as a PNG for manual-test evidence. The capture shell helper compiles and calls it with --window-id and --output; it does not capture the whole desktop.
 import AppKit
 import CoreGraphics
 import Foundation

@@ -1,3 +1,4 @@
+// Note: Regression tests for draw-screenshot-highlight.mjs, keeping its tooling behaviour verifiable without running the normal app flow. Run through Node's test runner; the fixtures and test setup below define any required isolation.
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Note: Draws labelled highlight outlines into a PNG without changing the underlying screenshot layout. Called by highlight-manual-test-screenshot.sh, or with its input/output/highlight CLI options.
 
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
