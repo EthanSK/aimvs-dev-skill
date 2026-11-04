@@ -233,6 +233,7 @@ linked directly here so an agent never needs to discover operating instructions 
   [references/manual-verification.md](references/manual-verification.md).
 - **Every Computer Use test, screenshot/report update, or question about prior manual-test evidence:** read
   [references/manual-test-reporting.md](references/manual-test-reporting.md).
+- **A newly observed provider response or error shape during debugging, testing or log inspection:** invoke the host's `development-workflow` skill and follow **Observed provider response fixtures** before handoff. Save sanitized errors and successful responses as durable test fixtures; temporary test-data cleanup must not remove them. User-requested — 2026-11-04.
 - **Every test that generates media, including Fal/provider probes and local synthetic fixtures:** follow the media-retention rule in [references/manual-test-reporting.md](references/manual-test-reporting.md#artifact-contract); save outputs under the ignored root `test-generations/` directory, not only temporary storage.
 
 ## Core workflow
