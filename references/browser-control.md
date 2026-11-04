@@ -264,6 +264,13 @@ The browser-tab strip and its context menu belong to the native browser app, out
 native app controller only on the verified task window; its activating input is permitted for an explicitly requested
 test. Muting remains best effort, so do not turn a missing control into a permission prompt or testing blocker.
 
+Ethan may be listening to music while tests run. Before sending a mute command, check that its actual target is only
+the task's browser page or test player. Never switch the system output device or change system output, speaker or
+alert volume to silence a test; use a brief non-distracting sample if page/player muting is unavailable.
+User-requested — 2026-10-21 (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859).
+
+When a mute control is available, verify the actual player's muted state before pressing Play, and check again after switching Assets or reloading. A JavaScript `play()` wrapper is not proof: native media controls can bypass it. Self-improved — 2026-10-23: the native control bypassed a test-only wrapper; its own mute control and readback verified the subsequent tests (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859).
+
 For Firefox, the native right-click method and Control+M shortcut both activate Firefox through Computer Use, so use
 them only on the verified task window during an explicitly requested test:
 

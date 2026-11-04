@@ -281,13 +281,16 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    Preserve a healthy process in its current owner unless Ethan requests migration. (Codex tasks:
    01a06eec-07f7-7aa1-a498-15f6334e4b91, 01a0a16f-d40c-7b10-b1da-e87175b0bcf7)
 
-   macOS `screen` does not support GNU `-Logfile`; use the role log directory and `-L` above, then verify its
+   Before each launch, compare the actual command with the macOS form above and reject GNU `-Logfile`; macOS
+   `screen` does not support it. Use the role log directory and `-L`, then verify its
    `screenlog.0` exists. Self-improved — 2026-10-07: an unsupported flag prevented a retained role from starting
-   (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168).
+   (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168). Self-improved — 2026-10-22: the same flag was repeated
+   for a report server; checking the command itself before execution catches that omission (Codex task:
+   01a06e80-5360-7cb2-9ed6-bf97e3311859).
 
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
-   Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. Before executing the rebuild, require that wrapper and the exact owned nonzero index in the command; a direct `nx ... frontend:build` does not establish the stack configuration. Check the reloaded environment banner's worktree and index before more UI input. Self-improved — 2026-10-29: a direct build needed replacing with the existing stack-aware wrapper before testing (Codex task: 01a18497-18bd-7820-8ac3-4efbd0843d86). The API watcher remains unchanged. Use the checkout's Nx environment rule above consistently for startup and explicit rebuilds.
+   Start the frontend in its own session, or reuse its already healthy owned process. On nonzero stacks this command builds once, then retains only Vite preview with the existing API, Storage and diagnostic proxies; no Angular source watcher remains. After edits to frontend code or its shared dependencies, or a rebase, run `npm run build:frontend:dev -- --dev-stack-index=N` from that worktree, verify success and reload the browser page. Before executing the rebuild, require that wrapper and the exact owned nonzero index in the command; a direct `nx ... frontend:build` does not establish the stack configuration. Check the reloaded environment banner's worktree and index before more UI input. Self-improved — 2026-10-29: a direct build needed replacing with the existing stack-aware wrapper before testing (Codex task: 01a18497-18bd-7820-8ac3-4efbd0843d86). Skipping verification builds for trivial changes does not exempt this running-app rebuild: even a wording-only edit must reach the served bundle before handoff. User correction — 2026-10-26 (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859). The API watcher remains unchanged. Use the checkout's Nx environment rule above consistently for startup and explicit rebuilds.
 
    Keep each role's exact screen name, log path, launcher/child PIDs, exact worktree, and stack index in the task's
    live context and continuation handoff, not in committed skill files or a new registry. Read the role's
@@ -513,6 +516,7 @@ E2E runner stdout follows this same check: extract results from the structured r
 before emitting them; never return a raw log tail just because a previous run contained no secrets. Self-improved —
 2026-10-09: a local media-result read skipped the existing redaction boundary. (Codex task:
 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
+Treat redirected Nx/Jest/Playwright output files as logs too; check every emitted excerpt, not just live screen logs. Project structured E2E records to test outcomes and needed metrics; never emit complete test objects containing replay actors/passwords. Self-improved — 2026-10-22: captured test-output suffixes and a complete test-object readback bypassed this same guard during the stream-metadata checks (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859).
 Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
 not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
 synthetic `App Check debug token: <value>` entry that also matches the route filter and require `[REDACTED]` or omission.
@@ -524,6 +528,7 @@ For task-history tools, parse their returned text locally and emit only the need
 outcomes, with the same final redaction; never serialize the complete result. Self-improved — 2026-10-04: a bounded
 `read_thread` still returned reasoning and token-bearing log history; projecting message fields avoids that exposure
 (Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf).
+Before emitting, reject `text(parsedHistory)` or `print(parsedHistory)`; parsing JSON is not a projection. Check that the final print argument contains only the selected message or outcome fields. Self-improved — 2026-10-28: a bounded history read still emitted the complete parsed object (Codex task: 01a17dbf-0b72-7981-b9c2-12447453dcbb).
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
 the secret without inserting the marker.
 Filter returned browser-log entries in memory and redact their messages before emitting them; never treat a tool's
