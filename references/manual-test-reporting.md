@@ -43,10 +43,11 @@ its one locally changed report folder; more than one is ambiguous and stops for 
 private assignment marker between worktrees; later capture and create commands use it to select the same folder even
 when several inherited folders are visible.
 
-`manual-test-results.md` is the append-only reviewer-facing artifact. HTML report generation is disabled, including generic Markdown-to-HTML viewers of this report: do not run
+`manual-test-results.md` is the append-only reviewer-facing artifact. Before dispatching any viewer helper, check every input path, including paths in a mixed batch; link this report directly as a local file. HTML report generation is disabled, including generic Markdown-to-HTML viewers of this report: do not run
 `render-manual-test-report.mjs`, and do not create, update, or delete existing `index.html` files. Keep the dormant
 renderer code so Ethan can re-enable it later without rebuilding it.
 Self-improved — 2026-10-02: the generic response viewer bypassed the existing no-HTML rule; check the artifact type before invoking any viewer. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
+Self-improved — 2026-10-22: a mixed skill/report link batch repeated that omission; the per-input check catches it before the helper runs. (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859)
 
 Store manual-test PNGs through Git LFS:
 
@@ -175,7 +176,7 @@ the worktree's assigned report directory with `prepare-manual-test-report.mjs`, 
 the capture is destined for a PNG report; after inspecting the raw pixels, run
 `normalize-in-app-browser-screenshot.sh --screenshot <absolute-path>`, then run
 `file -b --mime-type <absolute-path>` and require `image/png` before annotation; the `.png` extension and a successful
-image preview do not prove PNG bytes. Self-improved — 2026-10-02: the picker-free upload test missed normalization and
+image preview do not prove PNG bytes. Apply this byte-format check to `tab.getScreenshot()` too, before parsing PNG dimensions or preparing an annotation candidate. Self-improved — 2026-10-27: that API also returned JPEG, so reading a PNG header produced invalid dimensions and annotation refused it (Codex task: 01a17dbf-0b72-7981-b9c2-12447453dcbb). Self-improved — 2026-10-02: the picker-free upload test missed normalization and
 the annotation helper rejected JPEG captures; the signature check catches this before annotation. Evidence:
 `_manual-test-results/2026-10-02-uploads-without-picker/manual-test-results.md` (Codex task:
 `01a0fcfd-381c-7361-90da-28b9479c768a`).
