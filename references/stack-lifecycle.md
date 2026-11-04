@@ -167,6 +167,12 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    main's shared dependencies without authorization. User-requested — 2026-10-19 (Codex task:
    `01a1548b-ec58-7db3-9044-78b5eb7c1918`).
 
+   Before moving build output to external scratch, inspect every packaging consumer. The isolated Firebase image
+   uses Docker `COPY` for its compiled API: keep that output and its ancestors inside the Docker build context,
+   because an outside-context SD symlink appears missing. A supported frontend-output symlink does not establish
+   backend compatibility. Self-improved — 2026-11-04: verified during stack38's guarded rebuild (Codex task:
+   `01a17fc9-2554-7772-a4e9-641816b1f486`).
+
    The private backend does not replace ignored API config; R2/Stripe local config still comes from
    `apps/api/.env.local`.
    Local API secrets follow the selected app mode's staging target through the shared secret cache, while the
