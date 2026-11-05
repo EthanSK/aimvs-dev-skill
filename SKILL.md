@@ -276,7 +276,7 @@ inspection, but serialize heavyweight checks within the shared Mac memory budget
 prerequisites. Before launching Nx validation, check both its task concurrency and the test runner's worker count: one selected project can still run several prerequisite targets. User-requested — 2026-10-28. Skip build and lint for trivial prose/static changes, retain the spec skill's validation for changed typed tests, and rerun only checks affected by a later edit or failure.
 User request — 2026-10-04.
 
-Before dispatching formatting, verify the literal command includes `--sort-root-tsconfig-paths=false`; file selection does not replace that check. Self-improved — 2026-10-28: the overnight unit run omitted this existing flag (Codex task: 01a17f2e-00a9-75a1-9365-dcd025a5e32c).
+Before dispatching formatting, verify the literal command includes `--sort-root-tsconfig-paths=false`; file selection does not replace that check. Check the final arguments in scripted retry commands too, before the script launches Nx. Self-improved — 2026-10-28: the overnight unit run omitted this existing flag (Codex task: 01a17f2e-00a9-75a1-9365-dcd025a5e32c).
 
 Agent patches and shell writes do not trigger VS Code's format-on-save. After the final edit, run the existing
 `npm exec -- nx format:write --files=<explicit changed files> --sort-root-tsconfig-paths=false`, then
