@@ -278,7 +278,7 @@ User request — 2026-10-04.
 
 Before dispatching formatting, verify the literal command includes `--sort-root-tsconfig-paths=false`; file selection does not replace that check. Check the final arguments in scripted retry commands too, before the script launches Nx. Self-improved — 2026-10-28: the overnight unit run omitted this existing flag (Codex task: 01a17f2e-00a9-75a1-9365-dcd025a5e32c).
 
-Wait for the formatter's successful process completion before starting validation or taking a Fleet source snapshot; a returned running-session ID is not completion. Self-improved — 2026-11-07: formatting overlapped a dispatched check, making its source snapshot uncertain (Codex task: `01a1b70c-b0cc-75b3-8fea-ad2f680ae324`).
+Wait for the formatter's successful process completion before starting validation or taking a Fleet source snapshot; a returned running-session ID is not completion. Finish planned comment and JSDoc edits in the submitted source before dispatch too; changing those bytes during upload aborts the snapshot even when runtime behavior is unchanged. Self-improved — 2026-11-07: formatting overlapped a dispatched check, making its source snapshot uncertain (Codex task: `01a1b70c-b0cc-75b3-8fea-ad2f680ae324`); a later comment correction aborted the preview-audio unit submission before tests ran (Codex task: `01a1acc3-0b47-71a2-8dc2-499e4dbe9b47`).
 
 Agent patches and shell writes do not trigger VS Code's format-on-save. After the final edit, run the existing
 `npm exec -- nx format:write --files=<explicit changed files> --sort-root-tsconfig-paths=false`, then
