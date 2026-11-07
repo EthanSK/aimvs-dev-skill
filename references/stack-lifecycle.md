@@ -268,6 +268,13 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    `.nx/workspace-data` and daemon are already local to that checkout, whose reservation permits only its own stack.
    A second indexed directory creates a second daemon when ordinary tooling uses the default, duplicating idle memory.
 
+   Keep `NX_CACHE_DIRECTORY` consistent too: on Nx 24, an explicit override changes the SQLite database scope even
+   when workspace data uses its default. Before a check or retained-role launch, compare both variables with the
+   recorded daemon environment; do not override only one invocation or disable the database to hide a mismatch.
+   Self-improved — 2026-11-07: a cache-only override split CLI task details from daemon task history and produced
+   a foreign-key error after successful compilers; the same check passed with the retained environment (Codex task:
+   `01a1b70c-b0cc-75b3-8fea-ad2f680ae324`; Nx `db-connection.js`, `hash-task.js`, and `task-history.js`).
+
    Keep the existing `NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data-stack-N` on Nx-backed commands and frontend
    rebuilds for a nonzero stack launched from the primary checkout; this change is limited to dedicated linked worktrees.
    Stack 0 and ordinary primary-checkout tooling keep the default. The built nonzero frontend no longer runs Nx's
@@ -293,6 +300,13 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168). Self-improved — 2026-10-22: the same flag was repeated
    for a report server; checking the command itself before execution catches that omission (Codex task:
    01a06e80-5360-7cb2-9ed6-bf97e3311859).
+
+   Check the launcher's actual working directory, not just `mkdir`: use the role log directory as the command
+   tool's `workdir` or enter it before launching screen. Verify the exact screen process has that role's log open;
+   file existence alone can match an older run. To redirect a mistaken detached log without restarting its healthy
+   role, target window `-p 0` when sending `log off`, `logfile`, then `log on`, and verify the open path again.
+   Self-improved — 2026-11-07: creating the role directory without selecting it wrote screenlog.0 into the source
+   checkout (Codex task: `01a1b70c-b0cc-75b3-8fea-ad2f680ae324`).
 
    Start `watch:api` first and wait for its initial successful development build before starting the API server.
    The launcher already performs that prebuild; a second manual build is unnecessary when its success is verified.
