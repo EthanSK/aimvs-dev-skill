@@ -548,7 +548,7 @@ For task-history tools, parse their returned text locally and emit only the need
 outcomes, with the same final redaction; never serialize the complete result. Self-improved — 2026-10-04: a bounded
 `read_thread` still returned reasoning and token-bearing log history; projecting message fields avoids that exposure
 (Codex task: 01a10321-0e9a-79e1-b75f-8919b5dddcaf).
-Before emitting, reject `text(parsedHistory)` or `print(parsedHistory)`; parsing JSON is not a projection. Check that the final print argument contains only the selected message or outcome fields. Self-improved — 2026-10-28: a bounded history read still emitted the complete parsed object (Codex task: 01a17dbf-0b72-7981-b9c2-12447453dcbb).
+Before emitting, reject `text(parsedHistory)`, `print(parsedHistory)` and `text(await tools.read_thread(...))`; parsing JSON or limiting each item is not a projection. In the same tool invocation, parse the response, select only the requested message or outcome fields, and check the final print argument before it runs. Self-improved — 2026-11-08: a bounded history lookup still returned the entire tool result instead of the requested final reply (Codex task: `01a1acc3-0b47-71a2-8dc2-499e4dbe9b47`). Self-improved — 2026-10-28: a bounded history read still emitted the complete parsed object (Codex task: 01a17dbf-0b72-7981-b9c2-12447453dcbb).
 In a Perl replacement, write `${1}[REDACTED]`, not `$1[REDACTED]`; the latter is ambiguous and can silently delete
 the secret without inserting the marker.
 Filter returned browser-log entries in memory and redact their messages before emitting them; never treat a tool's
