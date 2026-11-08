@@ -185,7 +185,7 @@ focus. User correction — 2026-09-24: foreground control of the agent-owned tes
 01a024f9-f80c-71c0-9005-51c76fc2e18d) Before acting on fresh Computer Use state, require its accessibility tree to
 show the exact stack URL; if it shows another window or stack, stop page input. In a batched controller call, make the
 exact window-title and stack-URL checks conditions that must pass before the page action executes; printing the
-state and then clicking unconditionally is not a check. Derive each element index from that same fresh state inside the gate; an index from an earlier response can now point to a different control even when the window and URL still match. Before sending a batched action, require both the current target identity and the current control match. Self-improved — 2026-10-04: a refreshed Safari tree renumbered a Following control and the older index opened a Video instead; matching the control from the gated tree prevented recurrence. (Codex task: 01a10717-3580-7622-9439-28dad3d68db3) Before finishing, inspect each such call for a real mismatch
+state and then clicking unconditionally is not a check. Derive each element index from that same fresh state inside the gate; an index from an earlier response can now point to a different control even when the window and URL still match. A call that performs one action and then reads its postcondition is still a batched action: a separate earlier state read does not replace the in-call identity and control checks. Self-improved — 2026-10-27: a dashboard test clicked an earlier index before its post-action read (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3). Before sending a batched action, require both the current target identity and the current control match. Self-improved — 2026-10-04: a refreshed Safari tree renumbered a Following control and the older index opened a Video instead; matching the control from the gated tree prevented recurrence. (Codex task: 01a10717-3580-7622-9439-28dad3d68db3) Before finishing, inspect each such call for a real mismatch
 branch that performs no page input. Self-improved — 2026-10-02: concurrent Firefox input changed the target between
 reselection and cleanup; conditional gates completed the exact-window cleanup safely. (Codex task:
 01a0e8c5-e4a3-7b53-8c02-2c796ab9fe2d)
@@ -327,6 +327,12 @@ For each discrete click, keypress, text entry, drag, navigation, or browser-cont
    Stack 25 sweep; fresh full-snapshot label selection and completion readback prevented further duplicates.
 4. If concurrent user input changes focus or target, stop that action and re-identify the task window; never reclaim
    focus from a newer user action.
+
+When reporting window identity, emit only explicit allowlisted booleans or the known task window ID, never a raw
+window header after a best-effort title replacement. Before emitting, test the actual projection with a synthetic
+secret in both indexed headers and fallback `Window: ...` headers; require the secret to be absent in both.
+Self-improved — 2026-10-27: a fallback Safari header bypassed a title-replacement pattern and exposed another
+window's text (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3).
 
 For a harmless resize or drag, never infer the reached position from Sky's requested endpoint. Opera 133 visibly
 stopped one `sky.drag` at a mid-width boundary even though the requested endpoint was near the intended limit; inspect
