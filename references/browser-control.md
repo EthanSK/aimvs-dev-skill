@@ -510,7 +510,7 @@ changed, and never target a pre-existing window by title, position, or sight. Tr
 first. If it clearly fails while ownership remains exact, use a target-scoped foreground close on that same verified
 window and recheck its ID; never close a different window. If the test launched an otherwise stopped browser app, quit it only after
 the tracked window closes and only when it has no other windows. If exact cleanup cannot be proven safe, leave the
-tracked window alone and report cleanup as blocked instead of closing another window or app. (Codex tasks:
+tracked window alone and record closure as unverified instead of closing another window or app. Browser closure remains best-effort cleanup under [worktree-lifecycle.md](worktree-lifecycle.md#land-and-remove-a-completed-worktree); do not block MMCDW or ask Ethan to close it. (Codex tasks:
 01a0357e-e591-7381-bc21-f9b5f93ccee7, 01a0361a-9cf7-7dc3-b1b6-381b783854d5,
 01a0399b-e199-79d2-b4ec-a32664b00adf)
 
