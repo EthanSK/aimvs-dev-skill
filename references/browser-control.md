@@ -148,9 +148,14 @@ browser to be the in-app Browser. If that legacy skill is absent and `mcp__cua_r
 matching entrypoint rule for the user's request. When the request names or mentions the in-app Browser, the documented
 entrypoint is `cua.createBrowserTab("iab", STACK_URL, { visible: false })`. When no browser is named or mentioned, start
 with `cua.getBrowser({ url: STACK_URL })`, read its returned documentation, and verify that the selected browser is the
-in-app Browser before creating a tab. Make only the permitted single API call in the first CUA invocation. If CUA
-selects an incompatible browser, report that selection as the blocker; do not proceed in Chrome or silently switch
-contexts. A missing legacy skill alone is not a blocker when the current controller can select the permitted context.
+in-app Browser before creating a tab. Make only the permitted single API call in the first CUA invocation. If generic
+selection returns Chrome or the `iab` alias fails, read the supported browser inventory once with automatic output
+suppressed, project only browser IDs/names/types, and select the exact entry whose type is `iab`. Create the task page
+using that binding's returned `browserId`; the registered ID may be numeric. Verify its type before navigation and
+explain the recovery. Report a blocker or ask to change testing surfaces only after this registered-ID route fails;
+never proceed in personal Chrome. Self-improved — 2026-11-09: alias failure was mistaken for missing in-app support,
+but the inventory's registered ID opened the required browser (Codex task: `01a1c14e-4e38-7c91-9aa1-26725da42963`).
+A missing legacy skill alone is not a blocker when the current controller can select the permitted context.
 
 Create exactly one new agent-owned tab at the task's nonzero `STACK_URL` and retain its returned controller and ID
 as `TEST_BROWSER_TAB_ID`. Name the browser session with the worktree and stack when the controller supports session
