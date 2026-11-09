@@ -503,6 +503,9 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+Treat debugger WebSocket addresses as private capability URLs too; test the final redactor with a synthetic `ws://`
+address before emitting debugger startup lines. Self-improved — 2026-11-09: a startup diagnostic exposed a local
+debugger address (Codex task: `01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3`).
 Apply the same boundary to local credential files, including `.secret.local`: reject raw `cat`, `rg` or line excerpts
 before execution; parse privately and emit only key names, presence booleans or redacted values. When searching source
 configuration near credential bindings, project matching names and locations without neighboring key values. Apply the
