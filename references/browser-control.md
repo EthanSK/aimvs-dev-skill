@@ -444,8 +444,8 @@ When direct input assignment is unavailable, use this verified temporary develop
 1. Use the task-owned named worktree, its nonzero isolated stack and its assigned browser page or dedicated external
    browser window. Record
    baseline asset IDs and the exact source content before adding the hook.
-2. Load a fixed-fixture JavaScript script before Angular bootstrap through the existing development-serve guard in
-   `apps/frontend/tools/plugins/frontend-build-status.dev.ts`, using `setFrontendBuildInIndexHtml`. Keep the script in
+2. Load a fixed-fixture JavaScript script before Angular bootstrap through the existing development-serve guard that calls
+   `setFrontendBuildInIndexHtml` in the frontend HTML transformer. Keep the script in
    task-owned scratch storage and require its exact stack origin. Do not change production components, add an
    arbitrary-local-file endpoint, or mutate the page through browser automation `evaluate`.
 3. In a capture-phase document click listener, match the upload file input and call `event.preventDefault()`
