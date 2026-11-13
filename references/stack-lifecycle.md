@@ -186,7 +186,7 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    with `No value provided for input HTTP label: Bucket`. Run `watch:api` after linking so the build copies the file
    into `dist/apps/api/.env.local` before `serve:api:standalone:debug` starts.
 
-   The frontend App Check debug token is also ignored local config. `apps/frontend/tools/plugins/env-var-plugin.ts`
+   The frontend App Check debug token is also ignored local config. `apps/frontend/tools/plugins/env-var-plugin/env-var-plugin.ts`
    reads `FIREBASE_APPCHECK_DEBUG_TOKEN` from `process.env` or repo-root `.secret.local`; no manual export is
    needed when the frontend command is launched from the worktree root. Restart the frontend after changing
    `.secret.local`.
@@ -679,7 +679,7 @@ allocation and startup keep `reservable`'s strict free-port check and skip the o
 2026-10-15: verified live owner and cleanup/startup regression tests (Codex task: 01a13a36-0fab-7812-b46a-9b3b6f9d0e49).
 
 New allocations also exclude the known configured/default ports in `reservedDevStackPorts` in
-`tools/scripts/dev-stack/isolated-backend.dev.ts`, deriving unavailable stack numbers from each candidate's actual role
+`tools/scripts/dev-stack/isolated-backend/isolated-backend.dev.ts`, deriving unavailable stack numbers from each candidate's actual role
 map. Keep the reasons and port entries there, not in another stack-number list. Existing reservations retain their live-port
 startup and cleanup checks, so growing the list does not prevent already-assigned work from resuming. An observed
 unrelated listener is not proof of a permanent port; keep the live checks for changing or newly occupied ports.
