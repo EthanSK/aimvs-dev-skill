@@ -146,6 +146,16 @@ existing document after the last import, then capture the slow request in browse
 time isolates the browser connection pool; `Waiting (TTFB)` only implicates the emulator when a simultaneous warmed
 server-side control read is also slow.
 
+Six or more pages of one local stack in one browser profile or Playwright context can exhaust its plain-HTTP
+Firestore emulator's six HTTP/1.1 connections: each page holds a WebChannel listen connection, so later requests
+queue until a connection recycles. Keep ordinary multi-page responsiveness checks to five pages total; active write
+streams can consume another connection, so use four when that overlap is needed. In the verified trace, Playwright
+labelled a 30-second queue as `ssl` even though the address used plain HTTP; inspect the request timeline rather than
+diagnosing TLS from that label. This emulator pool is separate from the frontend dev server's pool and production
+Firestore's HTTP/2 transport. Ethan accepted closing local browser pages instead of adding HTTPS or an HTTP/2 proxy.
+User-requested — 2026-11-14 (Codex tasks: `01a1d51e-07da-7073-a5f4-cbbeb29f7e6e`,
+`01a1da14-60d5-76a2-b0fa-dff4a399b7bb`).
+
 ## Firestore performance diagnostics
 
 The 30-second Firestore lock-timeout JAR patch is deliberately manual opt-in. Normal `postinstall` must not run
