@@ -48,6 +48,8 @@ it to an AIMVS test. Record the pre-existing window IDs and whether the assigned
 never claim they were created by the test. Do not infer the display from a window's size, a negative X coordinate,
 or whichever display is currently main.
 
+Before selecting a desktop browser with `cua.getApp`, verify through `NSWorkspace` that it is already running and not hidden; the API launches a stopped app, so it is not an availability probe. Apply this check before the controller call as well as before a window helper. Self-improved — 2026-11-14: prevents a read-like controller selection from bypassing the stopped-browser guard (Codex task: `01a1d720-b517-73d3-82d1-ee663f52b93f`).
+
 Before creating a desktop window, prefer an eligible existing window under [the shared window-reuse preference](/Users/ethansarif-kattan/.codex/skills/use-macbook-display/SKILL.md#workflow), including a window opened by another Computer Use task. Keep the assigned browser/profile, exact stack URL and independent task-owned tab; reuse is not permission for concurrent foreground input, shared-session changes or personal Chrome. Record the existing window ID and the new `TEST_BROWSER_TAB_ID`; never claim the reused window or its other tabs as this task's own. If exact-window tab creation cannot be verified safely, use the normal isolated-window or overflow route. User-requested — 2026-10-27.
 
 When Safari is assigned and no existing window is eligible, create one dedicated test window and navigate it to the exact stack URL in the same operation with:

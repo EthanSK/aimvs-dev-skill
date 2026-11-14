@@ -32,6 +32,7 @@ For feature testing, prove the behavior at all four layers before calling it don
   the expected documents, counters, operation statuses, links, and storage side effects. Every nonzero stack uses its
   own private indexed emulator; use stack 0 only when Ethan explicitly authorized that exact stack. Use the staging
   project namespace when connecting to either local emulator.
+  Before each diagnostic query, read its current writer, `FIRESTORE_COLLECTIONS` value and document-key helper; reuse those contracts rather than a remembered collection name. An empty legacy collection does not verify the visible UI. Self-improved — 2026-11-14: catches old `users`/`published-videos` reads after their canonical stores moved to `identities`/`published-content` (Codex task: `01a1d720-b517-73d3-82d1-ee663f52b93f`).
 - Logs: check the browser console on page load, after meaningful actions, before navigation or a reload can clear
   it, and when testing is done. Keep track of new errors throughout the test, rather than checking only at the end;
   preserve relevant errors before clearing the console. Also inspect the stack frontend debug log
