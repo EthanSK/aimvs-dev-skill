@@ -510,6 +510,7 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+Generated Fleet `command.sh` files also contain exported debug tokens: parse them privately and emit only the named non-secret arguments needed for recovery, never the whole script. Self-improved — 2026-11-14: a recovery read printed a generated command's App Check token (Codex task: `01a1d6ad-e079-7f31-982f-a59588fe2262`).
 Treat debugger WebSocket addresses as private capability URLs too; test the final redactor with a synthetic `ws://`
 address before emitting debugger startup lines. Self-improved — 2026-11-09: a startup diagnostic exposed a local
 debugger address (Codex task: `01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3`).
