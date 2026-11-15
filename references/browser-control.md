@@ -344,7 +344,11 @@ window's text (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3).
 For a harmless resize or drag, never infer the reached position from Sky's requested endpoint. Opera 133 visibly
 stopped one `sky.drag` at a mid-width boundary even though the requested endpoint was near the intended limit; inspect
 fresh pixels or measured state, then use at most one corrective edge drag when the first result is clearly partial and
-the exact window still owns the gesture. (Codex task: 01a0357e-e591-7381-bc21-f9b5f93ccee7)
+the exact window still owns the gesture. (Codex task: 01a0357e-e591-7381-bc21-f9b5f93ccee7) An unchanged UI is not a partial result: before another
+attempt, require fresh evidence that identifies and resolves a concrete blocker; varying coordinates alone is not
+enough. Otherwise use a supported page controller or report the gesture unverified.
+Self-improved — 2026-11-15: repeated native drag attempts added no verified coverage; this pre-retry check catches
+that omission before another input (Codex task: 01a1dfb6-475f-7110-84bf-5d61a88a4025).
 
 Never repeat the same ignored mechanism or send unscoped global keyboard/pointer input. A mismatched window, URL,
 display, ambiguous side
