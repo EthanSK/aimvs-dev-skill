@@ -336,10 +336,12 @@ For each discrete click, keypress, text entry, drag, navigation, or browser-cont
    focus from a newer user action.
 
 When reporting window identity, emit only explicit allowlisted booleans or the known task window ID, never a raw
-window header after a best-effort title replacement. Before emitting, test the actual projection with a synthetic
+window header after a best-effort title replacement. On a close readback, emit only whether the tracked task window
+remains; never print the replacement window's header, title or URL. Before emitting, test the actual projection with a synthetic
 secret in both indexed headers and fallback `Window: ...` headers; require the secret to be absent in both.
 Self-improved — 2026-10-27: a fallback Safari header bypassed a title-replacement pattern and exposed another
-window's text (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3).
+window's text (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3). Self-improved — 2026-11-15: the cleanup readback
+printed the replacement Chrome window; require the same allowlist after closure (Codex task: 01a1dfb6-475f-7110-84bf-5d61a88a4025).
 
 For a harmless resize or drag, never infer the reached position from Sky's requested endpoint. Opera 133 visibly
 stopped one `sky.drag` at a mid-width boundary even though the requested endpoint was near the intended limit; inspect
