@@ -300,6 +300,9 @@ Before starting or retaining any owned manual or E2E stack, apply [the local Fir
    (Codex task: 01a11665-40f0-73d0-b6cb-e80897937168). Self-improved — 2026-10-22: the same flag was repeated
    for a report server; checking the command itself before execution catches that omission (Codex task:
    01a06e80-5360-7cb2-9ed6-bf97e3311859).
+   After compaction, reread this launch check before constructing a retained-role command; a continuation summary
+   does not replace checking the actual flags. Self-improved — 2026-11-15: the unsupported flag was repeated after
+   resuming a frontend restart (Codex task: 01a1d6ad-e079-7f31-982f-a59588fe2262).
 
    Check the launcher's actual working directory, not just `mkdir`: use the role log directory as the command
    tool's `workdir` or enter it before launching screen. Verify the exact screen process has that role's log open;
