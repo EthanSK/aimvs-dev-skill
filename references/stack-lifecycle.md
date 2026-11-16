@@ -513,6 +513,7 @@ claiming that its terminal is attached or starting a duplicate. Then verify all 
 
 Inspect terminal and log content locally, but filter App Check debug tokens, credentials, signed URLs, cookies, and
 other secrets out of tool output and reports; the health gate needs status and error evidence, not sensitive values.
+For process inventories, select executable/script basenames before matching and emit only needed PIDs, executable names and categorical state, never arguments. Another model's command can contain an entire private prompt and match a broad grep. Test the projection with a synthetic secret-bearing command before its first output. Self-improved — 2026-11-16: a validation-process grep printed unrelated prompt text (Codex task: 01a1dfb6-475f-7110-84bf-5d61a88a4025).
 Generated Fleet `command.sh` files also contain exported debug tokens: parse them privately and emit only the named non-secret arguments needed for recovery, never the whole script. Self-improved — 2026-11-14: a recovery read printed a generated command's App Check token (Codex task: `01a1d6ad-e079-7f31-982f-a59588fe2262`).
 Treat debugger WebSocket addresses as private capability URLs too; test the final redactor with a synthetic `ws://`
 address before emitting debugger startup lines. Self-improved — 2026-11-09: a startup diagnostic exposed a local
