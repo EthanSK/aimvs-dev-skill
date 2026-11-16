@@ -261,7 +261,7 @@ keep retrying character `i` shortcuts.
 The window setup above is conditional on this assignment: use the Safari helper only for Safari, and use the
 verified browser-controller flow for Firefox or Opera. Keep every test browser on
 `Built-in Retina Display` when other monitors are attached. If the newly created test window opens elsewhere,
-move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting. For the
+move only that new window to `Built-in Retina Display` and re-run the display inventory before interacting. Repeat this check after detaching a browser page into a new window: Safari can place the detached window on the main external display even when its original window was on the MacBook. Verify the new numeric window ID and display before its next page action; the opener's placement does not carry over. Self-improved — 2026-11-16 (Codex task: `01a1e200-27c7-7ba2-8d16-b19d85aba01b`). For the
 in-app Browser, follow the overflow section instead; do not invent a macOS window or display check for its agent tab.
 
 ## Best-effort browser-page muting
@@ -317,6 +317,7 @@ For each discrete click, keypress, text entry, drag, navigation, or browser-cont
 
 1. Refresh `TEST_WINDOW_ID`, exact stack URL, display, frontmost app, ordered-window state, and the relevant
    postcondition before input.
+   Before a responsive or viewport-resize test, record any saved panel sizes and open/docked state that the app may update during resizing. Restore and verify those exact values afterward; resetting to a default is not proof of restoring an unknown original value. Self-improved — 2026-11-16: the short-height chat test reduced its saved height to zero without a prior size record (Codex task: `01a1e200-27c7-7ba2-8d16-b19d85aba01b`).
 2. Use an exact-window background method when it can complete the action. Otherwise, use target-scoped foreground
    input on the verified task window and recheck its identity before each material action.
    For an unlabeled icon, verify its meaning from the current pixels or exposed tooltip before acting; a fresh AX
