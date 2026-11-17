@@ -571,6 +571,7 @@ E2E runner stdout follows this same check: extract results from the structured r
 before emitting them; never return a raw log tail just because a previous run contained no secrets. Self-improved —
 2026-10-09: a local media-result read skipped the existing redaction boundary. (Codex task:
 01a1119b-5d3a-7b91-8c5d-4ab00a53d33e)
+For delegated E2E progress, require named Playwright case-start rows or case results before saying browser cases are running; a report that only says the runtime command started proves setup, not case execution. Self-improved — 2026-11-17: an ambiguous delegated start report was overstated as two started browser journeys (Codex task: `01a1dfb6-475f-7110-84bf-5d61a88a4025`).
 Treat redirected Nx/Jest/Playwright output files as logs too; check every emitted excerpt, not just live screen logs. Project structured E2E records to test outcomes and needed metrics; never emit complete test objects containing replay actors/passwords. Self-improved — 2026-10-22: captured test-output suffixes and a complete test-object readback bypassed this same guard during the stream-metadata checks (Codex task: 01a06e80-5360-7cb2-9ed6-bf97e3311859).
 Apply redaction after the final selection in inline Node/Python scripts too. A page-route or feature-name filter is
 not a secret boundary: unrelated startup entries can carry that same route. Test the exact final emission with a
