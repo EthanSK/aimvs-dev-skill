@@ -539,6 +539,7 @@ require them to be absent. Self-improved — 2026-10-10: status inspection expos
 challenge URL; this checks the projection before emission (Codex task: 01a121fb-be25-73d0-938f-aa7cde71ac67).
 Never screenshot provider key-list or secret-reveal pages, including crops. Use a credential-free permissions or
 metadata view instead; text-only DOM checks miss rendered input values, and crop coordinates are not redaction.
+Before every native browser-window capture, inspect that exact window's Accessibility state with automatic output suppressed and require DevTools/Console to be closed; a page-only DOM snapshot excludes browser inspector panes and cannot clear this check. Verify closure again before calling the capture helper. Self-improved — 2026-11-17: a native window capture included debug-token console output despite a clean page snapshot (Codex task: `01a1dfb6-475f-7110-84bf-5d61a88a4025`).
 Before any credential-adjacent capture, inspect visible input/textarea values privately as well as text and require a
 synthetic secret-valued input to fail that same capture preflight. Self-improved — 2026-11-08: a Stripe sandbox key
 appeared in a crop after a text-only check (Codex task: 01a17e73-b7ca-7290-bf59-1bf8f2dd9ae3).
