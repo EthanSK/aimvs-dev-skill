@@ -74,12 +74,24 @@ removed, but every new linked worktree must use the helper and the `aimvs<N>-<ta
 User-requested — 2026-11-18: AIMVS linked worktrees used to live directly under `~/Projects`. If an old chat points
 there, run `git -C ~/Projects/ai-music-video-studio worktree list --porcelain`. Find the same checkout by its name
 and branch, then continue at its registered path. Moved checkouts kept their names, changes and stack numbers.
-The old paths can be hidden compatibility links. A checkout with a live stack or file watcher can still be at its
-original path. Reuse it there until it can be moved safely.
+User-requested — 2026-11-18: use the registered path rather than leaving old-path symlinks for saved chats.
+A checkout with a live stack or file watcher can still be at its original path. Reuse it there until it can be moved safely.
 
 The hidden folder is for local work on this Mac. Use the creation command from current local main. An older copy of
 the helper can still create a top-level worktree. Fleet E2E reserves its stack through the same allocator and keeps
 its disposable checkout directly under the Fleet job folder so the finalizer can find it.
+
+## Automatic review after deployment iterations
+
+User-requested — 2026-11-18: keep the automatic review-worktree rule in AIMVS's own agent instructions. Use the shared
+[committed changes review workflow](/Users/ethansarif-kattan/.codex/skills/committed-changes-review-split/SKILL.md)
+for the review baseline and staging checks.
+
+User-requested — 2026-10-17; review method replaced at Ethan's request — 2026-10-18: When authorized automatic changes land on AIMVS main while iterating for E2Es, manual testing, or anything requiring deployment, finish the authorized iteration, then automatically provide one named review worktree with the actual changes unstaged against their before-commit. Tell Ethan where to review them. This is standing permission for that scoped review worktree, local review branch and index setup, not permission to commit, merge, push or deploy production changes he has not reviewed.
+
+Track the exact commits and paths changed by the iteration, including interleaved or mixed commits. Expose only the selected changes; use one review worktree for the iteration, not one per commit, and retain it until Ethan finishes. Prefer reusing the existing task-owned worktree when its working files already contain the selected result and its Git state can be preserved safely. Keep naturally unstaged repairs as they are when nothing has landed.
+
+For temporary deployment commits, use their verified before/after states without merging them into main to manufacture a review. For interleaved or mixed changes, apply only the selected commit/path/hunk patch onto the proven before-state in the review worktree. Do not hide unrelated landed edits by restoring whole older files. Stop on ambiguous overlap or a failed patch preflight rather than forcing it.
 
 ## Add the full worktree name to the current Codex chat name
 
@@ -100,11 +112,10 @@ task's verified source worktree; report an unavailable title tool or failed read
 Rename only when Ethan explicitly requests it. First resolve the owning task and live processes, fingerprint the
 staged/unstaged/untracked state, and verify the destination is free. A numbered worktree must keep the same exact
 `aimvs<N>-` prefix so its stable Git metadata continues to match the same shared reservation. Use `git worktree
-move`, then immediately put an old-path compatibility symlink in place so saved task working directories and running
-processes remain usable. Verify the registered path, unchanged Git boundaries, symlink target, `npm run
-aimvs-worktree -- list`, and live stack before notifying the owning task to use the new path. Never treat the
-compatibility symlink as a second worktree. (Codex tasks: 01a01193-8a28-7801-b514-509a50b727bb,
-01a05ebf-a8f9-7f83-a325-1565cf6005a7)
+move` once its processes have reached a safe boundary. Repoint live settings that need the exact path and keep saved
+chats resumable through the registered worktree path. Verify the registered path, unchanged Git boundaries, and
+`npm run aimvs-worktree -- list`. Defer an unsafe live move until the affected stack or file watcher can be stopped
+or redirected safely.
 
 ## Keep VS Code workspace membership accurate
 
