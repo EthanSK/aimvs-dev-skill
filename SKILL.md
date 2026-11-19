@@ -111,7 +111,7 @@ Use `aimvs-` at the start of AIMVS-specific skill folder names and frontmatter n
   desktop-browser profile; desktop browsers use their existing persistent profiles. (Codex task:
   01a03a49-3424-7e93-bcd8-f261515ba730)
   Before the first browser call, compare the controller's browser ID with this assignment; a global browser skill's
-  Chrome allowance does not override AIMVS's prohibition. Self-improved — 2026-10-03: the prior outline check missed
+  Chrome allowance does not override AIMVS's prohibition. Repeat this check when resuming browser tests, using the live browser name and profile; an inherited browser handle is not authorization. Self-improved — 2026-11-19: a resumed banner check inherited personal Chrome without applying the project assignment (Codex task: `01a1e200-27c7-7ba2-8d16-b19d85aba01b`). Self-improved — 2026-10-03: the prior outline check missed
   that conflict; the final acceptance check used the permitted in-app Browser instead. (Codex task: 01a0ecff-cf98-7541-bcae-a898915b8bd3)
 - Before the first manual-test interaction, treat muting the exact tracked agent-owned browser page as best effort.
   Use an available page-level browser or native UI control, verify it when practical, and keep it muted for the session;
