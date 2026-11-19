@@ -320,9 +320,12 @@ Before finishing, verify that:
 Use a read-only image inspection tool for PNG verification. Never launch, activate, or open Preview.app, and never
 automatically open any evidence file at the end of the task.
 
-Leave manual-test reports unstaged unless Ethan explicitly asks to stage a report. Never stage or unstage PNG
-screenshots, including to "correct" ones Ethan staged himself; delete outdated or misaligned task-owned evidence
-as described above, without overwriting retained captures.
+Automatically stage the completed task-owned `manual-test-results.md` changes before handoff. Ethan does not
+need to review that Markdown. Verify the report has no remaining unstaged task-owned edits, and stage only the
+task-owned hunks if the file also contains unrelated edits. User-requested — 2026-11-19.
+
+Never stage or unstage PNG screenshots, including to "correct" ones Ethan staged himself; delete outdated or
+misaligned task-owned evidence as described above, without overwriting retained captures.
 Do not commit the report folder unless Ethan asks. For a requested implementation commit, preserve his exact staged
 evidence snapshot. User corrections — 2026-09-28 and 2026-09-29 (Codex task:
 01a0e8ca-6772-7251-8d07-9979d45bcb56).
